@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #F2F2F2;
+  --color-surface: #FFFFFF;
+  --color-ink: #2D2F33;
+  --color-subtitle: #6E727A;
+  --color-muted: #989898;
+  --color-muted2: #686868;
+  --color-line: #B9B9B9;
+  --color-fillsoft: #E9E9E9;
+  --color-brand: #026F4F;
+  --color-brand-light: #E6F1ED;
+  --color-grow: #158F15;
+  --color-live: #37CE2A;
+  --color-orange: #F97316;
+  --color-red: #E56767;
+  --color-red-light: #FFE6E6;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-satoshi: 'Satoshi', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --color-bg: #F2F2F2;
+  --color-surface: #FFFFFF;
+  --color-ink: #2D2F33;
+}
+
+html,
+body {
+  background: #F2F2F2;
+  color: #2D2F33;
+}
+
+* {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-satoshi {
+  font-family: 'Satoshi', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #B9B9B9;
+  border-radius: 99px;
+}
