@@ -1,0 +1,32 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies
+node_modules
+
+# Next.js build output
+.next
+out
+
+# Local env files
+.env
+.env.local
+.env*.local
+
+# Dev / editor noise
+.DS_Store
+*.pem
+*.log
+.vscode
+.idea
+
+# Docs / misc
+*.docx
+*.md
+README*
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+.dockerignore
