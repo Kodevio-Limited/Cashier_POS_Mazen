@@ -3,8 +3,8 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY package.json package-lock.json* pnpm-lock.yaml* ./
+RUN npm install
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
