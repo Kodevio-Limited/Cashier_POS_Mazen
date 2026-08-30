@@ -1,0 +1,43 @@
+services:
+  cashier-pos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    container_name: cashier_pos
+    restart: unless-stopped
+    expose:
+      - "3001"
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cashierpos.rule=Host(`kisharepos.codevio.com`) || Host(`kishare.codevio.com`) || Host(`pos.codevio.com`)
+      - traefik.http.routers.cashierpos.entrypoints=websecure
+      - traefik.http.routers.cashierpos.tls.certResolver=letsencrypt
+      - traefik.http.routers.cashierpos-http.rule=Host(`kisharepos.codevio.com`) || Host(`kishare.codevio.com`) || Host(`pos.codevio.com`)
+      - traefik.http.routers.cashierpos-http.entrypoints=web
+      - traefik.http.routers.cashierpos-http.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.services.cashierpos.loadbalancer.server.port=3001
+
+networks:
+  dokploy-network:
+    external: true
