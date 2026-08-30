@@ -27,10 +27,10 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.cashierpos.rule=Host(`kisharepos.codevio.com`) || Host(`kishare.codevio.com`) || Host(`pos.codevio.com`)
+      - traefik.http.routers.cashierpos.rule=Host(`kisharepos.kodevio.com`) || Host(`kishare.kodevio.com`) || Host(`pos.kodevio.com`)
       - traefik.http.routers.cashierpos.entrypoints=websecure
       - traefik.http.routers.cashierpos.tls.certResolver=letsencrypt
-      - traefik.http.routers.cashierpos-http.rule=Host(`kisharepos.codevio.com`) || Host(`kishare.codevio.com`) || Host(`pos.codevio.com`)
+      - traefik.http.routers.cashierpos-http.rule=Host(`kisharepos.kodevio.com`) || Host(`kishare.kodevio.com`) || Host(`pos.kodevio.com`)
       - traefik.http.routers.cashierpos-http.entrypoints=web
       - traefik.http.routers.cashierpos-http.middlewares=redirect-to-https
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
