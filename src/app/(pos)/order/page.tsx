@@ -163,7 +163,7 @@ export default function OrderPage() {
       {/* ── Center: Menu Section ─────────────────────────────────── */}
       <div className="flex flex-1 flex-col min-w-0 bg-white rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
         {/* Header row */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#F2F2F2]">
+        <div className="flex flex-wrap items-center justify-between px-5 pt-4 pb-3 border-b border-[#F2F2F2] gap-3">
           <div className="flex items-center gap-2">
             <span className="font-medium text-[19px] text-[#2D2F33]">Menu</span>
             <span className="text-[13px] text-[#989898]">({MENU_ITEMS.length} items)</span>
@@ -182,7 +182,7 @@ export default function OrderPage() {
             </div>
 
             {/* Order type switcher */}
-            <div className="flex gap-1 bg-[#F2F2F2] rounded-full p-0.5">
+            <div className="hidden sm:flex gap-1 bg-[#F2F2F2] rounded-full p-0.5">
               {(['dine-in', 'takeaway', 'delivery'] as const).map((t) => (
                 <button
                   key={t}
@@ -226,7 +226,7 @@ export default function OrderPage() {
               No items found.
             </div>
           ) : (
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filtered.map((item) => (
                 <ProductCard
                   key={item.id}
@@ -241,7 +241,7 @@ export default function OrderPage() {
 
       {/* ── Right Panel: Current Order (Side Modal - Only appears when an item is selected) ── */}
       {isCartOpen && (
-        <div className="w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative animate-in fade-in slide-in-from-right-4 duration-300 max-md:absolute max-md:inset-y-3 max-md:right-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
           {/* Header */}
           <div className="px-3 pt-3 pb-2.5 flex justify-between items-center border-b border-zinc-400/40">
             <div className="flex items-center gap-1.5">
@@ -508,10 +508,10 @@ function CustomizeItemModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="w-[650px] max-h-[90vh] bg-white rounded-2xl p-8 overflow-y-auto shadow-2xl relative flex flex-col justify-between gap-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+      <div className="w-full max-w-[650px] max-h-[90vh] bg-white rounded-2xl p-6 md:p-8 overflow-y-auto shadow-2xl relative flex flex-col justify-between gap-6">
         <div className="flex justify-between items-center">
-          <div className="text-black text-2xl font-medium font-['Inter'] leading-8">Current Order</div>
+          <div className="text-black text-xl md:text-2xl font-medium font-['Inter'] leading-8">Current Order</div>
           <button onClick={onClose} className="size-6 relative flex items-center justify-center text-black hover:text-zinc-600 transition-colors">
             <X size={20} strokeWidth={2.2} />
           </button>
@@ -627,7 +627,7 @@ function CustomizeItemModal({
                 emoji: data.emoji,
               });
             }}
-            className="w-96 h-14 bg-emerald-700 hover:bg-emerald-800 rounded-[30px] shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] text-white text-lg font-medium font-['Inter'] leading-7 flex items-center justify-center transition-all active:scale-95"
+            className="w-full sm:w-96 h-14 bg-emerald-700 hover:bg-emerald-800 rounded-[30px] shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] text-white text-lg font-medium font-['Inter'] leading-7 flex items-center justify-center transition-all active:scale-95"
           >
             Done
           </button>
@@ -652,11 +652,11 @@ function CollectPaymentModal({
   const change = Math.max(0, receivedNum - total);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="w-[650px] bg-white rounded-2xl p-8 shadow-2xl relative flex flex-col gap-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+      <div className="w-full max-w-[650px] bg-white rounded-2xl p-6 md:p-8 shadow-2xl relative flex flex-col gap-6">
         {/* Title & Close */}
         <div className="flex justify-between items-center">
-          <h2 className="text-[#2D2F33] text-2xl font-medium font-['Inter'] leading-8">Collect Payment</h2>
+          <h2 className="text-[#2D2F33] text-xl md:text-2xl font-medium font-['Inter'] leading-8">Collect Payment</h2>
           <button onClick={onClose} className="text-[#989898] hover:text-[#2D2F33] transition-colors">
             <X size={24} />
           </button>
@@ -687,18 +687,18 @@ function CollectPaymentModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center gap-5 pt-2">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="w-[280px] h-[52px] rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] hover:bg-[#E0E0E0] text-[#2D2F33] font-medium text-base transition-colors"
+            className="w-full sm:w-[280px] h-[52px] rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] hover:bg-[#E0E0E0] text-[#2D2F33] font-medium text-base transition-colors"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="w-[280px] h-[52px] rounded-[30px] bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-base shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all active:scale-95"
+            className="w-full sm:w-[280px] h-[52px] rounded-[30px] bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-base shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all active:scale-95"
           >
             Complete Order
           </button>
@@ -854,11 +854,12 @@ function ConfirmMergeModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="w-[553px] bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center gap-6 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+      <div className="w-full max-w-[553px] bg-white rounded-2xl p-6 md:p-8 shadow-2xl flex flex-col items-center text-center gap-6 animate-in zoom-in-95 duration-200">
         {/* Graphic */}
-        <div className="w-48 h-48 bg-[#E6F1ED] rounded-full flex items-center justify-center text-[#026F4F]">
-          <GitMerge size={80} strokeWidth={1.8} />
+        <div className="w-32 h-32 md:w-48 md:h-48 bg-[#E6F1ED] rounded-full flex items-center justify-center text-[#026F4F]">
+          <GitMerge size={60} strokeWidth={1.8} className="md:hidden" />
+          <GitMerge size={80} strokeWidth={1.8} className="hidden md:block" />
         </div>
 
         {/* Title */}
@@ -876,18 +877,18 @@ function ConfirmMergeModal({
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-between items-center gap-4 w-full pt-2">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 w-full pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="w-[241px] h-[52px] rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] hover:bg-[#E0E0E0] text-[#2D2F33] font-medium text-base transition-colors"
+            className="w-full sm:w-[241px] h-[52px] rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] hover:bg-[#E0E0E0] text-[#2D2F33] font-medium text-base transition-colors"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="w-[241px] h-[52px] rounded-[30px] bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-base shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all active:scale-95"
+            className="w-full sm:w-[241px] h-[52px] rounded-[30px] bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-base shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all active:scale-95"
           >
             Confirm Merge
           </button>
