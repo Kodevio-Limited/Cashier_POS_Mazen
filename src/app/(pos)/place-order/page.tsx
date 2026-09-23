@@ -3,8 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Truck, MapPin, Phone, User } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  CollectPaymentModal,
+  SplitBillModal,
+  MergeOrdersModal,
+  ConfirmMergeModal,
+} from '@/components/pos/PaymentModals';
 
 interface OrderLineItem {
   id: string;
@@ -24,20 +30,22 @@ const INITIAL_ITEMS: OrderLineItem[] = [
 export default function PlaceOrderPage() {
   const router = useRouter();
   const [items, setItems] = useState<OrderLineItem[]>(INITIAL_ITEMS);
-  const [orderType, setOrderType] = useState<'Dine-in' | 'Delivery'>('Delivery');
-  
+
   // Customer details
   const [phone, setPhone] = useState('+1 (555) 234-5678');
   const [name, setName] = useState('Sarah Jessie');
   const [email, setEmail] = useState('sarah.jessie@example.com');
-  const [address, setAddress] = useState('742 Evergreen Terrace, Apt 4B');
-  const [notes, setNotes] = useState('Ring doorbell upon arrival');
-  
+  const [notes, setNotes] = useState('');
+
   // Checkout options
   const [promo, setPromo] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card'>('Card');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [showConfirmMergeModal, setShowConfirmMergeModal] = useState(false);
+  const [selectedMergeOrders, setSelectedMergeOrders] = useState<string[]>(['ro1', 'ro2']);
 
   function incQty(id: string) {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, qty: item.qty + 1 } : item)));
@@ -56,16 +64,16 @@ export default function PlaceOrderPage() {
   }
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const deliveryFee = orderType === 'Delivery' ? 4.99 : 0;
+  const promoApplied = promo.trim().length > 0;
   const discount = promoApplied ? subtotal * 0.1 : 0;
   const serviceCharge = (subtotal - discount) * 0.1; // 10%
-  const total = subtotal - discount + serviceCharge + deliveryFee;
+  const total = subtotal - discount + serviceCharge;
 
   return (
     <div className="flex h-[calc(100vh-24px)] gap-3">
       {/* ── Main Content Area: Order Line Items ─────────────────── */}
       <div className="flex flex-1 flex-col min-w-0 bg-white rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-5">
-        {/* Top bar: Order ID & Type Switcher */}
+        {/* Top bar: Order ID */}
         <div className="flex items-center justify-between pb-4 border-b border-[#F2F2F2]">
           <div className="flex items-center gap-3">
             <Link
@@ -76,33 +84,8 @@ export default function PlaceOrderPage() {
             </Link>
             <div>
               <h1 className="font-semibold text-[20px] text-[#2D2F33]">Order #ORD-1025</h1>
-              <p className="text-[13px] text-[#686868]">
-                {orderType === 'Dine-in' ? 'Dine-in • Table 07' : 'Delivery • Order #ORD-1025'}
-              </p>
+              <p className="text-[13px] text-[#686868]">Review items and customer details</p>
             </div>
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="flex gap-1 bg-[#F2F2F2] rounded-full p-1">
-            <button
-              onClick={() => setOrderType('Dine-in')}
-              className={cn(
-                'px-4 py-1.5 rounded-full text-xs font-medium transition-all',
-                orderType === 'Dine-in' ? 'bg-white text-[#2D2F33] shadow-xs' : 'text-[#686868]',
-              )}
-            >
-              Dine-in
-            </button>
-            <button
-              onClick={() => setOrderType('Delivery')}
-              className={cn(
-                'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all',
-                orderType === 'Delivery' ? 'bg-[#026F4F] text-white shadow-xs' : 'text-[#686868]',
-              )}
-            >
-              <Truck size={14} />
-              <span>Delivery</span>
-            </button>
           </div>
         </div>
 
@@ -212,7 +195,6 @@ export default function PlaceOrderPage() {
               setPhone('');
               setName('');
               setEmail('');
-              setAddress('');
               setNotes('');
             }}
             className="w-9 h-9 rounded-lg bg-red-400 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
@@ -228,7 +210,7 @@ export default function PlaceOrderPage() {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[#686868] flex items-center gap-1">
               <Phone size={12} />
-              <span>Phone Number</span>
+              <span>Phone Number (Optional)</span>
             </label>
             <input
               type="text"
@@ -243,7 +225,7 @@ export default function PlaceOrderPage() {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[#686868] flex items-center gap-1">
               <User size={12} />
-              <span>Full Name</span>
+              <span>Full Name (Optional)</span>
             </label>
             <input
               type="text"
@@ -254,26 +236,9 @@ export default function PlaceOrderPage() {
             />
           </div>
 
-          {/* Delivery Address (if Delivery) */}
-          {orderType === 'Delivery' && (
-            <div className="flex flex-col gap-1 animate-in fade-in duration-200">
-              <label className="text-xs text-[#686868] flex items-center gap-1">
-                <MapPin size={12} className="text-[#026F4F]" />
-                <span>Delivery Address</span>
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Full delivery street address"
-                className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-              />
-            </div>
-          )}
-
           {/* Email */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#686868]">Send Receipt to Email</label>
+            <label className="text-xs text-[#686868]">Send Receipt to Email (Optional)</label>
             <input
               type="email"
               value={email}
@@ -283,21 +248,7 @@ export default function PlaceOrderPage() {
             />
           </div>
 
-          {/* Driver Note */}
-          {orderType === 'Delivery' && (
-            <div className="flex flex-col gap-1 animate-in fade-in duration-200">
-              <label className="text-xs text-[#686868]">Delivery Note for Driver</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Gate code, apartment #, dropoff note"
-                className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-              />
-            </div>
-          )}
-
-          {/* Promo code input */}
+          {/* Promo code input (no apply button) */}
           <div className="border border-[#B9B9B9] rounded-xl p-1 flex items-center gap-2 bg-white mt-1">
             <Tag size={16} className="text-[#989898] ml-3 shrink-0" />
             <input
@@ -307,17 +258,6 @@ export default function PlaceOrderPage() {
               placeholder="ENTER PROMO CODE"
               className="flex-1 bg-transparent text-xs uppercase font-medium text-[#2D2F33] placeholder:text-[#B9B9B9] outline-none"
             />
-            <button
-              onClick={() => {
-                if (promo.trim()) setPromoApplied(true);
-              }}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                promoApplied ? 'bg-emerald-100 text-[#026F4F]' : 'bg-[#026F4F] text-white hover:bg-[#015c42]',
-              )}
-            >
-              {promoApplied ? 'Applied!' : 'Apply'}
-            </button>
           </div>
 
           {/* Payment Method Switcher */}
@@ -360,12 +300,6 @@ export default function PlaceOrderPage() {
               <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} items)</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
-            {orderType === 'Delivery' && (
-              <div className="flex justify-between text-xs text-[#686868]">
-                <span>Delivery Fee</span>
-                <span>${deliveryFee.toFixed(2)}</span>
-              </div>
-            )}
             {discount > 0 && (
               <div className="flex justify-between text-xs text-emerald-700">
                 <span>Promo Discount (10%)</span>
@@ -386,6 +320,36 @@ export default function PlaceOrderPage() {
 
         {/* Bottom Actions */}
         <div className="p-4 flex flex-col gap-2.5 border-t border-[#F2F2F2] bg-white">
+          {/* Split Bill & Merge Bill */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => items.length > 0 && setShowSplitModal(true)}
+              disabled={items.length === 0}
+              className={cn(
+                'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-xs font-medium outline outline-1 outline-offset-[-1px] outline-emerald-700 transition-colors',
+                items.length > 0
+                  ? 'bg-zinc-100 text-emerald-700 hover:bg-emerald-50'
+                  : 'cursor-not-allowed bg-zinc-100 text-emerald-700/50',
+              )}
+            >
+              <Split size={15} className="shrink-0" />
+              <span>Split Bill</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => items.length > 0 && setShowMergeModal(true)}
+              disabled={items.length === 0}
+              className={cn(
+                'flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-zinc-100 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-200',
+                items.length === 0 && 'cursor-not-allowed',
+              )}
+            >
+              <GitMerge size={15} className="shrink-0" />
+              <span>Merge Bill</span>
+            </button>
+          </div>
+
           {/* Keep Check Running */}
           <button
             onClick={() => router.push('/running-order')}
@@ -397,7 +361,7 @@ export default function PlaceOrderPage() {
 
           {/* Confirm & Pay */}
           <button
-            onClick={() => items.length > 0 && setShowSuccessModal(true)}
+            onClick={() => items.length > 0 && setShowPaymentModal(true)}
             disabled={items.length === 0}
             className={cn(
               'w-full h-[50px] rounded-full font-medium text-[16px] text-white transition-all shadow-[0_4px_16px_11px_rgba(0,0,0,0.12)] flex items-center justify-center gap-2',
@@ -412,6 +376,58 @@ export default function PlaceOrderPage() {
         </div>
       </div>
 
+      {/* ── Collect Payment Modal ─────────────────────────────────── */}
+      {showPaymentModal && (
+        <CollectPaymentModal
+          total={total}
+          onClose={() => setShowPaymentModal(false)}
+          onConfirm={() => {
+            setShowPaymentModal(false);
+            setShowSuccessModal(true);
+          }}
+          onSplit={() => setShowSplitModal(true)}
+          onMerge={() => setShowMergeModal(true)}
+        />
+      )}
+
+      {/* ── Split Bill Modal ───────────────────────────────────────── */}
+      {showSplitModal && (
+        <SplitBillModal items={items} total={total} onClose={() => setShowSplitModal(false)} />
+      )}
+
+      {/* ── Merge Orders Modal ─────────────────────────────────────── */}
+      {showMergeModal && (
+        <MergeOrdersModal
+          onClose={() => setShowMergeModal(false)}
+          onProceedToConfirm={() => {
+            setShowMergeModal(false);
+            setShowConfirmMergeModal(true);
+          }}
+          selectedOrders={selectedMergeOrders}
+          onToggleSelect={(id) => {
+            setSelectedMergeOrders((prev) =>
+              prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+            );
+          }}
+        />
+      )}
+
+      {/* ── Confirm Merge Modal ────────────────────────────────────── */}
+      {showConfirmMergeModal && (
+        <ConfirmMergeModal
+          ordersCount={selectedMergeOrders.length}
+          combinedTotal={selectedMergeOrders.reduce((sum, id) => {
+            const totals: Record<string, number> = { ro1: 45.99, ro2: 32.5, ro3: 54, ro4: 18.99 };
+            return sum + (totals[id] ?? 0);
+          }, 0)}
+          onClose={() => setShowConfirmMergeModal(false)}
+          onConfirm={() => {
+            setShowConfirmMergeModal(false);
+            setShowMergeModal(false);
+          }}
+        />
+      )}
+
       {/* ── Success Modal ────────────────────────────────────────── */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
@@ -422,7 +438,7 @@ export default function PlaceOrderPage() {
 
             <h3 className="font-semibold text-2xl text-[#2D2F33]">Order Placed & Paid!</h3>
             <p className="text-sm text-[#686868]">
-              Order <span className="font-medium text-[#2D2F33]">#ORD-1025</span> ({orderType}) has been confirmed and dispatched to kitchen.
+              Order <span className="font-medium text-[#2D2F33]">#ORD-1025</span> has been confirmed and dispatched to kitchen.
             </p>
 
             <div className="w-full bg-[#F2F2F2] rounded-xl p-4 flex justify-between text-sm text-[#2D2F33] my-2">

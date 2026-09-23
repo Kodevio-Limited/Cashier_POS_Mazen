@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, Bell, Check, Calendar, MapPin, Scissors, Printer, X, CheckCircle2 } from 'lucide-react';
+import { Clock, Calendar, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Bell, CheckCircle2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ interface RunningOrder {
   customerName: string;
   phone?: string;
   email?: string;
-  isUnpaid: boolean;
+  isPaid: boolean;
   date: string;
   table: string;
   type: 'Dine In' | 'Takeaway' | 'Delivery';
@@ -41,6 +41,13 @@ interface TableRequestItem {
   paymentMethod?: 'Card' | 'Cash';
 }
 
+const STATUS_STEPS: { key: OrderStatus; label: string; icon: typeof Clock }[] = [
+  { key: 'Placed', label: 'Placed', icon: Clock },
+  { key: 'Preparing', label: 'Preparing', icon: CookingPot },
+  { key: 'Ready', label: 'Ready', icon: Package },
+  { key: 'Served', label: 'Served', icon: UtensilsCrossed },
+];
+
 // ─── Sample Data ───────────────────────────────────────────────────────────────
 const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
   {
@@ -49,7 +56,7 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     customerName: 'Robert Fox',
     phone: '+01284980',
     email: 'mike.t@example.com',
-    isUnpaid: true,
+    isPaid: true,
     date: '7 Apr, 11:30 AM',
     table: 'Table 03',
     type: 'Dine In',
@@ -59,7 +66,7 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
       { name: 'Iced Green Tea', qty: 1, price: 15.99, modifier: 'No Spice', emoji: '🍵' },
     ],
     subtotal: 25.99,
-    serviceCharge: 2.60,
+    serviceCharge: 2.6,
     total: 30.99,
   },
   {
@@ -68,7 +75,7 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     customerName: 'Mike Thompson',
     phone: '+01284980',
     email: 'mike.t@example.com',
-    isUnpaid: false,
+    isPaid: true,
     date: '7 Apr, 11:45 AM',
     table: 'Table 07',
     type: 'Dine In',
@@ -78,7 +85,7 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
       { name: 'Coca-Cola', qty: 1, price: 2.99, modifier: 'Standard', emoji: '🥤' },
     ],
     subtotal: 18.98,
-    serviceCharge: 1.90,
+    serviceCharge: 1.9,
     total: 20.88,
   },
   {
@@ -87,7 +94,7 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     customerName: 'David K.',
     phone: '+01284980',
     email: 'david.k@example.com',
-    isUnpaid: true,
+    isPaid: false,
     date: '7 Apr, 12:00 PM',
     table: 'Takeaway #12',
     type: 'Takeaway',
@@ -97,7 +104,7 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
       { name: 'French Fries', qty: 1, price: 4.99, modifier: 'Standard', emoji: '🍟' },
     ],
     subtotal: 36.97,
-    serviceCharge: 3.70,
+    serviceCharge: 3.7,
     total: 40.67,
   },
 ];
@@ -112,10 +119,10 @@ export default function RunningOrderPage() {
   const [orders, setOrders] = useState<RunningOrder[]>(INITIAL_RUNNING_ORDERS);
   const [requests, setRequests] = useState<TableRequestItem[]>(INITIAL_TABLE_REQUESTS);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
-  const [selectedOrderId, setSelectedOrderId] = useState<string>('ro1');
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [showTableRequestModal, setShowTableRequestModal] = useState<boolean>(false);
 
-  const selectedOrder = orders.find((o) => o.id === selectedOrderId) || orders[0];
+  const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
   const filteredOrders = orders.filter((o) => {
     if (activeTypeTab === 'All') return true;
@@ -123,9 +130,18 @@ export default function RunningOrderPage() {
   });
 
   function updateOrderStatus(id: string, newStatus: OrderStatus) {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)),
-    );
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
+  }
+
+  function advanceStatus(order: RunningOrder) {
+    const next: Record<OrderStatus, OrderStatus> = {
+      Placed: 'Preparing',
+      Preparing: 'Ready',
+      Ready: 'Served',
+      Served: 'Completed',
+      Completed: 'Completed',
+    };
+    updateOrderStatus(order.id, next[order.status]);
   }
 
   function handleDismissAllRequests() {
@@ -137,42 +153,38 @@ export default function RunningOrderPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-24px)] gap-3 bg-[#F2F2F2] p-1.5 rounded-2xl overflow-hidden relative">
-      {/* ── Running Orders Main Workspace ──────────────────────────────────── */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <div className="flex justify-between items-center px-4 py-3 bg-white rounded-xl mb-3 border border-[#E9E9E9]">
-          <div>
-            <h1 className="text-black text-lg font-medium font-['Inter']">Running Orders</h1>
-            <p className="text-neutral-400 text-xs font-normal font-['Inter']">Live order tracking & actions</p>
+    <div className="flex min-h-[calc(100vh-24px)] gap-3 bg-[#F2F2F2] relative">
+      {/* ── Left: Running Orders workspace ─────────────────────────────── */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-[7px]">
+            <h1 className="text-[19px] font-medium leading-[1.4] text-black">Running Orders</h1>
+            <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">Live order tracking & actions</p>
           </div>
-
-          {/* Table Request Pill Trigger with Red Count Badge */}
           <button
             onClick={() => setShowTableRequestModal(true)}
-            className="px-4 py-1.5 rounded-full bg-white border border-[#E9E9E9] text-stone-500 hover:border-[#026F4F] text-xs font-medium transition-all flex items-center gap-2 relative shadow-xs"
+            className="flex items-center gap-2 rounded-full border border-[#E9E9E9] bg-white px-4 py-1.5 text-xs font-medium text-stone-500 shadow-xs transition-all hover:border-[#026F4F]"
           >
             <Bell size={14} className="text-[#026F4F]" />
             <span>Table Request</span>
             {requests.length > 0 && (
-              <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-medium flex items-center justify-center -mr-1">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[11px] font-medium text-white">
                 {requests.length}
               </span>
             )}
           </button>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex items-center gap-2 mb-3">
+        {/* Filter pills */}
+        <div className="mt-[24px] flex flex-wrap items-center gap-[11px]">
           {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTypeTab(tab)}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-normal font-['Inter'] transition-all",
-                activeTypeTab === tab
-                  ? 'bg-[#026F4F] text-white shadow-xs'
-                  : 'bg-white text-stone-500 border border-[#E9E9E9] hover:text-[#2D2F33]',
+                'rounded-[33.8px] px-[12px] py-[5px] text-[13.5px] font-normal leading-[1.4] transition-all',
+                activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
               )}
             >
               {tab}
@@ -180,15 +192,15 @@ export default function RunningOrderPage() {
           ))}
         </div>
 
-        {/* Running Orders Cards Grid */}
-        <div className="flex-1 overflow-y-auto pr-1">
+        {/* Cards grid */}
+        <div className="mt-[24px] flex-1 overflow-y-auto pb-20">
           {filteredOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 bg-white rounded-xl text-[#989898] text-sm">
-              <Clock size={32} className="mb-2 text-[#989898]" />
+            <div className="flex h-48 flex-col items-center justify-center rounded-xl bg-white text-sm text-[#989898]">
+              <Clock size={32} className="mb-2" />
               <p>No active running orders for this filter.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
+            <div className="grid grid-cols-1 gap-[9px] sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredOrders.map((order) => {
                 const isSelected = order.id === selectedOrderId;
                 return (
@@ -196,84 +208,120 @@ export default function RunningOrderPage() {
                     key={order.id}
                     onClick={() => setSelectedOrderId(order.id)}
                     className={cn(
-                      'w-full h-80 bg-white rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer border flex flex-col justify-between p-3.5 relative',
-                      isSelected ? 'border-[#026F4F] ring-2 ring-[#026F4F]/20' : 'border-transparent',
+                      'relative flex h-[326px] min-w-0 cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white p-[14px] transition-all hover:shadow-md',
+                      isSelected ? 'ring-2 ring-[#026F4F]/30' : '',
                     )}
                   >
-                    {/* Customer & Order Header */}
-                    <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-black text-base font-medium font-['Inter'] truncate">
-                            {order.customerName}
-                          </span>
-                          {order.isUnpaid ? (
-                            <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-normal font-['Inter'] rounded-full shrink-0">
-                              Unpaid
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-green-600 text-white text-[8px] font-normal font-['Inter'] rounded-full shrink-0">
-                              Paid
-                            </span>
+                    {/* Header: name + paid + order no */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex min-w-0 items-center gap-[9px]">
+                        <span className="truncate text-[16.8px] font-medium leading-[1.4] text-black">{order.customerName}</span>
+                        <span
+                          className={cn(
+                            'flex shrink-0 items-center gap-[5px] rounded-[19.7px] px-[5px] py-[3px] text-[8px] font-normal leading-[1.4] text-white',
+                            order.isPaid ? 'bg-[#16C722]' : 'bg-[#E85E5E]',
                           )}
-                        </div>
-                        <span className="text-neutral-400 text-xs font-normal font-['Inter'] shrink-0">{order.orderNumber}</span>
+                        >
+                          <Check size={13} strokeWidth={3} className={order.isPaid ? '' : 'hidden'} />
+                          <span>{order.isPaid ? 'Paid' : 'Unpaid'}</span>
+                        </span>
                       </div>
+                      <span className="shrink-0 text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.orderNumber}</span>
+                    </div>
 
-                      <div className="flex flex-col gap-1 text-neutral-400 text-xs font-normal font-['Inter']">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar size={13} className="shrink-0" />
-                          <span>{order.date}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin size={13} className="shrink-0" />
-                          <span>{order.table}</span>
-                        </div>
+                    {/* Meta */}
+                    <div className="mt-[9px] flex flex-col gap-[8px]">
+                      <div className="flex items-center gap-[6px]">
+                        <Clock size={15.6} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        <span className="text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.date}</span>
+                      </div>
+                      <div className="flex items-center gap-[6px]">
+                        <UtensilsCrossed size={15.6} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        <span className="text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.table}</span>
                       </div>
                     </div>
 
-                    <div className="w-full border-t border-dashed border-neutral-300 my-1" />
-
                     {/* Items */}
-                    <div className="flex flex-col gap-2 flex-1 justify-center">
+                    <div className="mt-[15px] flex flex-col">
                       {order.items.slice(0, 2).map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center gap-2">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-10 h-12 bg-zinc-100 rounded-sm flex items-center justify-center text-xl shrink-0">
+                        <div key={idx} className="flex items-end justify-between gap-3 py-[14px] first:pt-0">
+                          <div className="flex items-center gap-[12px]">
+                            <div className="flex h-[56px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-[#F2F2F2] text-2xl">
                               {item.emoji}
                             </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-zinc-800 text-xs font-medium font-['Inter'] truncate">{item.name}</span>
-                              <span className="text-neutral-400 text-[9px] font-normal font-['Inter']">"{item.modifier || 'Standard'}"</span>
-                              <span className="text-emerald-700 text-xs font-semibold font-['Inter']">${item.price.toFixed(2)}</span>
+                            <div className="flex min-w-0 flex-col gap-[7px]">
+                              <span className="truncate text-[11.4px] font-medium leading-[1.4] text-[#2D2F33]">{item.name}</span>
+                              <span className="truncate text-[8px] font-normal leading-[1.4] text-[#989898]">&ldquo;{item.modifier || 'Standard'}&rdquo;</span>
+                              <span className="text-[10.8px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
                             </div>
                           </div>
-                          <span className="text-stone-500 text-[10px] font-medium font-['Inter'] shrink-0">Qty: {item.qty}</span>
+                          <span className="shrink-0 text-[8px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
                         </div>
                       ))}
                     </div>
 
-                    <div className="w-full border-t border-dashed border-neutral-300 my-1" />
-
                     {/* Footer */}
-                    <div className="flex justify-between items-center w-full pt-1">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-stone-500 text-[9px] font-normal font-['Inter']">+{order.items.length} Items</span>
-                        <span className="text-emerald-700 text-sm font-semibold font-['Inter']">${order.total.toFixed(2)}</span>
+                    <div className="mt-auto flex items-center justify-between">
+                      <div className="flex flex-col gap-[8px]">
+                        <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">
+                          +{Math.max(0, order.items.length - 2)} Items
+                        </span>
+                        <span className="text-[12px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (order.status === 'Preparing') updateOrderStatus(order.id, 'Ready');
-                          else updateOrderStatus(order.id, 'Completed');
-                        }}
-                        className={cn(
-                          'px-4 py-2 rounded-full text-xs font-medium text-white shadow-xs transition-all active:scale-95',
-                          order.status === 'Preparing' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700',
-                        )}
-                      >
-                        {order.status === 'Preparing' ? 'Mark Ready' : 'Complete'}
-                      </button>
+                      {order.status === 'Placed' && (
+                        <div className="flex items-center gap-[11px]">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOrders((prev) => prev.filter((o) => o.id !== order.id));
+                            }}
+                            aria-label="Reject order"
+                            className="flex h-[39px] w-[39px] items-center justify-center rounded-[6px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
+                          >
+                            <X size={18} strokeWidth={2.5} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order.id, 'Preparing');
+                            }}
+                            aria-label="Accept order"
+                            className="flex h-[39px] w-[39px] items-center justify-center rounded-[6px] bg-[#64C864] text-white transition-colors hover:bg-[#4fb84f]"
+                          >
+                            <Check size={18} strokeWidth={3} />
+                          </button>
+                        </div>
+                      )}
+                      {order.status === 'Preparing' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id, 'Ready');
+                          }}
+                          className="rounded-full bg-[#F97316] px-4 py-2 text-xs font-medium text-white shadow-xs transition-all hover:bg-[#ea690b] active:scale-95"
+                        >
+                          Mark Ready
+                        </button>
+                      )}
+                      {order.status === 'Ready' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id, 'Served');
+                          }}
+                          className="rounded-full bg-green-600 px-4 py-2 text-xs font-medium text-white shadow-xs transition-all hover:bg-green-700 active:scale-95"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {(order.status === 'Served' || order.status === 'Completed') && (
+                        <button
+                          disabled
+                          className="cursor-not-allowed rounded-full bg-zinc-300 px-4 py-2 text-xs font-medium text-white"
+                        >
+                          Served
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -283,202 +331,232 @@ export default function RunningOrderPage() {
         </div>
       </div>
 
-      {/* ── Right Panel: Side Drawer ────────────────────────────────────────── */}
+      {/* ── Right panel: order detail (overlay drawer below lg) ─────── */}
       {selectedOrder && (
-        <div className="w-80 shrink-0 flex flex-col justify-between bg-white rounded-xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] border border-[#E9E9E9]">
-          <div className="pt-4 pb-3 border-b border-zinc-200 flex flex-col items-center gap-0.5">
-            <span className="text-black text-lg font-medium font-['Inter']">{selectedOrder.orderNumber}</span>
-            <span className="text-stone-500 text-xs font-normal font-['Inter']">{selectedOrder.table}</span>
+        <div className="flex w-[343px] max-w-[calc(100vw-140px)] shrink-0 flex-col overflow-hidden rounded-lg bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] max-lg:fixed max-lg:bottom-3 max-lg:right-3 max-lg:top-3 max-lg:z-40 max-lg:shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 pt-3">
+            <button
+              onClick={() => setSelectedOrderId('')}
+              className="flex h-[28px] w-[28px] items-center justify-center rounded-full text-[#2D2F33] transition-colors hover:bg-[#F2F2F2]"
+              aria-label="Back to orders"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex flex-col items-center gap-[7px]">
+              <p className="text-[19px] font-medium leading-[1.4] text-black">{selectedOrder.orderNumber}</p>
+              <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">Table: 03</p>
+            </div>
+            <div className="h-[28px] w-[28px]" />
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-4">
-            <div className="bg-zinc-100 rounded-[10px] p-3 flex flex-col gap-1">
-              <span className="text-zinc-800 text-base font-medium font-['Inter']">{selectedOrder.customerName}</span>
-              <div className="flex flex-col gap-0.5 text-neutral-400 text-xs font-normal font-['Inter']">
-                <span>{selectedOrder.phone || '+01284980'}</span>
-                <span>{selectedOrder.email || 'mike.t@example.com'}</span>
+          <div className="mt-4 flex-1 overflow-y-auto px-[11px] pb-2">
+            {/* Customer info */}
+            <div className="flex h-[116px] flex-col gap-[14px] rounded-[10px] bg-[#F2F2F2] px-[18px] py-[16px]">
+              <p className="text-[16px] font-medium leading-[1.4] text-[#2D2F33]">{selectedOrder.customerName}</p>
+              <div className="flex flex-col gap-[10px]">
+                <div className="flex items-center gap-[8px]">
+                  <Phone size={19} className="shrink-0 text-[#989898]" />
+                  <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">{selectedOrder.phone}</span>
+                </div>
+                <div className="flex items-center gap-[8px]">
+                  <Mail size={19} className="shrink-0 text-[#989898]" />
+                  <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">{selectedOrder.email}</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-zinc-100 rounded-[10px] p-3 flex flex-col gap-2">
-              <span className="text-black text-xs font-medium font-['Inter']">Status</span>
-              <div className="flex items-center justify-between pt-1 relative">
-                {(['Placed', 'Preparing', 'Ready', 'Served'] as const).map((st, i) => {
-                  const stepIndex = ['Placed', 'Preparing', 'Ready', 'Served'].indexOf(selectedOrder.status);
-                  const isDone = i <= stepIndex;
+            {/* Status stepper */}
+            <div className="mt-[20px] h-[114px] rounded-[10px] bg-[#F2F2F2] px-[16px] pt-[13px]">
+              <p className="text-[13px] font-medium leading-[1.4] text-black">Status</p>
+              <div className="relative mt-[6px] flex items-start justify-between">
+                {STATUS_STEPS.map((step, i) => {
+                  const idx = STATUS_STEPS.findIndex((s) => s.key === selectedOrder.status);
+                  const isDone = i <= idx;
+                  const Icon = step.icon;
                   return (
-                    <div key={st} className="flex flex-col items-center gap-1 z-10">
+                    <div key={step.key} className="flex flex-col items-center">
                       <div
                         className={cn(
-                          'w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-bold bg-white transition-all',
-                          isDone ? 'border-teal-700 text-teal-700' : 'border-zinc-400 text-zinc-400',
+                          'flex h-[32px] w-[32px] items-center justify-center rounded-full border',
+                          isDone ? 'border-[#026F4F] bg-[#E6F1ED] text-[#026F4F]' : 'border-[#B9B9B9] bg-white text-[#989898]',
                         )}
                       >
-                        {isDone ? <Check size={12} strokeWidth={3} /> : i + 1}
+                        <Icon size={18} strokeWidth={1.6} />
                       </div>
-                      <span className={cn('text-[9px] font-normal', isDone ? 'text-emerald-700' : 'text-zinc-400')}>
-                        {st}
+                      <span className={cn('mt-[8px] text-[9px] font-normal leading-[1.4]', isDone ? 'text-[#026F4F]' : 'text-[#B9B9B9]')}>
+                        {step.label}
                       </span>
                     </div>
                   );
                 })}
+                {/* connectors */}
+                {STATUS_STEPS.slice(0, 3).map((_, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'absolute top-[16px] h-[2px] w-[45px]',
+                      i + 1 <= STATUS_STEPS.findIndex((s) => s.key === selectedOrder.status)
+                        ? 'bg-[#026F4F]'
+                        : 'bg-[#B9B9B9]',
+                    )}
+                    style={{ left: 16 + i * 81.5 }}
+                  />
+                ))}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <span className="text-zinc-800 text-xs font-semibold font-['Inter']">Order Summary</span>
-              <div className="flex flex-col gap-3">
+            {/* Order summary */}
+            <div className="mt-[10px] flex flex-col gap-[10px]">
+              <p className="text-[12px] font-semibold leading-[1.4] text-[#2D2F33]">Order Summary</p>
+              <div className="flex flex-col gap-[11px]">
                 {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center gap-2">
-                    <div className="w-12 h-14 bg-zinc-100 rounded-md flex items-center justify-center text-2xl shrink-0">
+                  <div key={idx} className="flex items-center gap-[10px]">
+                    <div className="flex h-[77px] w-[82px] shrink-0 items-center justify-center rounded-[7px] bg-[#F2F2F2] text-3xl">
                       {item.emoji}
                     </div>
-                    <div className="flex-1 flex flex-col gap-1 min-w-0">
-                      <span className="text-zinc-800 text-sm font-medium font-['Inter'] truncate">{item.name}</span>
-                      <div className="flex items-center gap-1 text-xs font-['Inter']">
-                        <span className="text-green-500 font-medium">+</span>
-                        <span className="text-neutral-400">{item.modifier || 'Mayo'}</span>
+                    <div className="flex min-w-0 flex-1 gap-[21px]">
+                      <div className="flex min-w-0 flex-col gap-[8px]">
+                        <span className="truncate text-[14.5px] font-medium leading-[1.4] text-[#2D2F33]">{item.name}</span>
+                        <span className="text-[12.6px] font-normal leading-[1.4] text-[#989898]">+ {item.modifier || 'Mayo'}</span>
+                        <span className="flex items-center gap-[3px] text-[12.6px] italic leading-[1.4] text-[#026F4F]">
+                          <UtensilsCrossed size={19} strokeWidth={1.4} />
+                          Cut in Half
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 text-emerald-700 text-xs font-['Inter']">
-                        <Scissors size={12} />
-                        <span>Cut in Half</span>
+                      <div className="ml-auto flex shrink-0 flex-col items-end gap-[36px]">
+                        <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
+                        <span className="text-[11.6px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
                       </div>
-                    </div>
-                    <div className="text-right flex flex-col gap-1 shrink-0">
-                      <span className="text-emerald-700 text-base font-semibold font-['Inter']">${(item.price * item.qty).toFixed(2)}</span>
-                      <span className="text-stone-500 text-xs font-medium font-['Inter']">Qty: {item.qty}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-zinc-100 rounded-md p-3 flex flex-col gap-2">
-              <span className="text-zinc-800 text-base font-medium font-['Inter']">Payments Details</span>
-              <div className="flex justify-between text-xs text-neutral-400 font-['Inter']">
-                <span>Subtotal ({selectedOrder.items.reduce((s, i) => s + i.qty, 0)} items)</span>
-                <span className="text-stone-500 font-medium">${selectedOrder.subtotal.toFixed(2)}</span>
+            {/* Payments */}
+            <div className="mt-[20px] flex h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
+              <p className="text-[15px] font-medium leading-[1.4] text-[#2D2F33]">Payments Details</p>
+              <div className="mt-[16px] flex flex-col gap-[12px] text-[13px] leading-[1.4]">
+                <div className="flex items-center justify-between">
+                  <span className="font-normal text-[#989898]">Subtotal ({selectedOrder.items.reduce((s, i) => s + i.qty, 0)} items)</span>
+                  <span className="font-medium text-[#686868]">${selectedOrder.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-normal text-[#989898]">Service Charge (10%)</span>
+                  <span className="font-medium text-[#686868]">${selectedOrder.serviceCharge.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-xs text-neutral-400 font-['Inter']">
-                <span>Service Charge (10%)</span>
-                <span className="text-stone-500 font-medium">${selectedOrder.serviceCharge.toFixed(2)}</span>
-              </div>
-              <div className="border-t border-neutral-400 my-1" />
-              <div className="flex justify-between text-sm font-medium text-black font-['Inter']">
-                <span>Total</span>
-                <span className="text-emerald-700 font-semibold">${selectedOrder.total.toFixed(2)}</span>
+              <div className="mt-[12px] border-t border-dashed border-[#989898]" />
+              <div className="mt-[10px] flex items-center justify-between text-[14px] leading-[1.4]">
+                <span className="font-medium text-black">Total</span>
+                <span className="font-semibold text-[#026F4F]">${selectedOrder.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          <div className="p-3 border-t border-zinc-200 bg-white">
+          {/* Mark Ready */}
+          <div className="p-[11px]">
             <button
-              onClick={() => {
-                if (selectedOrder.status === 'Placed') updateOrderStatus(selectedOrder.id, 'Preparing');
-                else if (selectedOrder.status === 'Preparing') updateOrderStatus(selectedOrder.id, 'Ready');
-                else if (selectedOrder.status === 'Ready') updateOrderStatus(selectedOrder.id, 'Served');
-                else updateOrderStatus(selectedOrder.id, 'Completed');
-              }}
-              className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white rounded-[30px] font-medium text-base shadow-md transition-all active:scale-95 flex items-center justify-center font-['Inter']"
+              onClick={() => advanceStatus(selectedOrder)}
+              className="flex h-[44px] w-full items-center justify-center rounded-[30px] bg-[#F97316] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#ea690b] active:scale-[0.99]"
             >
-              {selectedOrder.status === 'Placed' ? 'Mark Preparing' : selectedOrder.status === 'Preparing' ? 'Mark Ready' : selectedOrder.status === 'Ready' ? 'Serve Order' : 'Complete Order'}
+              {selectedOrder.status === 'Placed'
+                ? 'Mark Preparing'
+                : selectedOrder.status === 'Preparing'
+                  ? 'Mark Ready'
+                  : selectedOrder.status === 'Ready'
+                    ? 'Serve Order'
+                    : 'Completed'}
             </button>
           </div>
         </div>
       )}
 
-      {/* ── Table Request Vertical Modal (Figma Exact Code & Layout) ──────── */}
+      {/* ── Table Request Modal ───────────────────────────────────────── */}
       {showTableRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-          <div className="w-96 h-[800px] max-h-[calc(100vh-32px)] bg-zinc-100 rounded-lg overflow-hidden relative shadow-2xl flex flex-col p-5 animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="flex justify-between items-start pb-3 border-b border-zinc-400/40">
-              <span className="text-black text-lg font-medium font-['Inter']">Table Request</span>
-              <button
-                onClick={() => setShowTableRequestModal(false)}
-                className="w-6 h-6 flex items-center justify-center text-black hover:bg-zinc-200 rounded-full transition-colors"
-              >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="flex h-[720px] w-[384px] max-w-full flex-col rounded-lg bg-zinc-100 p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between border-b border-zinc-400/40 pb-3">
+              <span className="text-lg font-medium text-black">Table Request</span>
+              <button onClick={() => setShowTableRequestModal(false)} className="flex h-6 w-6 items-center justify-center rounded-full text-black transition-colors hover:bg-zinc-200">
                 <X size={18} />
               </button>
             </div>
 
-            {/* Sub-header Meta: Sorted by oldest & Dismiss All */}
-            <div className="flex justify-between items-center py-3">
-              <div className="flex items-center gap-1 text-neutral-400 text-xs font-normal font-['Inter']">
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-1 text-xs font-normal text-neutral-400">
                 <Clock size={14} />
                 <span>Sorted by oldest first</span>
               </div>
-              <button
-                onClick={handleDismissAllRequests}
-                className="text-emerald-700 text-xs font-medium font-['Inter'] hover:underline"
-              >
+              <button onClick={handleDismissAllRequests} className="text-xs font-medium text-emerald-700 hover:underline">
                 Dismiss All
               </button>
             </div>
 
-            {/* Cards List */}
-            <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-0.5">
+            <div className="flex-1 overflow-y-auto">
               {requests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-neutral-400 text-xs">
+                <div className="flex h-64 flex-col items-center justify-center text-xs text-neutral-400">
                   <CheckCircle2 size={32} className="mb-2 text-[#026F4F]" />
                   <span>All table requests have been handled.</span>
                 </div>
               ) : (
-                requests.map((req) => (
-                  <div key={req.id} className="w-80 h-36 shrink-0 bg-white rounded-xl p-3.5 flex flex-col justify-between shadow-xs relative self-center">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-black text-2xl font-medium font-['Inter']">{req.table}</span>
-                        {req.paymentMethod && (
-                          <div className="px-1.5 py-1 bg-zinc-100 rounded-[20px] flex items-center gap-1">
-                            <span className={cn('w-2 h-2 rounded-full', req.paymentMethod === 'Card' ? 'bg-yellow-500' : 'bg-green-600')} />
-                            <span className="text-zinc-800 text-[8px] font-normal font-['Inter']">{req.paymentMethod}</span>
+                <div className="flex flex-col gap-4">
+                  {requests.map((req) => (
+                    <div key={req.id} className="flex h-36 shrink-0 flex-col justify-between rounded-xl bg-white p-3.5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-2xl font-medium text-black">{req.table}</span>
+                          {req.paymentMethod && (
+                            <div className="flex items-center gap-1 rounded-[20px] bg-zinc-100 px-1.5 py-1">
+                              <span className={cn('h-2 w-2 rounded-full', req.paymentMethod === 'Card' ? 'bg-yellow-500' : 'bg-green-600')} />
+                              <span className="text-[8px] font-normal text-zinc-800">{req.paymentMethod}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-normal text-red-600">
+                          <Clock size={14} />
+                          <span>{req.timeAgo}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {req.type === 'Waiter Requested' ? (
+                          <div className="flex items-center gap-1.5 rounded-2xl bg-fuchsia-200 px-2.5 py-1.5 text-xs font-normal text-fuchsia-800">
+                            <Bell size={13} />
+                            <span>Waiter Requested</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 rounded-2xl bg-blue-100 px-2.5 py-1.5 text-xs font-normal text-blue-900">
+                            <CheckCircle2 size={13} />
+                            <span>Check Requested</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1 text-red-600 text-xs font-normal font-['Inter']">
-                        <Clock size={14} />
-                        <span>{req.timeAgo}</span>
+                      <div className="flex items-center gap-2 pt-1">
+                        {req.type === 'Check Requested' && (
+                          <button
+                            onClick={() => alert(`Printing receipt for ${req.table}`)}
+                            className="flex h-9 w-36 items-center justify-center gap-1 rounded-2xl border border-zinc-400 bg-gray-200 text-sm font-medium text-zinc-800 transition-colors hover:bg-gray-300"
+                          >
+                            <Printer size={14} />
+                            <span>Print</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRequestHandled(req.id)}
+                          className={cn(
+                            'flex h-9 items-center justify-center rounded-2xl bg-orange-500 text-sm font-medium text-white shadow-xs transition-colors hover:bg-orange-600',
+                            req.type === 'Check Requested' ? 'w-36' : 'w-72',
+                          )}
+                        >
+                          Handled
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      {req.type === 'Waiter Requested' ? (
-                        <div className="px-2.5 py-1.5 bg-fuchsia-200 rounded-2xl text-fuchsia-800 text-xs font-normal font-['Inter'] flex items-center gap-1.5">
-                          <Bell size={13} />
-                          <span>Waiter Requested</span>
-                        </div>
-                      ) : (
-                        <div className="px-2.5 py-1.5 bg-blue-100 rounded-2xl text-blue-900 text-xs font-normal font-['Inter'] flex items-center gap-1.5">
-                          <CheckCircle2 size={13} />
-                          <span>Check Requested</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1">
-                      {req.type === 'Check Requested' && (
-                        <button
-                          onClick={() => alert(`Printing receipt for ${req.table}`)}
-                          className="w-36 h-9 bg-gray-200 border border-zinc-400 rounded-2xl text-zinc-800 text-sm font-medium font-['Inter'] flex items-center justify-center gap-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <Printer size={14} />
-                          <span>Print</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleRequestHandled(req.id)}
-                        className={cn(
-                          "h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl text-sm font-medium font-['Inter'] flex items-center justify-center shadow-xs transition-colors",
-                          req.type === 'Check Requested' ? 'w-36' : 'w-72',
-                        )}
-                      >
-                        Handled
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           </div>
