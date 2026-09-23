@@ -98,6 +98,8 @@ export function RecipeTab({
   onEditRecipe: (r: Recipe) => void;
 }) {
   const [subTab, setSubTab] = useState<'Main Menu Item' | 'Add on & Extras'>('Main Menu Item');
+  const visible = recipes.filter((r) => (subTab === 'Main Menu Item' ? r.kind === 'main' : r.kind === 'addon'));
+  const compact = subTab === 'Add on & Extras';
   return (
     <div className="flex flex-col gap-4">
       {/* Sub tabs */}
@@ -117,22 +119,29 @@ export function RecipeTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {recipes.map((recipe) => {
+        {visible.map((recipe) => {
           const available = recipeAvailable(recipe, ingredients);
           return (
             <div key={recipe.id} className="flex min-w-0 flex-col rounded-[15px] bg-white p-[10px]">
-              <div className="relative flex h-[176px] items-center justify-center overflow-hidden rounded-[7.5px] bg-[#F2F2F2] text-[64px]">
-                {recipe.emoji}
-                <span className={cn('absolute left-[6px] top-[7px] rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
+              {!compact && (
+                <div className="relative flex h-[176px] items-center justify-center overflow-hidden rounded-[7.5px] bg-[#F2F2F2] text-[64px]">
+                  {recipe.emoji}
+                  <span className={cn('absolute left-[6px] top-[7px] rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
+                    {available ? 'AVAILABLE' : 'OUT OF STOCK'}
+                  </span>
+                </div>
+              )}
+              {compact && (
+                <span className={cn('self-start rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
                   {available ? 'AVAILABLE' : 'OUT OF STOCK'}
                 </span>
-              </div>
-              <p className="mt-[8px] truncate font-satoshi text-[14.3px] font-medium leading-[1.4] text-[#2D2F33]">{recipe.name}</p>
+              )}
+              <p className={cn('truncate font-satoshi text-[14.3px] font-medium leading-[1.4] text-[#2D2F33]', compact ? 'mt-[22px]' : 'mt-[8px]')}>{recipe.name}</p>
               <div className="mt-[8px] flex min-h-[53px] flex-col justify-center gap-[9px] rounded-[3.3px] bg-[#F2F2F2] px-[9px] py-[7px]">
                 {recipe.maps.length === 0 ? (
                   <span className="text-[10.7px] font-normal leading-[1.4] text-[#989898]">No ingredients mapped</span>
                 ) : (
-                  recipe.maps.map((m, i) => {
+                  (compact ? recipe.maps.slice(0, 1) : recipe.maps).map((m, i) => {
                     const ing = ingredients.find((x) => x.id === m.ingredientId);
                     const bad = m.missing || !ing;
                     return (
@@ -157,6 +166,9 @@ export function RecipeTab({
             </div>
           );
         })}
+        {visible.length === 0 && (
+          <p className="py-10 text-center text-sm text-[#989898]">No recipes in this section yet.</p>
+        )}
       </div>
     </div>
   );

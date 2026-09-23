@@ -33,6 +33,7 @@ export interface Recipe {
   id: string;
   name: string;
   emoji: string;
+  kind: 'main' | 'addon';
   maps: RecipeMap[];
 }
 
@@ -102,6 +103,7 @@ export const INITIAL_RECIPES: Recipe[] = [
     id: 'r1',
     name: 'Classic Burger',
     emoji: '🍔',
+    kind: 'main',
     maps: [
       { ingredientId: 'ing1', qty: 1, unit: 'pcs' },
       { ingredientId: 'ing3', qty: 1, unit: 'pcs' },
@@ -111,20 +113,57 @@ export const INITIAL_RECIPES: Recipe[] = [
     id: 'r2',
     name: 'Shoyu Ramen',
     emoji: '🍜',
+    kind: 'main',
     maps: [
       { ingredientId: 'ing1', qty: 1, unit: 'pcs' },
       { ingredientId: 'ing5', qty: 1, unit: 'pcs', missing: true },
     ],
   },
-  { id: 'r3', name: 'Cheese Burger', emoji: '🍔', maps: [] },
+  { id: 'r3', name: 'Cheese Burger', emoji: '🍔', kind: 'main', maps: [] },
   {
     id: 'r4',
     name: 'Tonkotsu Ramen',
     emoji: '🍜',
+    kind: 'main',
     maps: [
       { ingredientId: 'ing2', qty: 1, unit: 'L' },
       { ingredientId: 'ing4', qty: 1, unit: 'pcs' },
     ],
+  },
+  {
+    id: 'a1',
+    name: 'Extra Cheese (Cheddar)',
+    emoji: '🧀',
+    kind: 'addon',
+    maps: [{ ingredientId: 'ing4', qty: 2, unit: 'pcs' }],
+  },
+  {
+    id: 'a2',
+    name: 'Extra Patty',
+    emoji: '🥩',
+    kind: 'addon',
+    maps: [{ ingredientId: 'ing1', qty: 2, unit: 'pcs' }],
+  },
+  {
+    id: 'a3',
+    name: 'Avocado Add-on',
+    emoji: '🥑',
+    kind: 'addon',
+    maps: [{ ingredientId: 'ing6', qty: 2, unit: 'pcs' }],
+  },
+  {
+    id: 'a4',
+    name: 'Bacon Strips',
+    emoji: '🥓',
+    kind: 'addon',
+    maps: [{ ingredientId: 'ing2', qty: 2, unit: 'pcs' }],
+  },
+  {
+    id: 'a5',
+    name: 'Extra Sauce',
+    emoji: '🧂',
+    kind: 'addon',
+    maps: [{ ingredientId: 'ing4', qty: 1, unit: 'pcs' }],
   },
 ];
 
