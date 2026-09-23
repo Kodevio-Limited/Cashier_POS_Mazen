@@ -1,85 +1,101 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, Clock, Plus, Filter, Check, ArrowRightLeft, CreditCard, Receipt, AlertCircle, Sparkles, X, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
 
-type TableStatus = 'Available' | 'Occupied' | 'Reserved' | 'Billed';
-type Zone = 'Main Dining' | 'Terrace / Patio' | 'Bar Area' | 'VIP Room';
+type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
-interface Table {
+interface FloorTable {
   id: string;
   name: string;
   capacity: number;
-  status: TableStatus;
+  status: FloorTableStatus;
   zone: Zone;
   guestsCount?: number;
+  itemsCount?: number;
   orderId?: string;
   orderTotal?: number;
   timeSeated?: string;
   reservedTime?: string;
   reservedName?: string;
-  shape: 'square' | 'round' | 'rectangle';
 }
 
-const INITIAL_TABLES: Table[] = [
-  { id: 't1', name: 'Table 01', capacity: 2, status: 'Available', zone: 'Main Dining', shape: 'square' },
-  { id: 't2', name: 'Table 02', capacity: 4, status: 'Available', zone: 'Main Dining', shape: 'square' },
-  { id: 't3', name: 'Table 03', capacity: 4, status: 'Occupied', zone: 'Main Dining', guestsCount: 3, orderId: '#044', orderTotal: 59.34, timeSeated: '45 mins', shape: 'rectangle' },
-  { id: 't4', name: 'Table 04', capacity: 6, status: 'Available', zone: 'Main Dining', shape: 'rectangle' },
-  { id: 't5', name: 'Table 05', capacity: 2, status: 'Reserved', zone: 'Main Dining', reservedTime: '7:30 PM', reservedName: 'John Smith', shape: 'round' },
-  { id: 't6', name: 'Table 06', capacity: 4, status: 'Occupied', zone: 'Main Dining', guestsCount: 4, orderId: '#045', orderTotal: 30.22, timeSeated: '20 mins', shape: 'square' },
-  { id: 't7', name: 'Table 07', capacity: 2, status: 'Billed', zone: 'Main Dining', guestsCount: 2, orderId: '#048', orderTotal: 45.50, timeSeated: '1 hr 10 mins', shape: 'round' },
-  { id: 't8', name: 'Table 08', capacity: 8, status: 'Available', zone: 'Main Dining', shape: 'rectangle' },
-
-  // Terrace
-  { id: 't9', name: 'Patio 01', capacity: 4, status: 'Available', zone: 'Terrace / Patio', shape: 'round' },
-  { id: 't10', name: 'Patio 02', capacity: 4, status: 'Occupied', zone: 'Terrace / Patio', guestsCount: 4, orderId: '#051', orderTotal: 82.10, timeSeated: '35 mins', shape: 'round' },
-
-  // Bar
-  { id: 't11', name: 'Bar Seat 01', capacity: 1, status: 'Available', zone: 'Bar Area', shape: 'square' },
-  { id: 't12', name: 'Bar Seat 02', capacity: 1, status: 'Occupied', zone: 'Bar Area', guestsCount: 1, orderId: '#053', orderTotal: 15.99, timeSeated: '10 mins', shape: 'square' },
-
-  // VIP
-  { id: 't13', name: 'VIP Suite 01', capacity: 12, status: 'Reserved', zone: 'VIP Room', reservedTime: '8:00 PM', reservedName: 'CEO Dinner Group', shape: 'rectangle' },
+const INITIAL_TABLES: FloorTable[] = [
+  { id: 't1', name: 'Table A01', capacity: 2, status: 'available', zone: 'Indoor' },
+  { id: 't2', name: 'Table A02', capacity: 4, status: 'occupied', zone: 'Indoor', guestsCount: 3, itemsCount: 4, orderId: '#044', orderTotal: 15.99, timeSeated: '35 mins' },
+  { id: 't3', name: 'Table A03', capacity: 4, status: 'available', zone: 'Indoor' },
+  { id: 't4', name: 'Table A04', capacity: 2, status: 'reserved', zone: 'Indoor', reservedTime: '7:30 PM', reservedName: 'John Smith' },
+  { id: 't5', name: 'Table A05', capacity: 6, status: 'occupied', zone: 'Indoor', guestsCount: 4, itemsCount: 2, orderId: '#045', orderTotal: 42.5, timeSeated: '20 mins' },
+  { id: 't6', name: 'Table A06', capacity: 4, status: 'available', zone: 'Indoor' },
+  { id: 't7', name: 'Table A07', capacity: 2, status: 'occupied', zone: 'Indoor', guestsCount: 2, itemsCount: 3, orderId: '#048', orderTotal: 28.75, timeSeated: '50 mins' },
+  { id: 't8', name: 'Table A08', capacity: 8, status: 'available', zone: 'Indoor' },
+  { id: 't9', name: 'Table B01', capacity: 4, status: 'available', zone: 'Outdoor' },
+  { id: 't10', name: 'Table B02', capacity: 4, status: 'occupied', zone: 'Outdoor', guestsCount: 4, itemsCount: 5, orderId: '#051', orderTotal: 82.1, timeSeated: '15 mins' },
+  { id: 't11', name: 'Table B03', capacity: 6, status: 'reserved', zone: 'Outdoor', reservedTime: '8:00 PM', reservedName: 'Sarah Lee' },
+  { id: 't12', name: 'Table C01', capacity: 4, status: 'occupied', zone: 'Patio', guestsCount: 3, itemsCount: 2, orderId: '#053', orderTotal: 33.98, timeSeated: '10 mins' },
+  { id: 't13', name: 'Table C02', capacity: 2, status: 'available', zone: 'Patio' },
 ];
 
+const ZONE_FILTERS = ['All', 'Indoor', 'Outdoor', 'Patio'] as const;
+type ZoneFilter = (typeof ZONE_FILTERS)[number];
+
 export default function FloorPlanPage() {
-  const [tables, setTables] = useState<Table[]>(INITIAL_TABLES);
-  const [selectedZone, setSelectedZone] = useState<Zone>('Main Dining');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All' | TableStatus>('All');
-  const [activeModalTable, setActiveModalTable] = useState<Table | null>(null);
-  const [showTransferModal, setShowTransferModal] = useState<boolean>(false);
-  const [targetTransferTable, setTargetTransferTable] = useState<string>('');
+  const router = useRouter();
+  const [tables, setTables] = useState<FloorTable[]>(INITIAL_TABLES);
+  const [zoneFilter, setZoneFilter] = useState<ZoneFilter>('All');
+  const [activeModalTable, setActiveModalTable] = useState<FloorTable | null>(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [targetTransferTable, setTargetTransferTable] = useState('');
 
-  const filteredTables = tables.filter((t) => {
-    const matchesZone = t.zone === selectedZone;
-    const matchesStatus = selectedStatusFilter === 'All' || t.status === selectedStatusFilter;
-    return matchesZone && matchesStatus;
-  });
+  const filteredTables = useMemo(
+    () => tables.filter((t) => zoneFilter === 'All' || t.zone === zoneFilter),
+    [tables, zoneFilter],
+  );
 
-  // Summary Counters
-  const totalTables = tables.filter((t) => t.zone === selectedZone).length;
-  const occupiedCount = tables.filter((t) => t.zone === selectedZone && t.status === 'Occupied').length;
-  const availableCount = tables.filter((t) => t.zone === selectedZone && t.status === 'Available').length;
-  const reservedCount = tables.filter((t) => t.zone === selectedZone && t.status === 'Reserved').length;
-  const billedCount = tables.filter((t) => t.zone === selectedZone && t.status === 'Billed').length;
+  function seatTable(table: FloorTable) {
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === table.id
+          ? { ...t, status: 'occupied' as FloorTableStatus, guestsCount: 2, itemsCount: 0, orderId: '#NEW', orderTotal: 0, timeSeated: 'Just now', reservedName: undefined, reservedTime: undefined }
+          : t,
+      ),
+    );
+    setActiveModalTable(null);
+  }
+
+  function clearTable(table: FloorTable) {
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === table.id
+          ? { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined }
+          : t,
+      ),
+    );
+    setActiveModalTable(null);
+  }
 
   function handleTransferTable() {
     if (!activeModalTable || !targetTransferTable) return;
+    const source = activeModalTable;
     setTables((prev) =>
       prev.map((t) => {
-        if (t.id === activeModalTable.id) {
-          return { ...t, status: 'Available', guestsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined };
+        if (t.id === source.id) {
+          return { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined };
         }
         if (t.id === targetTransferTable) {
           return {
             ...t,
-            status: 'Occupied',
-            guestsCount: activeModalTable.guestsCount,
-            orderId: activeModalTable.orderId,
-            orderTotal: activeModalTable.orderTotal,
-            timeSeated: activeModalTable.timeSeated,
+            status: 'occupied' as FloorTableStatus,
+            guestsCount: source.guestsCount,
+            itemsCount: source.itemsCount,
+            orderId: source.orderId,
+            orderTotal: source.orderTotal,
+            timeSeated: source.timeSeated,
+            reservedName: undefined,
+            reservedTime: undefined,
           };
         }
         return t;
@@ -87,328 +103,200 @@ export default function FloorPlanPage() {
     );
     setShowTransferModal(false);
     setActiveModalTable(null);
-    alert(`Successfully transferred ${activeModalTable.name} to target table.`);
+    setTargetTransferTable('');
   }
 
   return (
-    <div className="flex h-[calc(100vh-24px)] flex-col gap-3 bg-[#F2F2F2] p-1.5 rounded-2xl overflow-hidden">
-      {/* Top Header */}
-      <div className="flex justify-between items-center px-5 py-3.5 bg-white rounded-xl border border-[#E9E9E9]">
-        <div>
-          <h1 className="text-black text-xl font-medium font-['Inter']">Floor Plan & Table Layout</h1>
-          <p className="text-neutral-400 text-xs font-normal font-['Inter']">Real-time table seating management & order assignments</p>
+    <div className="flex min-h-[calc(100vh-24px)] flex-col bg-[#F2F2F2]">
+      {/* ── Header (Figma 1843:341) ─────────────────────────────────── */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-[19px]">
+          <h1 className="text-[19px] font-medium leading-[1.4] text-black">
+            Floor Plan <span className="text-[13px] font-normal text-[#989898]">({tables.length} tables)</span>
+          </h1>
+          <div className="flex flex-wrap items-center gap-[13px]">
+            {ZONE_FILTERS.map((zone) => (
+              <button
+                key={zone}
+                onClick={() => setZoneFilter(zone)}
+                className={cn(
+                  'flex h-[33px] items-center justify-center rounded-[32.5px] px-4 text-[13px] font-normal leading-[1.4] transition-all',
+                  zoneFilter === zone
+                    ? 'bg-[#026F4F] text-white shadow-xs'
+                    : 'bg-white text-[#686868] hover:text-[#026F4F]',
+                )}
+              >
+                {zone}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Zone Selector Pills */}
-        <div className="flex items-center gap-2">
-          {(['Main Dining', 'Terrace / Patio', 'Bar Area', 'VIP Room'] as const).map((zone) => (
-            <button
-              key={zone}
-              onClick={() => setSelectedZone(zone)}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-medium font-['Inter'] transition-all",
-                selectedZone === zone
-                  ? 'bg-[#026F4F] text-white shadow-xs'
-                  : 'bg-[#F2F2F2] text-stone-500 hover:bg-zinc-200',
-              )}
-            >
-              {zone}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-[20px]">
+          <button
+            onClick={() => router.push('/order')}
+            className="flex h-[51px] items-center gap-[6px] rounded-[56px] border border-[#B9B9B9] bg-white px-[19px] text-[18px] font-normal leading-[1.4] text-[#686868] transition-colors hover:border-[#026F4F] hover:text-[#026F4F]"
+          >
+            <ShoppingBag size={30} strokeWidth={1.4} className="shrink-0" />
+            <span>Take Out</span>
+          </button>
+          <button
+            onClick={() => router.push('/order')}
+            className="flex h-[51px] items-center gap-[6px] rounded-[56px] border border-[#B9B9B9] bg-white px-[19px] text-[18px] font-normal leading-[1.4] text-[#686868] transition-colors hover:border-[#026F4F] hover:text-[#026F4F]"
+          >
+            <Bike size={30} strokeWidth={1.4} className="shrink-0" />
+            <span>Delivery</span>
+          </button>
         </div>
       </div>
 
-      {/* Summary KPI Cards Bar */}
-      <div className="grid grid-cols-5 gap-3">
-        <div className="bg-white rounded-xl p-3 border border-[#E9E9E9] flex items-center justify-between">
-          <div>
-            <p className="text-neutral-400 text-xs font-normal">Total Tables</p>
-            <p className="text-black text-lg font-bold">{totalTables}</p>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-700">
-            <Users size={18} />
-          </div>
-        </div>
-
-        <button
-          onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'Available' ? 'All' : 'Available')}
-          className={cn(
-            'bg-white rounded-xl p-3 border flex items-center justify-between text-left transition-all',
-            selectedStatusFilter === 'Available' ? 'border-[#026F4F] ring-2 ring-[#026F4F]/20' : 'border-[#E9E9E9]',
-          )}
-        >
-          <div>
-            <p className="text-emerald-700 text-xs font-medium">Available</p>
-            <p className="text-black text-lg font-bold">{availableCount}</p>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-[#026F4F]">
-            <Check size={18} />
-          </div>
-        </button>
-
-        <button
-          onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'Occupied' ? 'All' : 'Occupied')}
-          className={cn(
-            'bg-white rounded-xl p-3 border flex items-center justify-between text-left transition-all',
-            selectedStatusFilter === 'Occupied' ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-[#E9E9E9]',
-          )}
-        >
-          <div>
-            <p className="text-orange-600 text-xs font-medium">Occupied</p>
-            <p className="text-black text-lg font-bold">{occupiedCount}</p>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-            <Users size={18} />
-          </div>
-        </button>
-
-        <button
-          onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'Billed' ? 'All' : 'Billed')}
-          className={cn(
-            'bg-white rounded-xl p-3 border flex items-center justify-between text-left transition-all',
-            selectedStatusFilter === 'Billed' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-[#E9E9E9]',
-          )}
-        >
-          <div>
-            <p className="text-amber-600 text-xs font-medium">Check Requested</p>
-            <p className="text-black text-lg font-bold">{billedCount}</p>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-            <Receipt size={18} />
-          </div>
-        </button>
-
-        <button
-          onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'Reserved' ? 'All' : 'Reserved')}
-          className={cn(
-            'bg-white rounded-xl p-3 border flex items-center justify-between text-left transition-all',
-            selectedStatusFilter === 'Reserved' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-[#E9E9E9]',
-          )}
-        >
-          <div>
-            <p className="text-blue-600 text-xs font-medium">Reserved</p>
-            <p className="text-black text-lg font-bold">{reservedCount}</p>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-            <Clock size={18} />
-          </div>
-        </button>
+      {/* ── Table grid (Figma 1759:802) ──────────────────────────────── */}
+      <div className="flex flex-wrap gap-x-[46px] gap-y-9 pb-20 pt-9">
+        {filteredTables.map((table) => (
+          <FloorTableCard
+            key={table.id}
+            name={table.name}
+            zone={table.zone}
+            status={table.status}
+            itemsCount={table.status === 'occupied' ? table.itemsCount : undefined}
+            bill={table.status === 'occupied' && table.orderTotal ? `$${table.orderTotal.toFixed(2)}` : undefined}
+            time={table.status === 'occupied' ? table.timeSeated : undefined}
+            onClick={() => setActiveModalTable(table)}
+          />
+        ))}
+        {filteredTables.length === 0 && (
+          <p className="py-16 text-sm text-[#989898]">No tables in this zone yet.</p>
+        )}
       </div>
 
-      {/* Main Interactive Grid Workspace */}
-      <div className="flex-1 bg-white rounded-xl p-6 overflow-y-auto border border-[#E9E9E9]">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredTables.map((table) => (
-            <div
-              key={table.id}
-              onClick={() => setActiveModalTable(table)}
-              className={cn(
-                'min-h-[170px] bg-white rounded-2xl border p-4 flex flex-col justify-between cursor-pointer transition-all hover:shadow-lg relative overflow-hidden group',
-                table.status === 'Available' && 'border-emerald-300 hover:border-emerald-600 bg-emerald-50/20',
-                table.status === 'Occupied' && 'border-orange-300 hover:border-orange-600 bg-orange-50/20',
-                table.status === 'Billed' && 'border-amber-300 hover:border-amber-600 bg-amber-50/20',
-                table.status === 'Reserved' && 'border-blue-300 hover:border-blue-600 bg-blue-50/20',
-              )}
-            >
-              {/* Status Header Badge */}
-              <div className="flex justify-between items-center">
-                <span className="text-black text-lg font-bold font-['Inter']">{table.name}</span>
-                <span
-                  className={cn(
-                    'px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider',
-                    table.status === 'Available' && 'bg-emerald-100 text-emerald-800',
-                    table.status === 'Occupied' && 'bg-orange-100 text-orange-800',
-                    table.status === 'Billed' && 'bg-amber-100 text-amber-800',
-                    table.status === 'Reserved' && 'bg-blue-100 text-blue-800',
-                  )}
-                >
-                  {table.status}
-                </span>
-              </div>
-
-              {/* Table Details Body */}
-              <div className="flex flex-col gap-1.5 my-2">
-                <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                  <Users size={14} />
-                  <span>Capacity: {table.capacity} Seats</span>
-                </div>
-
-                {table.status === 'Occupied' && (
-                  <>
-                    <div className="flex items-center gap-1.5 text-xs text-stone-700 font-medium">
-                      <span>Order: {table.orderId}</span>
-                      <span className="text-emerald-700 font-bold">${table.orderTotal?.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-neutral-400">
-                      <Clock size={13} />
-                      <span>Seated: {table.timeSeated}</span>
-                    </div>
-                  </>
-                )}
-
-                {table.status === 'Billed' && (
-                  <>
-                    <div className="flex items-center gap-1.5 text-xs text-amber-800 font-medium">
-                      <span>Bill Total:</span>
-                      <span className="font-bold">${table.orderTotal?.toFixed(2)}</span>
-                    </div>
-                    <p className="text-[11px] text-amber-700">Check Requested</p>
-                  </>
-                )}
-
-                {table.status === 'Reserved' && (
-                  <div className="text-xs text-blue-800">
-                    <p className="font-medium">{table.reservedName}</p>
-                    <p className="text-[11px] text-blue-600">Reserved for {table.reservedTime}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Link Footer */}
-              <div className="flex justify-between items-center pt-2 border-t border-dashed border-zinc-200 text-xs">
-                <span className="text-neutral-400 text-[11px]">Click to manage</span>
-                <ChevronRight size={14} className="text-[#026F4F] group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Table Action Modal ──────────────────────────────────────────────── */}
+      {/* ── Table action modal ───────────────────────────────────────── */}
       {activeModalTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-          <div className="w-[420px] bg-white rounded-2xl shadow-2xl p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center pb-3 border-b border-zinc-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
               <div>
-                <h3 className="text-black text-xl font-bold font-['Inter']">{activeModalTable.name}</h3>
-                <p className="text-xs text-neutral-400">{activeModalTable.zone} • {activeModalTable.capacity} Seats</p>
+                <h3 className="text-xl font-bold text-black">{activeModalTable.name}</h3>
+                <p className="text-xs text-neutral-400">
+                  {activeModalTable.zone} • {activeModalTable.capacity} Seats •{' '}
+                  <span className="font-semibold uppercase text-[#2D2F33]">{activeModalTable.status}</span>
+                </p>
               </div>
               <button
                 onClick={() => setActiveModalTable(null)}
-                className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:text-black"
+                aria-label="Close"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition-colors hover:text-black"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Current Table State Summary */}
-            <div className="bg-zinc-100 rounded-xl p-3.5 flex flex-col gap-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-neutral-500">Status</span>
-                <span className="font-bold text-black uppercase">{activeModalTable.status}</span>
-              </div>
+            <div className="flex flex-col gap-2 rounded-xl bg-zinc-100 p-3.5">
               {activeModalTable.orderId && (
-                <div className="flex justify-between items-center text-xs">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-neutral-500">Active Order</span>
-                  <span className="font-semibold text-emerald-700">{activeModalTable.orderId} (${activeModalTable.orderTotal?.toFixed(2)})</span>
+                  <span className="font-semibold text-emerald-700">
+                    {activeModalTable.orderId} (${activeModalTable.orderTotal?.toFixed(2) ?? '0.00'})
+                  </span>
                 </div>
+              )}
+              {activeModalTable.reservedName && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-500">Reserved For</span>
+                  <span className="font-semibold text-blue-700">
+                    {activeModalTable.reservedName} • {activeModalTable.reservedTime}
+                  </span>
+                </div>
+              )}
+              {activeModalTable.status === 'available' && (
+                <p className="text-xs text-neutral-500">This table is free. Seat guests to start a new order.</p>
               )}
             </div>
 
-            {/* Modal Actions depending on Table Status */}
-            <div className="flex flex-col gap-2 pt-2">
-              {activeModalTable.status === 'Available' && (
+            <div className="flex flex-col gap-2 pt-1">
+              {(activeModalTable.status === 'available' || activeModalTable.status === 'reserved') && (
                 <button
-                  onClick={() => {
-                    setTables((prev) =>
-                      prev.map((t) => (t.id === activeModalTable.id ? { ...t, status: 'Occupied', guestsCount: 2, orderId: '#NEW', orderTotal: 0 } : t)),
-                    );
-                    setActiveModalTable(null);
-                  }}
-                  className="w-full h-11 bg-[#026F4F] hover:bg-[#015c42] text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                  onClick={() => seatTable(activeModalTable)}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white transition-colors hover:bg-[#015c42]"
                 >
                   <Plus size={16} />
                   <span>Start New Order & Seat Guests</span>
                 </button>
               )}
 
-              {activeModalTable.status === 'Occupied' && (
+              {activeModalTable.status === 'occupied' && (
                 <>
                   <button
-                    onClick={() => {
-                      window.location.href = '/order';
-                    }}
-                    className="w-full h-11 bg-[#026F4F] hover:bg-[#015c42] text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                    onClick={() => router.push('/order')}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white transition-colors hover:bg-[#015c42]"
                   >
                     <Plus size={16} />
                     <span>Add Items to Order</span>
                   </button>
-
                   <button
                     onClick={() => setShowTransferModal(true)}
-                    className="w-full h-11 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-800 rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-100 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
                   >
                     <ArrowRightLeft size={16} />
                     <span>Transfer Table</span>
                   </button>
-
                   <button
-                    onClick={() => {
-                      setTables((prev) =>
-                        prev.map((t) => (t.id === activeModalTable.id ? { ...t, status: 'Billed' } : t)),
-                      );
-                      setActiveModalTable(null);
-                    }}
-                    className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                    onClick={() => clearTable(activeModalTable)}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 text-sm font-medium text-white transition-colors hover:bg-amber-600"
                   >
                     <Receipt size={16} />
                     <span>Print Bill / Request Check</span>
                   </button>
+                  <button
+                    onClick={() => {
+                      clearTable(activeModalTable);
+                    }}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-medium text-white transition-colors hover:bg-green-700"
+                  >
+                    <CreditCard size={16} />
+                    <span>Collect Payment & Clear Table</span>
+                  </button>
                 </>
-              )}
-
-              {activeModalTable.status === 'Billed' && (
-                <button
-                  onClick={() => {
-                    setTables((prev) =>
-                      prev.map((t) => (t.id === activeModalTable.id ? { ...t, status: 'Available', orderId: undefined, orderTotal: undefined } : t)),
-                    );
-                    setActiveModalTable(null);
-                    alert(`Payment completed for ${activeModalTable.name}. Table is now Available!`);
-                  }}
-                  className="w-full h-11 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  <CreditCard size={16} />
-                  <span>Collect Payment & Clear Table</span>
-                </button>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Transfer Table Sub-Modal */}
+      {/* ── Transfer sub-modal ───────────────────────────────────────── */}
       {showTransferModal && activeModalTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs">
-          <div className="w-[380px] bg-white rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
-            <h4 className="font-bold text-lg text-black">Transfer {activeModalTable.name}</h4>
-            <p className="text-xs text-neutral-400">Select an available target table to transfer active order {activeModalTable.orderId}</p>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="flex w-[380px] max-w-full flex-col gap-4 rounded-2xl bg-white p-5 shadow-2xl">
+            <div>
+              <h4 className="text-lg font-bold text-black">Transfer {activeModalTable.name}</h4>
+              <p className="mt-1 text-xs text-neutral-400">
+                Select an available target table to transfer active order {activeModalTable.orderId}
+              </p>
+            </div>
             <select
               value={targetTransferTable}
               onChange={(e) => setTargetTransferTable(e.target.value)}
-              className="w-full h-11 border border-zinc-300 rounded-xl px-3 text-sm text-black"
+              className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm text-black outline-none focus:border-[#026F4F]"
             >
               <option value="">Select Target Table</option>
               {tables
-                .filter((t) => t.status === 'Available')
+                .filter((t) => t.status === 'available')
                 .map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name} ({t.zone} - {t.capacity} seats)
                   </option>
                 ))}
             </select>
-
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-1">
               <button
                 onClick={() => setShowTransferModal(false)}
-                className="flex-1 h-10 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl font-medium text-xs"
+                className="h-10 flex-1 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleTransferTable}
-                className="flex-1 h-10 bg-[#026F4F] hover:bg-[#015c42] text-white rounded-xl font-medium text-xs"
+                disabled={!targetTransferTable}
+                className="h-10 flex-1 rounded-xl bg-[#026F4F] text-xs font-medium text-white transition-colors hover:bg-[#015c42] disabled:cursor-not-allowed disabled:bg-zinc-300"
               >
                 Confirm Transfer
               </button>

@@ -105,27 +105,10 @@ export default function OrderPage() {
     return matchCat && matchSearch;
   });
 
-  // Direct add to cart and trigger side modal
+  // Every product click opens the customize modal (Figma 961:2999) —
+  // the same modal whether the item is new or already in the order.
   function handleProductClick(item: MenuItem) {
-    setOrderItems((prev) => {
-      const existingIdx = prev.findIndex((o) => o.id === item.id);
-      if (existingIdx >= 0) {
-        return prev.map((o, i) => (i === existingIdx ? { ...o, qty: o.qty + 1 } : o));
-      }
-      return [
-        ...prev,
-        {
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          qty: 1,
-          emoji: item.emoji,
-          texture: item.options ? item.options[0] : undefined,
-          modifiers: item.category === 'Ramen' ? ['Mayo', 'Extra Chili'] : [],
-          instructions: item.category === 'Ramen' ? 'Cut in Half' : undefined,
-        },
-      ];
-    });
+    setCustomizingItem({ item });
   }
 
   // Order actions
@@ -424,7 +407,16 @@ export default function OrderPage() {
                 prev.map((o, i) => (i === customizingItem.isEditingIndex ? customized : o)),
               );
             } else {
-              setOrderItems((prev) => [...prev, customized]);
+              // Merge into an identical line if one exists, else append a new line.
+              setOrderItems((prev) => {
+                const lineKey = (o: OrderItem) =>
+                  [o.id, o.texture ?? '', [...(o.modifiers ?? [])].sort().join('|'), o.instructions ?? ''].join('~');
+                const idx = prev.findIndex((o) => lineKey(o) === lineKey(customized));
+                if (idx >= 0) {
+                  return prev.map((o, i) => (i === idx ? { ...o, qty: o.qty + customized.qty } : o));
+                }
+                return [...prev, customized];
+              });
             }
             setCustomizingItem(null);
           }}
@@ -476,7 +468,7 @@ export default function OrderPage() {
   );
 }
 
-// ─── Customize / Edit Item Modal ───────────────────────────────────────────────
+// ─── Customize / Edit Item Modal (Figma 961:2999) ─────────────────────────────
 function CustomizeItemModal({
   data,
   onClose,
@@ -486,20 +478,19 @@ function CustomizeItemModal({
   onClose: () => void;
   onSave: (item: OrderItem) => void;
 }) {
+  const optionList: string[] = 'options' in data && Array.isArray(data.options) ? data.options : [];
   const [texture, setTexture] = useState<string>(
-    ('texture' in data && data.texture) ? data.texture : 'Firm (Kata)',
+    ('texture' in data && data.texture) ? data.texture : (optionList[0] ?? ''),
   );
   const [modifiers, setModifiers] = useState<string[]>(
-    ('modifiers' in data && data.modifiers) ? data.modifiers : ['Mayo', 'Extra Chili'],
+    ('modifiers' in data && data.modifiers) ? data.modifiers : [],
   );
   const [instructions, setInstructions] = useState<string>(
-    ('instructions' in data && data.instructions) ? data.instructions : 'Cut in Half',
+    ('instructions' in data && data.instructions) ? (data.instructions ?? '') : '',
   );
   const [qty, setQty] = useState<number>(
     ('qty' in data && data.qty) ? data.qty : 1,
   );
-
-  const textureOptions = ['Firm (Kata)', 'Medium', 'Soft (Yawa)'];
 
   function toggleModifier(mod: string) {
     setModifiers((prev) =>
@@ -508,58 +499,66 @@ function CustomizeItemModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-      <div className="w-full max-w-[650px] max-h-[90vh] bg-white rounded-2xl p-6 md:p-8 overflow-y-auto shadow-2xl relative flex flex-col justify-between gap-6">
-        <div className="flex justify-between items-center">
-          <div className="text-black text-xl md:text-2xl font-medium font-['Inter'] leading-8">Current Order</div>
-          <button onClick={onClose} className="size-6 relative flex items-center justify-center text-black hover:text-zinc-600 transition-colors">
-            <X size={20} strokeWidth={2.2} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs">
+      <div className="my-auto w-[651px] max-w-full rounded-[17px] bg-white px-8 pb-8 pt-[26px] shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-[23px] font-medium leading-[1.4] text-black">Current Order</h2>
+          <button onClick={onClose} aria-label="Close" className="text-black transition-colors hover:text-zinc-500">
+            <X size={24} strokeWidth={2} />
           </button>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <div className="inline-flex justify-start items-start gap-3">
-            <div className="size-20 relative bg-zinc-100 rounded-md overflow-hidden flex items-center justify-center text-4xl">
+        <div className="mt-[25px] flex flex-col gap-6">
+          {/* Item */}
+          <div className="flex items-start gap-[13px]">
+            <div className="flex size-[84px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-[#F2F2F2] text-[52px] leading-none">
               {data.emoji ?? '🍜'}
             </div>
-            <div className="w-48 inline-flex flex-col justify-start items-start gap-1">
-              <div className="self-stretch text-zinc-800 text-lg font-medium font-['Inter'] leading-7">{data.name}</div>
-              <div className="self-stretch text-emerald-700 text-lg font-semibold font-['Inter'] leading-6">${data.price.toFixed(2)}</div>
+            <div className="flex flex-col items-start gap-[15px] leading-[1.4]">
+              <p className="text-[19px] font-medium text-[#2D2F33]">{data.name}</p>
+              <p className="text-[17.5px] font-semibold text-[#026F4F]">${data.price.toFixed(2)}</p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-zinc-100 pt-4">
-            <div className="self-stretch inline-flex justify-between items-center">
-              <div className="text-zinc-800 text-lg font-semibold font-['Inter'] leading-7">Noodle Texture</div>
-              <div className="w-20 px-2.5 py-[3px] bg-zinc-800 rounded-2xl flex justify-center items-center gap-2.5">
-                <div className="text-white text-xs font-normal font-['Inter'] leading-5">Required</div>
+          {/* Options (e.g. Noodle Texture) — only when the item has options */}
+          {optionList.length > 0 && (
+            <div className="flex flex-col gap-[29px]">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">Noodle Texture</p>
+                <span className="flex w-[86px] shrink-0 items-center justify-center whitespace-nowrap rounded-[16px] bg-[#2D2F33] px-[10px] py-[3px] text-[13px] font-normal leading-[1.63] text-white">
+                  Required
+                </span>
+              </div>
+              <div className="flex flex-col gap-[21px]">
+                {optionList.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setTexture(opt)}
+                    className="flex w-full items-center justify-between gap-2 text-left"
+                  >
+                    <span className="text-[16px] font-normal leading-[1.4] text-[#2D2F33]">{opt}</span>
+                    <span className="flex items-center gap-[13px]">
+                      <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">Free</span>
+                      <span
+                        className={cn(
+                          'flex size-6 items-center justify-center rounded-full border-2 transition-all',
+                          texture === opt ? 'border-[#026F4F]' : 'border-[#B9B9B9] bg-white',
+                        )}
+                      >
+                        {texture === opt && <span className="size-2.5 rounded-full bg-[#026F4F]" />}
+                      </span>
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="self-stretch flex flex-col justify-start items-start gap-3.5">
-              {textureOptions.map((opt) => (
-                <label
-                  key={opt}
-                  onClick={() => setTexture(opt)}
-                  className="self-stretch inline-flex justify-between items-center cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-50 transition-colors"
-                >
-                  <div className="text-zinc-800 text-base font-normal font-['Inter'] leading-6">{opt}</div>
-                  <div className="flex justify-start items-center gap-3">
-                    <div className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">Free</div>
-                    <div className={cn(
-                      'size-5 rounded-full border-2 flex items-center justify-center transition-all',
-                      texture === opt ? 'border-emerald-700 bg-emerald-700' : 'border-neutral-400 bg-white',
-                    )}>
-                      {texture === opt && <div className="size-2 rounded-full bg-white" />}
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2.5 border-t border-zinc-100 pt-4">
-            <div className="text-zinc-800 text-sm font-semibold font-['Inter']">Extra Add-ons</div>
+          {/* Extra add-ons */}
+          <div className="flex flex-col gap-2.5">
+            <p className="text-sm font-semibold text-[#2D2F33]">Extra Add-ons</p>
             <div className="flex flex-wrap gap-2">
               {['Mayo', 'Extra Chili', 'Boiled Egg', 'Bamboo Shoots'].map((mod) => {
                 const isSelected = modifiers.includes(mod);
@@ -569,7 +568,7 @@ function CustomizeItemModal({
                     type="button"
                     onClick={() => toggleModifier(mod)}
                     className={cn(
-                      'px-3.5 py-1.5 rounded-full text-xs font-medium transition-all',
+                      'rounded-full px-3.5 py-1.5 text-xs font-medium transition-all',
                       isSelected
                         ? 'bg-emerald-700 text-white shadow-xs'
                         : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
@@ -582,55 +581,59 @@ function CustomizeItemModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5 border-t border-zinc-100 pt-4">
-            <div className="self-stretch text-zinc-800 text-lg font-semibold font-['Inter'] leading-7">Special instructions</div>
+          {/* Special instructions */}
+          <div className="flex flex-col gap-[17px]">
+            <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">Special instructions</p>
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               placeholder="Add note (e.g. no spicy, less salt)"
-              rows={3}
-              className="self-stretch bg-zinc-100 rounded-lg p-3 outline outline-1 outline-zinc-400 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-emerald-700 resize-none font-['Inter']"
+              rows={4}
+              className="h-[105px] w-full resize-none rounded-[9px] border border-[#B9B9B9] bg-[#F2F2F2] p-[15px] pt-[11px] text-[13px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:border-[#026F4F]"
             />
           </div>
-        </div>
 
-        <div className="self-stretch inline-flex justify-between items-center pt-3 border-t border-zinc-100">
-          <div className="w-28 flex justify-start items-center gap-3">
+          {/* Stepper + Done */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex shrink-0 items-center gap-[13px]">
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label="Decrease quantity"
+                className="flex size-10 items-center justify-center rounded-full bg-emerald-200 text-emerald-900 transition-colors hover:bg-emerald-300"
+              >
+                <Minus size={18} strokeWidth={2.4} />
+              </button>
+              <span className="min-w-5 text-center text-[23px] font-medium leading-[1.4] text-black">{qty}</span>
+              <button
+                type="button"
+                onClick={() => setQty((q) => q + 1)}
+                aria-label="Increase quantity"
+                className="flex size-10 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xs transition-colors hover:bg-emerald-800"
+              >
+                <Plus size={18} strokeWidth={2.4} />
+              </button>
+            </div>
+
             <button
               type="button"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              className="size-10 bg-emerald-200 hover:bg-emerald-300 text-emerald-900 rounded-full flex items-center justify-center transition-colors"
+              onClick={() => {
+                onSave({
+                  id: data.id,
+                  name: data.name,
+                  price: data.price,
+                  qty,
+                  texture: texture || undefined,
+                  modifiers,
+                  instructions: instructions || undefined,
+                  emoji: data.emoji,
+                });
+              }}
+              className="h-[55px] w-[438px] max-w-full shrink rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99]"
             >
-              <Minus size={18} strokeWidth={2.4} />
-            </button>
-            <div className="text-black text-2xl font-medium font-['Inter'] leading-8 min-w-5 text-center">{qty}</div>
-            <button
-              type="button"
-              onClick={() => setQty((q) => q + 1)}
-              className="size-10 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center transition-colors shadow-xs"
-            >
-              <Plus size={18} strokeWidth={2.4} />
+              Done
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              onSave({
-                id: data.id,
-                name: data.name,
-                price: data.price,
-                qty,
-                texture,
-                modifiers,
-                instructions,
-                emoji: data.emoji,
-              });
-            }}
-            className="w-full sm:w-96 h-14 bg-emerald-700 hover:bg-emerald-800 rounded-[30px] shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] text-white text-lg font-medium font-['Inter'] leading-7 flex items-center justify-center transition-all active:scale-95"
-          >
-            Done
-          </button>
         </div>
       </div>
     </div>
