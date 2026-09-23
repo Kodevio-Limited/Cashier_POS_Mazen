@@ -70,7 +70,7 @@ export default function PlaceOrderPage() {
   const total = subtotal - discount + serviceCharge;
 
   return (
-    <div className="flex h-[calc(100vh-24px)] gap-3">
+    <div className="flex h-[calc(100vh-38px)] gap-3">
       {/* ── Main Content Area: Order Line Items ─────────────────── */}
       <div className="flex flex-1 flex-col min-w-0 bg-white rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-5">
         {/* Top bar: Order ID */}

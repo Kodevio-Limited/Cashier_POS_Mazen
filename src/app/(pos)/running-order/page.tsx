@@ -153,7 +153,7 @@ export default function RunningOrderPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-24px)] gap-3 bg-[#F2F2F2] relative">
+    <div className="flex min-h-[calc(100vh-38px)] gap-3 bg-[#F2F2F2] relative">
       {/* ── Left: Running Orders workspace ─────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}

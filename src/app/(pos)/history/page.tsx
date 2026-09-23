@@ -148,7 +148,7 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-24px)] gap-3 bg-[#F2F2F2]">
+    <div className="relative flex min-h-[calc(100vh-38px)] gap-3 bg-[#F2F2F2]">
       {/* ── Left: history workspace ──────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}

@@ -137,7 +137,7 @@ export default function OrderPage() {
   const isCartOpen = orderItems.length > 0;
 
   return (
-    <div className="flex h-[calc(100vh-24px)] gap-3 transition-all duration-300">
+    <div className="flex h-[calc(100vh-38px)] gap-3 transition-all duration-300">
       {/* ── Center: Menu Section ─────────────────────────────────── */}
       <div className="flex flex-1 flex-col min-w-0 bg-white rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
         {/* Header row */}

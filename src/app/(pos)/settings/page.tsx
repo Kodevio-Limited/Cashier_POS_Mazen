@@ -85,7 +85,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-24px)] flex-col gap-[19px] bg-[#F2F2F2]">
+    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[19px] bg-[#F2F2F2]">
       {/* Header */}
       <div className="flex flex-col gap-[7px]">
         <h1 className="text-[19px] font-medium leading-[1.4] text-black">Settings</h1>

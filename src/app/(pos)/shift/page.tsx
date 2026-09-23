@@ -61,7 +61,7 @@ function StartShiftScreen({
   onStart: () => void;
 }) {
   return (
-    <div className="flex min-h-[calc(100vh-24px)] items-center justify-center py-8">
+    <div className="flex min-h-[calc(100vh-38px)] items-center justify-center py-8">
       <div className="w-[690px] max-w-full rounded-[30px] bg-white px-[56px] pb-[76px] pt-[40px] shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
         {/* Logo */}
         <div className="flex justify-center">
@@ -176,7 +176,7 @@ function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; c
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-24px)] flex-col gap-3 pb-20">
+    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-3 pb-20">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E9E9E9] bg-white px-5 py-3.5">
         <div className="min-w-0">

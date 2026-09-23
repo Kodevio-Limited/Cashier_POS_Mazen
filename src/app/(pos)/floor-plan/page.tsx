@@ -107,7 +107,7 @@ export default function FloorPlanPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-24px)] flex-col bg-[#F2F2F2]">
+    <div className="flex min-h-[calc(100vh-38px)] flex-col bg-[#F2F2F2]">
       {/* ── Header (Figma 1843:341) ─────────────────────────────────── */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-[19px]">

@@ -104,7 +104,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-24px)] flex-col gap-[19px] bg-[#F2F2F2]">
+    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[19px] bg-[#F2F2F2]">
       <InventoryHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="pb-20">
