@@ -10,7 +10,6 @@ import {
   Clock,
   LayoutGrid,
   History,
-  Timer,
   Package,
   Settings,
   LogOut,
@@ -21,7 +20,6 @@ const NAV_ITEMS = [
   { id: 'order', label: 'Order', icon: ShoppingCart, href: '/order' },
   { id: 'running-order', label: 'Running Order', icon: Clock, href: '/running-order' },
   { id: 'history', label: 'History', icon: History, href: '/history' },
-  { id: 'shift', label: 'Shift', icon: Timer, href: '/shift' },
   { id: 'inventory', label: 'Inventory', icon: Package, href: '/inventory' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
 ];
