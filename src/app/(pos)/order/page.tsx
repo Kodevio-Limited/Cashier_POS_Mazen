@@ -243,50 +243,60 @@ export default function OrderPage() {
           {/* Items List */}
           <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-4 divide-y divide-zinc-400/30">
             {orderItems.map((item, idx) => (
-              <div key={`${item.id}-${idx}`} className="w-full inline-flex justify-between items-start pt-3.5 first:pt-0">
+              <div key={`${item.id}-${idx}`} className="w-full flex items-start gap-2.5 pt-3.5 first:pt-0">
                 {/* Thumbnail */}
                 <div className="size-20 shrink-0 bg-zinc-100 rounded-md overflow-hidden flex items-center justify-center text-4xl">
                   {item.emoji ?? '🍜'}
                 </div>
 
                 {/* Details */}
-                <div className="w-56 pl-2.5 inline-flex flex-col justify-start items-start gap-3.5">
-                  <div className="self-stretch inline-flex justify-between items-start gap-2">
-                    <div className="w-32 inline-flex flex-col justify-start items-start gap-1">
-                      <div className="self-stretch justify-start text-zinc-800 text-base font-medium font-['Inter'] leading-5 truncate">
-                        {item.name}
-                      </div>
-
-                      {/* Modifiers (+ Mayo, + Extra Chili) */}
-                      {item.modifiers && item.modifiers.length > 0 && (
-                        <div className="self-stretch inline-flex flex-wrap justify-start items-start gap-1.5">
-                          {item.modifiers.map((mod, mi) => (
-                            <div key={mi} className="justify-start">
-                              <span className="text-green-500 text-sm font-normal font-['Inter'] leading-5">+</span>
-                              <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5 ml-0.5">{mod}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Special instructions badge (e.g., Cut in Half) */}
-                      {item.instructions && (
-                        <div className="self-stretch inline-flex justify-start items-center gap-[3px]">
-                          <Scissors size={14} className="text-emerald-700 shrink-0" />
-                          <div className="justify-start text-emerald-700 text-xs font-normal font-['Inter'] leading-5">
-                            {item.instructions}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-20 text-right justify-start text-emerald-700 text-lg font-semibold font-['Inter'] leading-6 shrink-0">
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      title={item.name}
+                      className="min-w-0 flex-1 break-words text-zinc-800 text-base font-medium font-['Inter'] leading-5 line-clamp-2"
+                    >
+                      {item.name}
+                    </p>
+                    <p className="shrink-0 text-emerald-700 text-lg font-semibold font-['Inter'] leading-6">
                       ${(item.price * item.qty).toFixed(2)}
-                    </div>
+                    </p>
                   </div>
 
+                  {/* Custom field (e.g. noodle texture) */}
+                  {item.texture && (
+                    <p className="break-words text-neutral-500 text-xs font-normal font-['Inter'] leading-5">
+                      {item.texture}
+                    </p>
+                  )}
+
+                  {/* Modifiers (+ Mayo, + Extra Chili) */}
+                  {item.modifiers && item.modifiers.length > 0 && (
+                    <div className="flex flex-wrap items-start gap-x-1.5 gap-y-0.5">
+                      {item.modifiers.map((mod, mi) => (
+                        <span key={mi} className="break-words">
+                          <span className="text-green-500 text-sm font-normal font-['Inter'] leading-5">+</span>
+                          <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5 ml-0.5">{mod}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Special instructions */}
+                  {item.instructions && (
+                    <div className="flex items-start gap-[3px]">
+                      <Scissors size={14} className="mt-0.5 text-emerald-700 shrink-0" />
+                      <p
+                        title={item.instructions}
+                        className="min-w-0 flex-1 break-words text-emerald-700 text-xs font-normal font-['Inter'] leading-5 line-clamp-3"
+                      >
+                        {item.instructions}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Actions & Qty Row */}
-                  <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-between items-center pt-1">
                     {/* Left: Edit Icon and Delete Icon */}
                     <div className="w-16 flex justify-start items-center gap-3">
                       <button
