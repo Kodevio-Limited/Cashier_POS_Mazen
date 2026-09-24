@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, clearDraft } from '@/lib/order-draft';
 import {
@@ -460,14 +460,16 @@ export default function PlaceOrderPage() {
             <div className="flex gap-3 w-full mt-2">
               <button
                 onClick={() => {
+                  window.print();
                   setShowSuccessModal(false);
                   clearDraft();
                   setItems([]);
-                  router.push('/running-order');
+                  router.push('/order');
                 }}
-                className="flex-1 h-12 rounded-full border border-[#B9B9B9] bg-white text-[#2D2F33] font-medium text-sm hover:bg-zinc-50 transition-colors"
+                className="flex-1 h-12 rounded-full border border-[#B9B9B9] bg-white text-[#2D2F33] font-medium text-sm hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2"
               >
-                View Running Orders
+                <Printer size={16} />
+                Print Receipt
               </button>
               <button
                 onClick={() => {
