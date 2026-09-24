@@ -371,7 +371,16 @@ export default function PlaceOrderPage() {
 
           {/* Confirm & Pay */}
           <button
-            onClick={() => items.length > 0 && setShowPaymentModal(true)}
+            onClick={() => {
+              if (items.length === 0) return;
+              // Card is charged automatically — place the order right away;
+              // only Cash needs the Collect Payment modal to enter tendered amount.
+              if (paymentMethod === 'Card') {
+                setShowSuccessModal(true);
+              } else {
+                setShowPaymentModal(true);
+              }
+            }}
             disabled={items.length === 0}
             className={cn(
               'w-full h-[50px] rounded-full font-medium text-[16px] text-white transition-all shadow-[0_4px_16px_11px_rgba(0,0,0,0.12)] flex items-center justify-center gap-2',
