@@ -237,15 +237,26 @@ export function MergeOrdersModal({
   onClose,
   onProceedToConfirm,
   selectedOrders,
+  currentOrder,
   onToggleSelect,
 }: {
   onClose: () => void;
   onProceedToConfirm: () => void;
   selectedOrders: string[];
+  currentOrder?: { id: string; label: string; total: number; itemsCount: number };
   onToggleSelect: (id: string) => void;
 }) {
   const [filter, setFilter] = useState<'All' | 'Dine In' | 'Takeaway' | 'Delivery'>('All');
   const [search, setSearch] = useState('');
+
+  // Lock background scrolling while the merge modal is open; only the order list scrolls.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const filtered = SAMPLE_RUNNING_ORDERS.filter((o) => {
     const matchFilter = filter === 'All' || o.type === filter;
@@ -298,7 +309,34 @@ export function MergeOrdersModal({
         </div>
 
         {/* Order Cards List */}
-        <div className="flex max-h-[50vh] flex-1 flex-col gap-3 overflow-y-auto p-3">
+        <div className="flex flex-col">
+          {/* Pinned Current Order */}
+          {currentOrder && (
+            <div className="shrink-0 border-b border-[#026F4F]/30 bg-[#E6F1ED] p-3">
+              <div className="flex flex-col gap-2 rounded-lg border border-[#026F4F] bg-white p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-5 items-center justify-center rounded-full border border-[#026F4F] bg-[#026F4F]">
+                      <Check size={12} className="text-white" strokeWidth={3} />
+                    </div>
+                    <span className="text-sm font-semibold text-[#2D2F33]">{currentOrder.label}</span>
+                    <span className="rounded bg-[#026F4F] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
+                      Current Order
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-[#026F4F]">${currentOrder.total.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center gap-2 pl-7 text-xs text-[#686868]">
+                  <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">This Check</span>
+                  <span>•</span>
+                  <span>{currentOrder.itemsCount} Items</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable list of other orders */}
+          <div className="flex max-h-[45vh] flex-1 flex-col gap-3 overflow-y-auto p-3">
           {filtered.map((order) => {
             const isSelected = selectedOrders.includes(order.id);
             return (
@@ -334,6 +372,7 @@ export function MergeOrdersModal({
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Bottom Bar */}

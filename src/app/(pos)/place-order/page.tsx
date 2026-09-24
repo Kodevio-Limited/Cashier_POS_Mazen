@@ -414,6 +414,7 @@ export default function PlaceOrderPage() {
             setShowConfirmMergeModal(true);
           }}
           selectedOrders={selectedMergeOrders}
+          currentOrder={{ id: 'current', label: 'ORD-1025', total, itemsCount: items.length }}
           onToggleSelect={(id) => {
             setSelectedMergeOrders((prev) =>
               prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
