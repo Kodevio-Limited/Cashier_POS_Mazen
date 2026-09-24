@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { loadDraft, saveDraft, clearDraft } from '@/lib/order-draft';
 import {
   CollectPaymentModal,
   SplitBillModal,
@@ -17,8 +18,10 @@ interface OrderLineItem {
   name: string;
   price: number;
   qty: number;
-  emoji: string;
+  emoji?: string;
   modifiers?: string[];
+  texture?: string;
+  instructions?: string;
 }
 
 const INITIAL_ITEMS: OrderLineItem[] = [
@@ -29,7 +32,14 @@ const INITIAL_ITEMS: OrderLineItem[] = [
 
 export default function PlaceOrderPage() {
   const router = useRouter();
-  const [items, setItems] = useState<OrderLineItem[]>(INITIAL_ITEMS);
+  // Prefer the live cart drafted on the Menu (/order) page; fall back to demo
+  // items only on a direct visit with no draft. Edits here are saved back so
+  // the "<-" back-arrow returns to the Menu with the same items.
+  const [items, setItems] = useState<OrderLineItem[]>(() => loadDraft() ?? INITIAL_ITEMS);
+
+  useEffect(() => {
+    saveDraft(items);
+  }, [items]);
 
   // Customer details
   const [phone, setPhone] = useState('+1 (555) 234-5678');
@@ -123,7 +133,7 @@ export default function PlaceOrderPage() {
                   {/* Dish */}
                   <div className="col-span-6 flex items-center gap-3">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-[#F2F2F2] rounded-lg text-2xl">
-                      {item.emoji}
+                      {item.emoji ?? '🍜'}
                     </div>
                     <div>
                       <p className="font-medium text-[14px] text-[#2D2F33]">{item.name}</p>
@@ -450,6 +460,8 @@ export default function PlaceOrderPage() {
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
+                  clearDraft();
+                  setItems([]);
                   router.push('/running-order');
                 }}
                 className="flex-1 h-12 rounded-full border border-[#B9B9B9] bg-white text-[#2D2F33] font-medium text-sm hover:bg-zinc-50 transition-colors"
@@ -459,6 +471,8 @@ export default function PlaceOrderPage() {
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
+                  clearDraft();
+                  setItems([]);
                   router.push('/order');
                 }}
                 className="flex-1 h-12 rounded-full bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-sm transition-colors shadow-md"

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Minus, Plus, X, Trash2, Pencil, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { loadDraft, saveDraft } from '@/lib/order-draft';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -74,8 +75,13 @@ export default function OrderPage() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(() => loadDraft() ?? []);
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
+
+  // Keep the draft in sync so /place-order (and the back-arrow there) sees the same cart.
+  useEffect(() => {
+    saveDraft(orderItems);
+  }, [orderItems]);
 
   // Filter menu items
   const filtered = MENU_ITEMS.filter((item) => {
