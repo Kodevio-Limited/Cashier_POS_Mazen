@@ -84,9 +84,13 @@ export default function OrderPage() {
     return matchCat && matchSearch;
   });
 
-  // Clicking a product adds it straight to the Current Order, without
-  // Extra Add-ons or Special instructions — those are only set via the customize modal.
+  // Clicking a product adds it straight to the Current Order, except items
+  // with a Required selection (options) which open the customize modal first.
   function handleProductClick(item: MenuItem) {
+    if (item.options && item.options.length > 0) {
+      setCustomizingItem({ item });
+      return;
+    }
     setOrderItems((prev) => {
       const existingIdx = prev.findIndex((o) => o.id === item.id);
       if (existingIdx >= 0) {
@@ -133,8 +137,6 @@ export default function OrderPage() {
   const serviceCharge = subtotal * 0.10; // 10% Service Charge
   const total = subtotal + serviceCharge;
   const itemCount = orderItems.reduce((s, o) => s + o.qty, 0);
-
-  const isCartOpen = orderItems.length > 0;
 
   return (
     <div className="flex h-[calc(100vh-38px)] gap-3 transition-all duration-300">
@@ -199,9 +201,8 @@ export default function OrderPage() {
         </div>
       </div>
 
-      {/* ── Right Panel: Current Order (Side Modal - Only appears when an item is selected) ── */}
-      {isCartOpen && (
-        <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative animate-in fade-in slide-in-from-right-4 duration-300 max-md:absolute max-md:inset-y-3 max-md:right-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
+      {/* ── Right Panel: Current Order (Side Modal - Always visible) ── */}
+      <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-md:absolute max-md:inset-y-3 max-md:right-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
           {/* Header */}
           <div className="px-3 pt-3 pb-2.5 flex justify-between items-center border-b border-zinc-400/40">
             <div className="flex items-center gap-1.5">
@@ -219,7 +220,15 @@ export default function OrderPage() {
 
           {/* Items List */}
           <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-4 divide-y divide-zinc-400/30">
-            {orderItems.map((item, idx) => (
+            {orderItems.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-1 py-10 text-center">
+                <p className="text-zinc-800 text-sm font-medium font-['Inter']">No items yet</p>
+                <p className="text-neutral-400 text-xs font-normal font-['Inter']">
+                  Tap any menu item to add it here.
+                </p>
+              </div>
+            ) : (
+              orderItems.map((item, idx) => (
               <div
                 key={`${item.id}-${idx}`}
                 onClick={() => setCustomizingItem({ item, isEditingIndex: idx })}
@@ -330,7 +339,8 @@ export default function OrderPage() {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Payments Details Box & Place Order Button */}
@@ -368,14 +378,19 @@ export default function OrderPage() {
 
             {/* Place Order Button */}
             <button
-              onClick={() => router.push('/place-order')}
-              className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 rounded-[30px] shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] inline-flex justify-center items-center gap-5 text-white text-lg font-medium font-['Inter'] leading-7 transition-all active:scale-95"
+              onClick={() => orderItems.length > 0 && router.push('/place-order')}
+              disabled={orderItems.length === 0}
+              className={cn(
+                'w-full h-12 rounded-[30px] inline-flex justify-center items-center gap-5 text-white text-lg font-medium font-[\'Inter\'] leading-7 transition-all',
+                orderItems.length > 0
+                  ? 'bg-emerald-700 hover:bg-emerald-800 shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] active:scale-95'
+                  : 'bg-[#B9B9B9] cursor-not-allowed shadow-none',
+              )}
             >
               Place Order
             </button>
           </div>
         </div>
-      )}
 
       {/* ── Edit / Customize Item Modal ─────────────────────────────── */}
       {customizingItem && (
