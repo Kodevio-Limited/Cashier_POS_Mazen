@@ -343,10 +343,8 @@ export default function PlaceOrderPage() {
               onClick={() => items.length > 0 && setShowSplitModal(true)}
               disabled={items.length === 0}
               className={cn(
-                'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-xs font-medium outline outline-1 outline-offset-[-1px] outline-emerald-700 transition-colors',
-                items.length > 0
-                  ? 'bg-zinc-100 text-emerald-700 hover:bg-emerald-50'
-                  : 'cursor-not-allowed bg-zinc-100 text-emerald-700/50',
+                'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-100 text-xs font-medium text-[#2D2F33] transition-colors hover:bg-zinc-200',
+                items.length === 0 && 'cursor-not-allowed opacity-50 hover:bg-zinc-100',
               )}
             >
               <Split size={15} className="shrink-0" />
@@ -357,8 +355,8 @@ export default function PlaceOrderPage() {
               onClick={() => items.length > 0 && setShowMergeModal(true)}
               disabled={items.length === 0}
               className={cn(
-                'flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-zinc-100 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-200',
-                items.length === 0 && 'cursor-not-allowed',
+                'flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-zinc-100 text-xs font-medium text-[#2D2F33] transition-colors hover:bg-zinc-200',
+                items.length === 0 && 'cursor-not-allowed opacity-50 hover:bg-zinc-100',
               )}
             >
               <GitMerge size={15} className="shrink-0" />
