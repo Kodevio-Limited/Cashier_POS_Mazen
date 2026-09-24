@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, Check, X, Split, GitMerge, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +44,13 @@ export function CollectPaymentModal({
   const [received, setReceived] = useState('50.00');
   const receivedNum = parseFloat(received) || 0;
   const change = Math.max(0, receivedNum - total);
+
+  // Auto-focus the amount field so the tablet numpad keyboard opens immediately.
+  const amountRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    amountRef.current?.focus();
+    amountRef.current?.select();
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
@@ -90,6 +97,7 @@ export function CollectPaymentModal({
               $
             </span>
             <input
+              ref={amountRef}
               type="number"
               value={received}
               onChange={(e) => setReceived(e.target.value)}
