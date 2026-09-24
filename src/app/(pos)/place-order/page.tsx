@@ -62,10 +62,9 @@ export default function PlaceOrderPage() {
   }
 
   function decQty(id: string) {
+    // Minimum quantity is 1 — items can only be removed via the delete button.
     setItems((prev) =>
-      prev
-        .map((item) => (item.id === id ? { ...item, qty: item.qty - 1 } : item))
-        .filter((item) => item.qty > 0),
+      prev.map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty - 1) } : item)),
     );
   }
 
@@ -154,7 +153,14 @@ export default function PlaceOrderPage() {
                   <div className="col-span-2 flex items-center justify-center gap-2">
                     <button
                       onClick={() => decQty(item.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-[#026F4F] hover:bg-emerald-200 transition-colors"
+                      disabled={item.qty <= 1}
+                      title={item.qty <= 1 ? 'Minimum quantity is 1' : 'Decrease quantity'}
+                      className={cn(
+                        'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                        item.qty <= 1
+                          ? 'cursor-not-allowed bg-zinc-100 text-zinc-300'
+                          : 'bg-emerald-100 text-[#026F4F] hover:bg-emerald-200',
+                      )}
                     >
                       <Minus size={13} strokeWidth={2.4} />
                     </button>
