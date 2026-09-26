@@ -1,37 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-type OrderStatus = 'Placed' | 'Preparing' | 'Ready' | 'Served' | 'Completed';
-type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
-
-interface RunningOrderItem {
-  name: string;
-  qty: number;
-  price: number;
-  modifier?: string;
-  emoji: string;
-}
-
-interface RunningOrder {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  phone?: string;
-  email?: string;
-  isPaid: boolean;
-  date: string;
-  table: string;
-  type: 'Dine In' | 'Takeaway' | 'Delivery';
-  status: OrderStatus;
-  items: RunningOrderItem[];
-  subtotal: number;
-  serviceCharge: number;
-  total: number;
-}
+import {
+  getOrders,
+  updateOrderStatus,
+  removeOrder,
+  subscribeOrders,
+  type OrderStatus,
+  type OrderType,
+  type RunningOrder,
+} from '@/lib/running-orders';
 
 const STATUS_STEPS: { key: OrderStatus; label: string; icon: typeof Clock }[] = [
   { key: 'Placed', label: 'Placed', icon: Clock },
@@ -40,81 +20,22 @@ const STATUS_STEPS: { key: OrderStatus; label: string; icon: typeof Clock }[] = 
   { key: 'Served', label: 'Served', icon: UtensilsCrossed },
 ];
 
-// ─── Sample Data ───────────────────────────────────────────────────────────────
-const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
-  {
-    id: 'ro1',
-    orderNumber: '#044',
-    customerName: 'Robert Fox',
-    phone: '+01284980',
-    email: 'mike.t@example.com',
-    isPaid: true,
-    date: '7 Apr, 11:30 AM',
-    table: 'Table 03',
-    type: 'Dine In',
-    status: 'Preparing',
-    items: [
-      { name: 'Shoyu Ramen', qty: 1, price: 15.99, modifier: 'No Spice', emoji: '🍜' },
-      { name: 'Iced Green Tea', qty: 1, price: 15.99, modifier: 'No Spice', emoji: '🍵' },
-    ],
-    subtotal: 25.99,
-    serviceCharge: 2.6,
-    total: 30.99,
-  },
-  {
-    id: 'ro2',
-    orderNumber: '#045',
-    customerName: 'Mike Thompson',
-    phone: '+01284980',
-    email: 'mike.t@example.com',
-    isPaid: true,
-    date: '7 Apr, 11:45 AM',
-    table: 'Table 07',
-    type: 'Dine In',
-    status: 'Ready',
-    items: [
-      { name: 'Shoyu Ramen', qty: 1, price: 15.99, modifier: 'Extra Chili', emoji: '🍜' },
-      { name: 'Coca-Cola', qty: 1, price: 2.99, modifier: 'Standard', emoji: '🥤' },
-    ],
-    subtotal: 18.98,
-    serviceCharge: 1.9,
-    total: 20.88,
-  },
-  {
-    id: 'ro3',
-    orderNumber: '#046',
-    customerName: 'David K.',
-    phone: '+01284980',
-    email: 'david.k@example.com',
-    isPaid: false,
-    date: '7 Apr, 12:00 PM',
-    table: 'Takeaway #12',
-    type: 'Takeaway',
-    status: 'Placed',
-    items: [
-      { name: 'Classic Burger', qty: 2, price: 15.99, modifier: 'Standard', emoji: '🍔' },
-      { name: 'French Fries', qty: 1, price: 4.99, modifier: 'Standard', emoji: '🍟' },
-    ],
-    subtotal: 36.97,
-    serviceCharge: 3.7,
-    total: 40.67,
-  },
-];
-
 export default function RunningOrderPage() {
-  const [orders, setOrders] = useState<RunningOrder[]>(INITIAL_RUNNING_ORDERS);
+  const [orders, setOrders] = useState<RunningOrder[]>([]);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+
+  useEffect(() => {
+    setOrders(getOrders());
+    return subscribeOrders(() => setOrders(getOrders()));
+  }, []);
+
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
-  const filteredOrders = orders.filter((o) => {
-    if (activeTypeTab === 'All') return true;
-    return o.type === activeTypeTab;
-  });
-
-  function updateOrderStatus(id: string, newStatus: OrderStatus) {
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
-  }
+  const filteredOrders = orders
+    .filter((o) => activeTypeTab === 'All' || o.type === activeTypeTab)
+    // Pending acceptance (Placed) always float to the top.
+    .sort((a, b) => Number(b.status === 'Placed') - Number(a.status === 'Placed'));
 
   function advanceStatus(order: RunningOrder) {
     const next: Record<OrderStatus, OrderStatus> = {
@@ -218,7 +139,7 @@ export default function RunningOrderPage() {
                               <span className="text-[10.8px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
                             </div>
                           </div>
-                          <span className="shrink-0 text-[8px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
+                          <span className="shrink-0 text-[16px] font-semibold leading-[1.4] text-[#2D2F33]">Qty: {item.qty}</span>
                         </div>
                       ))}
                     </div>
@@ -236,7 +157,7 @@ export default function RunningOrderPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOrders((prev) => prev.filter((o) => o.id !== order.id));
+                              removeOrder(order.id);
                             }}
                             aria-label="Reject order"
                             className="flex h-[39px] w-[39px] items-center justify-center rounded-[6px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
@@ -389,7 +310,7 @@ export default function RunningOrderPage() {
                       </div>
                       <div className="ml-auto flex shrink-0 flex-col items-end gap-[36px]">
                         <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
-                        <span className="text-[11.6px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
+                        <span className="text-[14px] font-semibold leading-[1.4] text-[#2D2F33]">Qty: {item.qty}</span>
                       </div>
                     </div>
                   </div>

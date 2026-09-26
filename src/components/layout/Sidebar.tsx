@@ -23,6 +23,7 @@ import {
   subscribeRequests,
   type TableRequest,
 } from '@/lib/table-requests';
+import { getOrders, pendingCount, subscribeOrders } from '@/lib/running-orders';
 
 const NAV_ITEMS = [
   { id: 'floor-plan', label: 'Floor Plan', icon: LayoutGrid, href: '/floor-plan' },
@@ -36,12 +37,19 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const pathname = usePathname();
   const [requests, setRequests] = useState<TableRequest[]>([]);
+  const [pendingOrders, setPendingOrders] = useState(0);
   const [showRequests, setShowRequests] = useState(false);
 
   // Keep the always-visible badge in sync with the shared request store.
   useEffect(() => {
     setRequests(getRequests());
     return subscribeRequests(() => setRequests(getRequests()));
+  }, []);
+
+  // Pending (not-yet-accepted) running orders badge.
+  useEffect(() => {
+    setPendingOrders(pendingCount(getOrders()));
+    return subscribeOrders(() => setPendingOrders(pendingCount(getOrders())));
   }, []);
 
   // Opening from a toast elsewhere in the app.
@@ -105,19 +113,25 @@ export function Sidebar() {
               pathname === item.href ||
               (item.href !== '#' && pathname.startsWith(item.href.replace(/\/?$/, '')));
             const Icon = item.icon;
+            const badge = item.id === 'running-order' ? pendingOrders : 0;
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 title={item.label}
                 className={cn(
-                  'group flex h-[50px] w-[50px] items-center justify-center rounded-full transition-all duration-200',
+                  'group relative flex h-[50px] w-[50px] items-center justify-center rounded-full transition-all duration-200',
                   active
                     ? 'bg-[#026F4F] text-white shadow-md'
                     : 'text-[#989898] hover:bg-[#F2F2F2] hover:text-[#2D2F33]',
                 )}
               >
                 <Icon size={24} strokeWidth={active ? 2.2 : 1.8} />
+                {badge > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white ring-2 ring-white">
+                    {badge}
+                  </span>
+                )}
               </Link>
             );
           })}
