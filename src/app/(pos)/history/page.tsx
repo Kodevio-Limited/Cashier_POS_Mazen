@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban } from 'lucide-react';
+import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -146,6 +146,7 @@ type RefundMode = 'refund' | 'cancel';
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<HistoryOrder[]>(INITIAL_HISTORY);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
+  const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   // Step 1: pick items (+ reason). Step 2: log waste.
   const [refundMode, setRefundMode] = useState<RefundMode | null>(null);
@@ -159,8 +160,13 @@ export default function OrderHistoryPage() {
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
   const filteredOrders = orders.filter((o) => {
-    if (activeTypeTab === 'All') return true;
-    return o.type === activeTypeTab;
+    if (activeTypeTab !== 'All' && o.type !== activeTypeTab) return false;
+    const q = search.trim().toLowerCase().replace(/^#/, '');
+    if (!q) return true;
+    return (
+      o.orderNumber.toLowerCase().replace(/^#/, '').includes(q) ||
+      o.table.toLowerCase().includes(q)
+    );
   });
 
   const refundLines = (selectedOrder?.items ?? [])
@@ -223,7 +229,7 @@ export default function OrderHistoryPage() {
           <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">View and manage past orders</p>
         </div>
 
-        {/* Filter pills */}
+        {/* Filter pills + search */}
         <div className="mt-[24px] flex flex-wrap items-center gap-[11px]">
           {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
             <button
@@ -237,6 +243,24 @@ export default function OrderHistoryPage() {
               {tab}
             </button>
           ))}
+          <div className="ml-auto flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-full bg-white px-4 sm:max-w-[280px] sm:flex-none">
+            <Search size={14} className="shrink-0 text-[#989898]" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search order # or table..."
+              className="w-full bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+                className="shrink-0 text-[#989898] transition-colors hover:text-[#2D2F33]"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Cards grid */}
