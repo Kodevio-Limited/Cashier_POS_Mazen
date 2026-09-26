@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert } from 'lucide-react';
+import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -126,11 +126,35 @@ const INITIAL_HISTORY: HistoryOrder[] = [
   },
 ];
 
+// ─── Mock ingredient lists (stand-in for the menu/inventory API) ──────────────
+const ITEM_INGREDIENTS: Record<string, string[]> = {
+  'Shoyu Ramen': ['Ramen Noodles', 'Shoyu Broth', 'Chashu Pork', 'Soft Egg', 'Nori', 'Scallions'],
+  'Classic Burger': ['Burger Bun', 'Beef Patty', 'Cheddar Cheese', 'Lettuce', 'Tomato', 'Burger Sauce'],
+  'French Fries': ['Potatoes', 'Frying Oil', 'Salt'],
+  'Coca-Cola': ['Coca-Cola Syrup', 'Soda Water', 'Ice'],
+  'Iced Green Tea': ['Green Tea', 'Ice', 'Sugar Syrup', 'Lemon'],
+};
+
+const GENERIC_INGREDIENTS = ['Main Component', 'Side Component', 'Sauce', 'Garnish'];
+
+function ingredientsFor(itemName: string): string[] {
+  return ITEM_INGREDIENTS[itemName] ?? GENERIC_INGREDIENTS;
+}
+
+type RefundMode = 'refund' | 'cancel';
+
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<HistoryOrder[]>(INITIAL_HISTORY);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
-  const [showRefundModal, setShowRefundModal] = useState(false);
+  // Step 1: pick items (+ reason). Step 2: log waste.
+  const [refundMode, setRefundMode] = useState<RefundMode | null>(null);
+  const [refundQty, setRefundQty] = useState<Record<number, number>>({});
+  const [refundReason, setRefundReason] = useState('');
+  const [showWasteModal, setShowWasteModal] = useState(false);
+  const [wasteLog, setWasteLog] = useState<Record<number, boolean>>({});
+  const [wasteIngredients, setWasteIngredients] = useState<Record<number, string[]>>({});
+  const [customOpen, setCustomOpen] = useState<number | null>(null);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
@@ -139,12 +163,54 @@ export default function OrderHistoryPage() {
     return o.type === activeTypeTab;
   });
 
-  function handleConfirmRefund(amount: number) {
-    if (!selectedOrder) return;
+  const refundLines = (selectedOrder?.items ?? [])
+    .map((item, idx) => ({ item, idx, qty: refundQty[idx] ?? 0 }))
+    .filter((l) => l.qty > 0);
+  const refundTotal = refundLines.reduce((s, l) => s + l.item.price * l.qty, 0);
+
+  function openRefundFlow(mode: RefundMode) {
+    setRefundMode(mode);
+    setRefundQty({});
+    setRefundReason('');
+    setShowWasteModal(false);
+    setWasteLog({});
+    setWasteIngredients({});
+    setCustomOpen(null);
+  }
+
+  // Step 1 confirm → carry the chosen lines into the Log Waste step.
+  function confirmItems() {
+    const initialLog: Record<number, boolean> = {};
+    refundLines.forEach((l) => {
+      initialLog[l.idx] = true;
+    });
+    setWasteLog(initialLog);
+    setWasteIngredients({});
+    setCustomOpen(null);
+    setShowWasteModal(true);
+  }
+
+  // Step 2 confirm → apply refund/cancel to the order.
+  function confirmWaste() {
+    if (!selectedOrder || !refundMode) return;
     setOrders((prev) =>
-      prev.map((o) => (o.id === selectedOrder.id ? { ...o, payState: 'Refunded' as PayState, footerState: 'Cancelled' as FooterState } : o)),
+      prev.map((o) =>
+        o.id === selectedOrder.id
+          ? {
+              ...o,
+              payState: (refundMode === 'refund' ? 'Refunded' : o.payState) as PayState,
+              footerState: 'Cancelled' as FooterState,
+            }
+          : o,
+      ),
     );
-    setShowRefundModal(false);
+    setRefundMode(null);
+    setShowWasteModal(false);
+  }
+
+  function closeFlow() {
+    setRefundMode(null);
+    setShowWasteModal(false);
   }
 
   return (
@@ -339,100 +405,202 @@ export default function OrderHistoryPage() {
             </div>
           </div>
 
-          {/* Refund */}
+          {/* Refund / Cancel — paid orders refund, unpaid orders cancel */}
           <div className="p-[11px]">
-            {selectedOrder.payState === 'Refunded' ? (
+            {selectedOrder.footerState === 'Cancelled' || selectedOrder.payState === 'Refunded' ? (
               <button disabled className="flex h-[44px] w-full cursor-not-allowed items-center justify-center rounded-[30px] bg-zinc-300 text-[16px] font-medium leading-[1.4] text-white">
-                Refunded
+                {selectedOrder.payState === 'Refunded' ? 'Refunded' : 'Cancelled'}
               </button>
-            ) : (
+            ) : selectedOrder.payState === 'Paid' ? (
               <button
-                onClick={() => setShowRefundModal(true)}
+                onClick={() => openRefundFlow('refund')}
                 className="flex h-[44px] w-full items-center justify-center gap-[3px] rounded-[30px] bg-[#F97316] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#ea690b] active:scale-[0.99]"
               >
                 <RotateCcw size={24} />
                 <span>Refund</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => openRefundFlow('cancel')}
+                className="flex h-[44px] w-full items-center justify-center gap-[3px] rounded-[30px] bg-[#E85E5E] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#d94a4a] active:scale-[0.99]"
+              >
+                <Ban size={22} />
+                <span>Cancel</span>
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* ── Process Refund modal (Figma 1129:2000) ───────────────────── */}
-      {showRefundModal && selectedOrder && (
-        <RefundModal
+      {/* ── Step 1: pick items to refund / cancel ─────────────────────── */}
+      {refundMode && selectedOrder && !showWasteModal && (
+        <RefundItemsModal
+          mode={refundMode}
           orderNumber={selectedOrder.orderNumber}
-          total={selectedOrder.total}
-          onClose={() => setShowRefundModal(false)}
-          onConfirm={handleConfirmRefund}
+          items={selectedOrder.items}
+          refundQty={refundQty}
+          onQtyChange={(idx, qty) => setRefundQty((prev) => ({ ...prev, [idx]: qty }))}
+          reason={refundReason}
+          onReasonChange={setRefundReason}
+          total={refundTotal}
+          onClose={closeFlow}
+          onConfirm={confirmItems}
+        />
+      )}
+
+      {/* ── Step 2: log waste ─────────────────────────────────────────── */}
+      {refundMode && selectedOrder && showWasteModal && (
+        <LogWasteModal
+          mode={refundMode}
+          lines={refundLines}
+          wasteLog={wasteLog}
+          onToggleLog={(idx) => setWasteLog((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+          wasteIngredients={wasteIngredients}
+          customOpen={customOpen}
+          onToggleCustom={(idx) => setCustomOpen((prev) => (prev === idx ? null : idx))}
+          onToggleIngredient={(idx, ing) =>
+            setWasteIngredients((prev) => {
+              const cur = prev[idx] ?? [];
+              return {
+                ...prev,
+                [idx]: cur.includes(ing) ? cur.filter((i) => i !== ing) : [...cur, ing],
+              };
+            })
+          }
+          onBack={() => setShowWasteModal(false)}
+          onConfirm={confirmWaste}
         />
       )}
     </div>
   );
 }
 
-// ─── Process Refund modal ──────────────────────────────────────────────────
-function RefundModal({
+// ─── Step 1: choose which items to refund / cancel ───────────────────────────
+function RefundItemsModal({
+  mode,
   orderNumber,
+  items,
+  refundQty,
+  onQtyChange,
+  reason,
+  onReasonChange,
   total,
   onClose,
   onConfirm,
 }: {
+  mode: RefundMode;
   orderNumber: string;
+  items: HistoryItem[];
+  refundQty: Record<number, number>;
+  onQtyChange: (idx: number, qty: number) => void;
+  reason: string;
+  onReasonChange: (v: string) => void;
   total: number;
   onClose: () => void;
-  onConfirm: (amount: number) => void;
+  onConfirm: () => void;
 }) {
-  const [amount, setAmount] = useState(total.toFixed(2));
-  const [reason, setReason] = useState('');
+  const selectedCount = Object.values(refundQty).filter((q) => q > 0).length;
+  const title = mode === 'refund' ? 'Process Refund' : 'Cancel Order Items';
+  const confirmLabel = mode === 'refund' ? 'Confirm Refund' : 'Confirm Cancellation';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs">
-      <div className="my-auto w-[560px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
+      <div className="my-auto w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-[23px] font-medium leading-[1.4] text-black">Process Refund</h2>
+          <h2 className="text-[23px] font-medium leading-[1.4] text-black">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="text-black transition-colors hover:text-zinc-500">
             <X size={24} />
           </button>
         </div>
         <p className="mt-[7px] text-[16px] font-normal leading-[1.4] text-[#989898]">Order {orderNumber}</p>
 
-        {/* Amount */}
-        <div className="mt-[37px] flex flex-col gap-[13px]">
-          <label className="text-[16px] font-normal leading-[1.4] text-[#686868]">Refund Amount ($)</label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-[17px] top-1/2 -translate-y-1/2 text-[19px] font-normal leading-[1.4] text-[#989898]">
-              $
-            </span>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="decimal"
-              placeholder="0.00"
-              className="h-[61px] w-full rounded-[10px] bg-[#E9E9E9] pl-[38px] pr-[17px] text-[19px] font-normal leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
-            />
-          </div>
+        {/* Item picker */}
+        <p className="mt-[24px] text-[16px] font-medium leading-[1.4] text-[#2D2F33]">
+          Select items {mode === 'refund' ? 'to refund' : 'to cancel'}
+        </p>
+        <div className="mt-[12px] flex max-h-[280px] flex-col gap-2 overflow-y-auto">
+          {items.map((item, idx) => {
+            const qty = refundQty[idx] ?? 0;
+            const isSelected = qty > 0;
+            return (
+              <div
+                key={idx}
+                onClick={() => onQtyChange(idx, isSelected ? 0 : Math.min(1, item.qty))}
+                className={cn(
+                  'flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all',
+                  isSelected ? 'border-[#026F4F] bg-[#E6F1ED]' : 'border-[#E9E9E9] bg-white hover:border-[#B9B9B9]',
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all',
+                    isSelected ? 'border-[#026F4F] bg-[#026F4F]' : 'border-[#B9B9B9] bg-white',
+                  )}
+                >
+                  {isSelected && <Check size={14} strokeWidth={3} className="text-white" />}
+                </span>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F2F2F2] text-2xl">
+                  {item.emoji}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium text-[#2D2F33]">{item.name}</span>
+                  <span className="text-[12px] text-[#989898]">
+                    ${item.price.toFixed(2)} × {item.qty} ordered
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    aria-label="Decrease quantity"
+                    disabled={qty <= (isSelected ? 1 : 0)}
+                    onClick={() => onQtyChange(idx, Math.max(qty - 1, 1))}
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                      qty <= 1 ? 'bg-zinc-100 text-zinc-300' : 'bg-emerald-200 text-emerald-900 hover:bg-emerald-300',
+                    )}
+                  >
+                    <Minus size={13} strokeWidth={2.4} />
+                  </button>
+                  <span className="w-5 text-center text-sm font-medium text-[#2D2F33]">{qty}</span>
+                  <button
+                    type="button"
+                    aria-label="Increase quantity"
+                    disabled={qty >= item.qty}
+                    onClick={() => onQtyChange(idx, Math.min(qty + 1, item.qty))}
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                      qty >= item.qty ? 'bg-zinc-100 text-zinc-300' : 'bg-[#026F4F] text-white hover:bg-[#015c42]',
+                    )}
+                  >
+                    <Plus size={13} strokeWidth={2.4} />
+                  </button>
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Warning */}
-        <div className="mt-[26px] flex items-start gap-[11px]">
+        <div className="mt-[20px] flex items-start gap-[11px]">
           <CircleAlert size={24} className="shrink-0 text-[#8C1818]" />
           <p className="text-[13px] font-light leading-[1.4] text-[#8C1818]">
-            This action cannot be undone. The amount will be returned to the customer&apos;s original payment method.
+            This action cannot be undone.
+            {mode === 'refund' ? ' The amount will be returned to the customer\u2019s original payment method.' : ''}
           </p>
         </div>
 
         {/* Reason */}
-        <div className="mt-[26px] flex flex-col gap-[13px]">
-          <label className="text-[16px] font-normal leading-[1.4] text-[#686868]">Reason for a Refund</label>
+        <div className="mt-[20px] flex flex-col gap-[13px]">
+          <label className="text-[16px] font-normal leading-[1.4] text-[#686868]">
+            Reason for {mode === 'refund' ? 'a Refund' : 'Cancellation'}
+          </label>
           <textarea
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => onReasonChange(e.target.value)}
             placeholder="Reason....."
-            rows={4}
-            className="h-[117px] w-full resize-none rounded-[10px] bg-[#E9E9E9] p-[17px] text-[19px] font-normal leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
+            rows={3}
+            className="h-[88px] w-full resize-none rounded-[10px] bg-[#E9E9E9] p-[17px] text-[16px] font-normal leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
           />
         </div>
 
@@ -447,10 +615,154 @@ function RefundModal({
           </button>
           <button
             type="button"
-            onClick={() => onConfirm(parseFloat(amount) || 0)}
+            disabled={selectedCount === 0}
+            onClick={onConfirm}
+            className={cn(
+              'h-[52px] w-full rounded-[30px] font-satoshi text-[19px] font-medium leading-[1.4] text-white transition-all sm:w-[241px]',
+              selectedCount === 0
+                ? 'cursor-not-allowed bg-zinc-300'
+                : 'bg-[#026F4F] shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] hover:bg-[#015c42] active:scale-[0.99]',
+            )}
+          >
+            {confirmLabel} (${total.toFixed(2)})
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 2: log waste (+ per-item Custom ingredient picker) ─────────────────
+function LogWasteModal({
+  mode,
+  lines,
+  wasteLog,
+  onToggleLog,
+  wasteIngredients,
+  customOpen,
+  onToggleCustom,
+  onToggleIngredient,
+  onBack,
+  onConfirm,
+}: {
+  mode: RefundMode;
+  lines: { item: HistoryItem; idx: number; qty: number }[];
+  wasteLog: Record<number, boolean>;
+  onToggleLog: (idx: number) => void;
+  wasteIngredients: Record<number, string[]>;
+  customOpen: number | null;
+  onToggleCustom: (idx: number) => void;
+  onToggleIngredient: (idx: number, ing: string) => void;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs">
+      <div className="my-auto w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[23px] font-medium leading-[1.4] text-black">Log Waste</h2>
+          <button onClick={onBack} aria-label="Back" className="text-black transition-colors hover:text-zinc-500">
+            <X size={24} />
+          </button>
+        </div>
+        <p className="mt-[7px] text-[15px] font-normal leading-[1.4] text-[#989898]">
+          Choose whether to log the {mode === 'refund' ? 'refunded' : 'cancelled'} items as waste.
+        </p>
+
+        <div className="mt-[20px] flex max-h-[320px] flex-col gap-3 overflow-y-auto">
+          {lines.map(({ item, idx, qty }) => {
+            const log = wasteLog[idx] ?? true;
+            const selectedIngs = wasteIngredients[idx] ?? [];
+            const isCustomOpen = customOpen === idx;
+            return (
+              <div key={idx} className="rounded-xl border border-[#E9E9E9] bg-white p-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F2F2F2] text-2xl">
+                    {item.emoji}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-[#2D2F33]">
+                      {item.name} <span className="text-[#989898]">× {qty}</span>
+                    </span>
+                    <span className="text-[12px] text-[#989898]">${(item.price * qty).toFixed(2)}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onToggleCustom(idx)}
+                    className={cn(
+                      'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all',
+                      isCustomOpen || selectedIngs.length > 0
+                        ? 'bg-[#026F4F] text-white shadow-xs'
+                        : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
+                    )}
+                  >
+                    Custom{selectedIngs.length > 0 ? ` (${selectedIngs.length})` : ''}
+                  </button>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={log}
+                    onClick={() => onToggleLog(idx)}
+                    className={cn(
+                      'flex h-7 w-[52px] shrink-0 items-center rounded-full p-1 transition-colors',
+                      log ? 'justify-end bg-[#026F4F]' : 'justify-start bg-zinc-300',
+                    )}
+                    title={log ? 'Log as waste' : 'Do not log as waste'}
+                  >
+                    <span className="h-5 w-5 rounded-full bg-white shadow" />
+                  </button>
+                </div>
+                <p className="mt-1 text-right text-[11px] text-[#989898]">
+                  {log ? 'Logged as waste' : 'Not logged'}
+                </p>
+
+                {isCustomOpen && (
+                  <div className="mt-2 rounded-lg bg-[#F2F2F2] p-3">
+                    <p className="mb-2 text-[13px] font-medium text-[#2D2F33]">
+                      Which ingredients were wasted?
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {ingredientsFor(item.name).map((ing) => {
+                        const active = selectedIngs.includes(ing);
+                        return (
+                          <button
+                            key={ing}
+                            type="button"
+                            onClick={() => onToggleIngredient(idx, ing)}
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all',
+                              active
+                                ? 'bg-[#026F4F] text-white shadow-xs'
+                                : 'bg-white text-zinc-700 hover:bg-zinc-200',
+                            )}
+                          >
+                            {active && <Check size={12} strokeWidth={3} />}
+                            {ing}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-[24px] flex flex-col justify-between gap-[19px] sm:flex-row">
+          <button
+            type="button"
+            onClick={onBack}
+            className="h-[52px] w-full rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[19px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0] sm:w-[241px]"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
             className="h-[52px] w-full rounded-[30px] bg-[#026F4F] font-satoshi text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99] sm:w-[241px]"
           >
-            Confirm Refund
+            Done
           </button>
         </div>
       </div>
