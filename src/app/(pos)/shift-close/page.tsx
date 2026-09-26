@@ -40,14 +40,11 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
   const { openingFloat, cashierName, startedAt } = shift;
 
   const [actualCash, setActualCash] = useState('650.50');
-  const [paidOutAmount, setPaidOutAmount] = useState('');
-  const [paidOutReason, setPaidOutReason] = useState('');
-  const [showPaidOutModal, setShowPaidOutModal] = useState(false);
-  const [paidOutEntries, setPaidOutEntries] = useState<{ amount: number; reason: string }[]>([]);
 
   const cashSales = 480.5;
   const cardSales = 840.2;
-  const paidOutTotal = paidOutEntries.reduce((s, e) => s + e.amount, 0) + 30.0;
+  // TODO: derive from real paid-out/expense data once the API provides it.
+  const paidOutTotal = 30.0;
   const expectedCash = openingFloat + cashSales - paidOutTotal;
   const actualCashNumber = parseFloat(actualCash) || 0;
   const variance = actualCashNumber - expectedCash;
@@ -57,15 +54,6 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
       endShift();
       router.replace('/shift');
     }
-  }
-
-  function handleAddPaidOut() {
-    const amount = parseFloat(paidOutAmount);
-    if (!Number.isFinite(amount) || amount <= 0 || !paidOutReason.trim()) return;
-    setPaidOutEntries((prev) => [...prev, { amount, reason: paidOutReason.trim() }]);
-    setPaidOutAmount('');
-    setPaidOutReason('');
-    setShowPaidOutModal(false);
   }
 
   const startedLabel = new Date(startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -80,12 +68,6 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setShowPaidOutModal(true)}
-            className="whitespace-nowrap rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
-          >
-            Paid Out / Expense
-          </button>
           <button
             onClick={handleCloseShift}
             className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-600 px-4 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-rose-700"
@@ -219,56 +201,6 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
           </button>
         </div>
       </div>
-
-      {/* Paid Out modal */}
-      {showPaidOutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="flex w-[400px] max-w-full flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-black">Paid Out / Expense</h3>
-            <div className="flex flex-col gap-2">
-              <label htmlFor="paidout-amount" className="text-xs font-medium text-stone-500">
-                Amount ($)
-              </label>
-              <input
-                id="paidout-amount"
-                type="number"
-                step="0.01"
-                value={paidOutAmount}
-                onChange={(e) => setPaidOutAmount(e.target.value)}
-                placeholder="0.00"
-                className="h-11 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-3 text-sm text-black outline-none focus:border-[#026F4F]"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label htmlFor="paidout-reason" className="text-xs font-medium text-stone-500">
-                Reason
-              </label>
-              <input
-                id="paidout-reason"
-                type="text"
-                value={paidOutReason}
-                onChange={(e) => setPaidOutReason(e.target.value)}
-                placeholder="e.g. Supplier payment"
-                className="h-11 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-3 text-sm text-black outline-none focus:border-[#026F4F]"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowPaidOutModal(false)}
-                className="h-10 flex-1 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddPaidOut}
-                className="h-10 flex-1 rounded-xl bg-[#026F4F] text-xs font-medium text-white transition-colors hover:bg-[#015c42]"
-              >
-                Save Expense
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
