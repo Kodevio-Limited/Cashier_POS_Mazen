@@ -39,17 +39,24 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
   const router = useRouter();
   const { openingFloat, cashierName, startedAt } = shift;
 
-  const [actualCash, setActualCash] = useState('650.50');
+  const [actualCash, setActualCash] = useState('');
+  const [cashError, setCashError] = useState('');
 
   const cashSales = 480.5;
   const cardSales = 840.2;
   // TODO: derive from real paid-out/expense data once the API provides it.
   const paidOutTotal = 30.0;
   const expectedCash = openingFloat + cashSales - paidOutTotal;
-  const actualCashNumber = parseFloat(actualCash) || 0;
-  const variance = actualCashNumber - expectedCash;
+  const actualCashNumber = parseFloat(actualCash);
+  const hasCount = actualCash.trim() !== '' && Number.isFinite(actualCashNumber);
+  const variance = hasCount ? actualCashNumber - expectedCash : 0;
 
   function handleCloseShift() {
+    if (!hasCount) {
+      setCashError('Please enter the actual cash counted in the drawer to close the shift.');
+      return;
+    }
+    setCashError('');
     if (confirm('Are you sure you want to close the current shift and print the Z-Report?')) {
       endShift();
       router.replace('/shift');
@@ -155,18 +162,25 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
                 type="number"
                 step="0.01"
                 value={actualCash}
-                onChange={(e) => setActualCash(e.target.value)}
+                onChange={(e) => {
+                  setActualCash(e.target.value);
+                  if (cashError) setCashError('');
+                }}
+                placeholder="0.00"
                 className="h-12 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 text-lg font-bold text-black outline-none focus:border-[#026F4F]"
               />
+              {cashError && <p className="text-xs font-medium text-red-600">{cashError}</p>}
             </div>
             <div
               className={cn(
                 'flex items-center justify-between rounded-xl border p-4',
-                variance === 0
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : variance > 0
-                    ? 'border-blue-200 bg-blue-50 text-blue-800'
-                    : 'border-rose-200 bg-rose-50 text-rose-800',
+                !hasCount
+                  ? 'border-zinc-200 bg-zinc-50 text-zinc-500'
+                  : variance === 0
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : variance > 0
+                      ? 'border-blue-200 bg-blue-50 text-blue-800'
+                      : 'border-rose-200 bg-rose-50 text-rose-800',
               )}
             >
               <div>
@@ -175,10 +189,18 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
                   Cash Variance
                 </p>
                 <p className="text-xs opacity-80">
-                  {variance === 0 ? 'Drawer perfectly balanced' : variance > 0 ? 'Over cash in drawer' : 'Shortage detected'}
+                  {!hasCount
+                    ? 'Awaiting cash count'
+                    : variance === 0
+                      ? 'Drawer perfectly balanced'
+                      : variance > 0
+                        ? 'Over cash in drawer'
+                        : 'Shortage detected'}
                 </p>
               </div>
-              <span className="text-lg font-bold">{variance >= 0 ? `+$${variance.toFixed(2)}` : `-$${Math.abs(variance).toFixed(2)}`}</span>
+              <span className="text-lg font-bold">
+                {!hasCount ? '—' : variance >= 0 ? `+$${variance.toFixed(2)}` : `-$${Math.abs(variance).toFixed(2)}`}
+              </span>
             </div>
           </div>
 
