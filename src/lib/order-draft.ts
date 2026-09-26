@@ -2,8 +2,17 @@
 // survives navigation between /order (Menu) and /place-order (checkout).
 // The back-arrow beside "Order #ORD-1025" must return to the Menu with items intact.
 
+const KEY = 'pos-current-order';
+
 export interface DraftItem {
+  /** Menu item id (e.g. 'm1' for Classic Burger). Two lines can share this. */
   id: string;
+  /**
+   * Unique per cart line. Two Classic Burgers with different customizations are
+   * separate lines with separate lineIds; only truly identical configurations
+   * merge, and then only in quantity.
+   */
+  lineId: string;
   name: string;
   price: number;
   qty: number;
@@ -13,8 +22,19 @@ export interface DraftItem {
   instructions?: string;
 }
 
-const KEY = 'pos-current-order';
+let lineIdCounter = 0;
 
+/** New unique cart-line id; menu `id` alone is NOT unique across lines. */
+export function newLineId(): string {
+  lineIdCounter += 1;
+  return `line-${Date.now().toString(36)}-${lineIdCounter}`;
+}
+
+/**
+ * Loads the draft and guarantees every line has a unique `lineId` (backfills
+ * one for drafts saved before lineId existed, and de-dupes any accidental
+ * duplicates so React keys and per-line buttons stay correct).
+ */
 export function loadDraft(): DraftItem[] | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -22,11 +42,23 @@ export function loadDraft(): DraftItem[] | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return null;
-    return parsed.filter(
-      (i): i is DraftItem =>
-        !!i && typeof i.id === 'string' && typeof i.name === 'string' &&
-        typeof i.price === 'number' && typeof i.qty === 'number',
-    );
+    const seen = new Set<string>();
+    const lines: DraftItem[] = [];
+    for (const i of parsed) {
+      if (
+        !i || typeof i.id !== 'string' || typeof i.name !== 'string' ||
+        typeof i.price !== 'number' || typeof i.qty !== 'number'
+      ) {
+        continue;
+      }
+      const lineId =
+        typeof i.lineId === 'string' && i.lineId !== '' && !seen.has(i.lineId)
+          ? i.lineId
+          : newLineId();
+      seen.add(lineId);
+      lines.push({ ...i, lineId });
+    }
+    return lines;
   } catch {
     return null;
   }

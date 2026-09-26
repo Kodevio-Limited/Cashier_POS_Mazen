@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Minus, Plus, X, Trash2, Pencil, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadDraft, saveDraft } from '@/lib/order-draft';
+import { loadDraft, saveDraft, newLineId } from '@/lib/order-draft';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -18,6 +18,8 @@ interface MenuItem {
 
 interface OrderItem {
   id: string;
+  /** Unique cart-line id — menu `id` is shared by lines that differ only in customization. */
+  lineId: string;
   name: string;
   price: number;
   qty: number;
@@ -70,6 +72,20 @@ function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void 
   );
 }
 
+// ─── Cart line identity ─────────────────────────────────────────────────────
+// Two cart lines are the "same item" only when item id AND all customizations
+// match. Add-ons and instructions are order-insensitive; texture/required
+// option is a single choice. Used both when quick-adding and when saving the
+// customize modal, so differently-customized copies of one item stay separate.
+function orderLineKey(o: Pick<OrderItem, 'id' | 'texture' | 'modifiers' | 'instructions'>): string {
+  return [
+    o.id,
+    o.texture ?? '',
+    [...(o.modifiers ?? [])].sort().join('|'),
+    o.instructions ?? '',
+  ].join('~');
+}
+
 // ─── Main Order Page ───────────────────────────────────────────────────────────
 export default function OrderPage() {
   const router = useRouter();
@@ -98,7 +114,11 @@ export default function OrderPage() {
       return;
     }
     setOrderItems((prev) => {
-      const existingIdx = prev.findIndex((o) => o.id === item.id);
+      // Merge only into a line with the exact same configuration (a quick add
+      // is always plain). A Classic Burger with extra mayo must not absorb a
+      // second Classic Burger with different customizations (Bug-10).
+      const plainKey = orderLineKey({ id: item.id });
+      const existingIdx = prev.findIndex((o) => orderLineKey(o) === plainKey);
       if (existingIdx >= 0) {
         return prev.map((o, i) => (i === existingIdx ? { ...o, qty: o.qty + 1 } : o));
       }
@@ -106,11 +126,11 @@ export default function OrderPage() {
         ...prev,
         {
           id: item.id,
+          lineId: newLineId(),
           name: item.name,
           price: item.price,
           qty: 1,
           emoji: item.emoji,
-          texture: item.options ? item.options[0] : undefined,
         },
       ];
     });
@@ -236,7 +256,7 @@ export default function OrderPage() {
             ) : (
               orderItems.map((item, idx) => (
               <div
-                key={`${item.id}-${idx}`}
+                key={item.lineId}
                 onClick={() => setCustomizingItem({ item, isEditingIndex: idx })}
                 title="Edit item"
                 className="w-full flex items-start gap-2.5 pt-3.5 first:pt-0 cursor-pointer"
@@ -405,19 +425,20 @@ export default function OrderPage() {
           onClose={() => setCustomizingItem(null)}
           onSave={(customized) => {
             if (customizingItem.isEditingIndex !== undefined) {
+              // Replace the line's config, keeping its unique lineId.
               setOrderItems((prev) =>
-                prev.map((o, i) => (i === customizingItem.isEditingIndex ? customized : o)),
+                prev.map((o, i) =>
+                  i === customizingItem.isEditingIndex ? { ...customized, lineId: o.lineId } : o,
+                ),
               );
             } else {
               // Merge into an identical line if one exists, else append a new line.
               setOrderItems((prev) => {
-                const lineKey = (o: OrderItem) =>
-                  [o.id, o.texture ?? '', [...(o.modifiers ?? [])].sort().join('|'), o.instructions ?? ''].join('~');
-                const idx = prev.findIndex((o) => lineKey(o) === lineKey(customized));
+                const idx = prev.findIndex((o) => orderLineKey(o) === orderLineKey(customized));
                 if (idx >= 0) {
                   return prev.map((o, i) => (i === idx ? { ...o, qty: o.qty + customized.qty } : o));
                 }
-                return [...prev, customized];
+                return [...prev, { ...customized, lineId: newLineId() }];
               });
             }
             setCustomizingItem(null);
@@ -580,6 +601,7 @@ function CustomizeItemModal({
               onClick={() => {
                 onSave({
                   id: data.id,
+                  lineId: 'lineId' in data && data.lineId ? data.lineId : '',
                   name: data.name,
                   price: data.price,
                   qty,

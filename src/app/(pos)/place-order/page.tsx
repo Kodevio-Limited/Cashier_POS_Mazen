@@ -15,6 +15,8 @@ import {
 
 interface OrderLineItem {
   id: string;
+  /** Unique cart-line id — several lines can share the same menu `id`. */
+  lineId: string;
   name: string;
   price: number;
   qty: number;
@@ -25,9 +27,9 @@ interface OrderLineItem {
 }
 
 const INITIAL_ITEMS: OrderLineItem[] = [
-  { id: '1', name: 'Shoyu Ramen', price: 15.99, qty: 2, emoji: '🍜', modifiers: ['Mayo', 'Extra Chili'] },
-  { id: '2', name: 'Classic Burger', price: 15.99, qty: 1, emoji: '🍔' },
-  { id: '3', name: 'Coca-Cola', price: 2.99, qty: 2, emoji: '🥤' },
+  { id: '1', lineId: 'demo-1', name: 'Shoyu Ramen', price: 15.99, qty: 2, emoji: '🍜', modifiers: ['Mayo', 'Extra Chili'] },
+  { id: '2', lineId: 'demo-2', name: 'Classic Burger', price: 15.99, qty: 1, emoji: '🍔' },
+  { id: '3', lineId: 'demo-3', name: 'Coca-Cola', price: 2.99, qty: 2, emoji: '🥤' },
 ];
 
 export default function PlaceOrderPage() {
@@ -57,19 +59,22 @@ export default function PlaceOrderPage() {
   const [showConfirmMergeModal, setShowConfirmMergeModal] = useState(false);
   const [selectedMergeOrders, setSelectedMergeOrders] = useState<string[]>(['ro1', 'ro2']);
 
-  function incQty(id: string) {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, qty: item.qty + 1 } : item)));
+  // Operate on the unique cart-line id, NOT the menu item id: two lines can be
+  // the same dish with different customizations (e.g. Classic Burger plain and
+  // with extra mayo) and must be editable independently.
+  function incQty(lineId: string) {
+    setItems((prev) => prev.map((item) => (item.lineId === lineId ? { ...item, qty: item.qty + 1 } : item)));
   }
 
-  function decQty(id: string) {
+  function decQty(lineId: string) {
     // Minimum quantity is 1 — items can only be removed via the delete button.
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty - 1) } : item)),
+      prev.map((item) => (item.lineId === lineId ? { ...item, qty: Math.max(1, item.qty - 1) } : item)),
     );
   }
 
-  function removeItem(id: string) {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  function removeItem(lineId: string) {
+    setItems((prev) => prev.filter((item) => item.lineId !== lineId));
   }
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -126,7 +131,7 @@ export default function PlaceOrderPage() {
             <div className="flex flex-col gap-2.5">
               {items.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.lineId}
                   className="grid grid-cols-12 gap-3 items-center px-4 py-3 bg-white border border-[#E9E9E9] rounded-xl hover:border-[#026F4F]/40 transition-all"
                 >
                   {/* Dish */}
@@ -152,7 +157,7 @@ export default function PlaceOrderPage() {
                   {/* Quantity */}
                   <div className="col-span-2 flex items-center justify-center gap-2">
                     <button
-                      onClick={() => decQty(item.id)}
+                      onClick={() => decQty(item.lineId)}
                       disabled={item.qty <= 1}
                       title={item.qty <= 1 ? 'Minimum quantity is 1' : 'Decrease quantity'}
                       className={cn(
@@ -166,7 +171,7 @@ export default function PlaceOrderPage() {
                     </button>
                     <span className="w-5 text-center font-medium text-sm text-[#2D2F33]">{item.qty}</span>
                     <button
-                      onClick={() => incQty(item.id)}
+                      onClick={() => incQty(item.lineId)}
                       className="flex h-7 w-7 items-center justify-center rounded-full bg-[#026F4F] text-white hover:bg-[#015c42] transition-colors"
                     >
                       <Plus size={13} strokeWidth={2.4} />
@@ -176,7 +181,7 @@ export default function PlaceOrderPage() {
                   {/* Actions */}
                   <div className="col-span-2 text-right">
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(item.lineId)}
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors"
                       title="Remove item"
                     >
