@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Clock, CreditCard, DollarSign, Lock, Printer, ShieldCheck } from 'lucide-react';
+import { Check, Clock, CreditCard, DollarSign, Printer, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { endShift, getActiveShift, subscribeShift, type ActiveShift } from '@/lib/shift-session';
 
@@ -65,16 +65,6 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
         <div className="min-w-0">
           <h1 className="text-xl font-medium text-black">Shift &amp; Cash Drawer Management</h1>
           <p className="text-xs font-normal text-neutral-400">Active Cashier: {cashierName} • Shift started {startedLabel}</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleCloseShift}
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-600 px-4 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-rose-700"
-          >
-            <Lock size={14} />
-            <span>Close Shift &amp; Print Z-Report</span>
-          </button>
         </div>
       </div>
 
