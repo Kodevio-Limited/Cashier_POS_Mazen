@@ -44,6 +44,24 @@ body {
   font-family: 'Satoshi', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * Modal overlays: always cover the viewport and never scroll as a page.
+ * The inner dialog is height-capped to the viewport (`max-h`) and scrolls
+ * internally if content exceeds it — so scrolling turns on per resolution
+ * only when the content actually doesn't fit.
+ */
+.pos-overlay {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+.pos-overlay__panel {
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

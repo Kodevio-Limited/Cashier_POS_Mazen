@@ -498,8 +498,8 @@ function CustomizeItemModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs">
-      <div className="my-auto w-[651px] max-w-full rounded-[17px] bg-white px-8 pb-8 pt-[26px] shadow-2xl">
+    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[651px] max-w-full rounded-[17px] bg-white px-8 pb-8 pt-[26px] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-[23px] font-medium leading-[1.4] text-black">Current Order</h2>

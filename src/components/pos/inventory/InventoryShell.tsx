@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { INV_TABS, type InvTab, type StockState } from './types';
 
 // ─── Page header + horizontal tab bar (Figma 1996:2494) ───────────────────────
@@ -88,8 +89,9 @@ export function Drawer({
   saveLabel: string;
   children: ReactNode;
 }) {
+  useBodyScrollLock(true);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40">
+    <div className="pos-overlay z-50 bg-black/40">
       <aside className="absolute bottom-3 right-3 top-3 flex w-[413px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-[#F2F2F2] shadow-2xl animate-in slide-in-from-right-8 duration-200">
         {/* Header */}
         <div className="flex items-center gap-3 px-[20px] pt-[33px]">

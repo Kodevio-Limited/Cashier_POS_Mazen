@@ -2,6 +2,7 @@
 
 import { Clock, Bell, CheckCircle2, Printer, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import type { TableRequest } from '@/lib/table-requests';
 
 export function TableRequestModal({
@@ -15,9 +16,10 @@ export function TableRequestModal({
   onDismissAll: () => void;
   onHandled: (id: string) => void;
 }) {
+  useBodyScrollLock(true);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-      <div className="flex h-[720px] max-h-[calc(100vh-2rem)] w-[384px] max-w-full flex-col rounded-lg bg-zinc-100 p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel flex max-h-full w-[384px] max-w-full flex-col rounded-lg bg-zinc-100 p-5 shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-start justify-between border-b border-zinc-400/40 pb-3">
           <span className="text-lg font-medium text-black">Table Request</span>
           <button

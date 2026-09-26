@@ -474,8 +474,8 @@ export default function PlaceOrderPage() {
 
       {/* ── Success Modal ────────────────────────────────────────── */}
       {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-          <div className="w-[450px] bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center gap-4 animate-in zoom-in-95 duration-200">
+        <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+          <div className="pos-overlay__panel w-[450px] bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center gap-4 animate-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-[#026F4F]">
               <Check size={36} strokeWidth={3} />
             </div>

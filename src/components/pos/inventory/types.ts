@@ -13,6 +13,8 @@ export interface Ingredient {
   capacity: number;
   unit: string;
   threshold: number;
+  /** Average price per unit — editable in Add/Edit, recalculated on purchase log. */
+  avgPrice: number;
   updatedAgo: string;
 }
 
@@ -90,12 +92,12 @@ export interface WasteEntry {
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
 export const INITIAL_INGREDIENTS: Ingredient[] = [
-  { id: 'ing1', name: 'Beef Patties', qty: 120, capacity: 150, unit: 'pcs', threshold: 50, updatedAgo: '10 mins ago' },
-  { id: 'ing2', name: 'Chicken Breast', qty: 120, capacity: 150, unit: 'L', threshold: 50, updatedAgo: '10 mins ago' },
-  { id: 'ing3', name: 'Burger Buns', qty: 70, capacity: 150, unit: 'pcs', threshold: 50, updatedAgo: '10 mins ago' },
-  { id: 'ing4', name: 'Cheddar Cheese', qty: 120, capacity: 150, unit: 'pcs', threshold: 50, updatedAgo: '10 mins ago' },
-  { id: 'ing5', name: 'Lettuce', qty: 0, capacity: 150, unit: 'kg', threshold: 50, updatedAgo: '10 mins ago' },
-  { id: 'ing6', name: 'Tomatoes', qty: 120, capacity: 150, unit: 'pcs', threshold: 50, updatedAgo: '10 mins ago' },
+  { id: 'ing1', name: 'Beef Patties', qty: 120, capacity: 150, unit: 'pcs', threshold: 50, avgPrice: 1.5, updatedAgo: '10 mins ago' },
+  { id: 'ing2', name: 'Chicken Breast', qty: 120, capacity: 150, unit: 'L', threshold: 50, avgPrice: 2.1, updatedAgo: '10 mins ago' },
+  { id: 'ing3', name: 'Burger Buns', qty: 70, capacity: 150, unit: 'pcs', threshold: 50, avgPrice: 0.4, updatedAgo: '10 mins ago' },
+  { id: 'ing4', name: 'Cheddar Cheese', qty: 120, capacity: 150, unit: 'pcs', threshold: 50, avgPrice: 0.9, updatedAgo: '10 mins ago' },
+  { id: 'ing5', name: 'Lettuce', qty: 0, capacity: 150, unit: 'kg', threshold: 50, avgPrice: 0.35, updatedAgo: '10 mins ago' },
+  { id: 'ing6', name: 'Tomatoes', qty: 120, capacity: 150, unit: 'pcs', threshold: 50, avgPrice: 0.5, updatedAgo: '10 mins ago' },
 ];
 
 export const INITIAL_RECIPES: Recipe[] = [

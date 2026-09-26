@@ -203,8 +203,8 @@ export default function FloorPlanPage() {
 
       {/* ── Table action modal ───────────────────────────────────────── */}
       {activeModalTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
+        <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
               <div>
                 <h3 className="text-xl font-bold text-black">{activeModalTable.name}</h3>
@@ -317,8 +317,8 @@ export default function FloorPlanPage() {
 
       {/* ── Transfer sub-modal ───────────────────────────────────────── */}
       {showTransferModal && activeModalTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="flex w-[380px] max-w-full flex-col gap-4 rounded-2xl bg-white p-5 shadow-2xl">
+        <div className="pos-overlay z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="pos-overlay__panel flex w-[380px] max-w-full flex-col gap-4 rounded-2xl bg-white p-5 shadow-2xl">
             <div>
               <h4 className="text-lg font-bold text-black">Transfer {activeModalTable.name}</h4>
               <p className="mt-1 text-xs text-neutral-400">

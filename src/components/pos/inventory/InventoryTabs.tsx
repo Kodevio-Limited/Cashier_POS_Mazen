@@ -38,9 +38,10 @@ export function StockTab({
         <div className="overflow-x-auto">
           <div className="min-w-[680px]">
             <TableHead>
-              <div className="grid w-full grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 px-2">
+              <div className="grid w-full grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 px-2">
                 <span>INGREDIENT NAME</span>
                 <span>CURRENT STOCK</span>
+                <span>AVERAGE PRICE</span>
                 <span className="flex items-center gap-1">STATUS <ChevronDown size={12} /></span>
                 <span>LAST UPDATED</span>
                 <span>ACTIONS</span>
@@ -50,10 +51,13 @@ export function StockTab({
               {ingredients.map((ing) => {
                 const state = stockStateOf(ing);
                 return (
-                  <div key={ing.id} className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 border-b border-[#F2F2F2] px-6 py-[14px] last:border-0">
+                  <div key={ing.id} className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 border-b border-[#F2F2F2] px-6 py-[14px] last:border-0">
                     <span className="truncate text-[15.3px] font-medium leading-[1.4] text-[#2D2F33]">{ing.name}</span>
                     <span className="whitespace-nowrap text-[12.7px] font-medium leading-[1.4] text-black">
                       {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{ing.unit}</span>
+                    </span>
+                    <span className="whitespace-nowrap text-[12.7px] font-medium leading-[1.4] text-[#026F4F]">
+                      ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{ing.unit}</span>
                     </span>
                     <span><StockPill state={state} /></span>
                     <span className="whitespace-nowrap text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{ing.updatedAgo}</span>

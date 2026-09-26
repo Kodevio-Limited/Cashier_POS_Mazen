@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Search, Check, X, Split, GitMerge, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 
 export interface OrderLine {
   id: string;
@@ -44,6 +45,7 @@ export function CollectPaymentModal({
   const [received, setReceived] = useState('50.00');
   const receivedNum = parseFloat(received) || 0;
   const change = Math.max(0, receivedNum - total);
+  useBodyScrollLock(true);
 
   // Auto-focus the amount field so the tablet numpad keyboard opens immediately.
   const amountRef = useRef<HTMLInputElement>(null);
@@ -53,8 +55,8 @@ export function CollectPaymentModal({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-      <div className="w-[651px] max-w-full rounded-[17px] bg-white px-[32px] pb-[27px] pt-[26px] shadow-2xl">
+    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[651px] max-w-full rounded-[17px] bg-white px-[32px] pb-[27px] pt-[26px] shadow-2xl">
         {/* Title & Close */}
         <div className="flex items-center justify-between">
           <h2 className="text-[23px] font-medium leading-[1.4] text-black">Collect Payment</h2>
@@ -151,10 +153,11 @@ export function SplitBillModal({
   // Distribute the total across N bills, last bill absorbs the cent remainder.
   const perBill = Math.floor((total / ways) * 100) / 100;
   const remainder = Math.round((total - perBill * ways) * 100) / 100;
+  useBodyScrollLock(true);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-      <div className="w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[26px] shadow-2xl">
+    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[26px] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-[23px] font-medium leading-[1.4] text-black">Split Bill</h2>
@@ -250,13 +253,7 @@ export function MergeOrdersModal({
   const [search, setSearch] = useState('');
 
   // Lock background scrolling while the merge modal is open; only the order list scrolls.
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  useBodyScrollLock(true);
 
   const filtered = SAMPLE_RUNNING_ORDERS.filter((o) => {
     const matchFilter = filter === 'All' || o.type === filter;
@@ -267,8 +264,8 @@ export function MergeOrdersModal({
   });
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-      <div className="w-[343px] max-w-full rounded-xl bg-white shadow-2xl flex flex-col justify-between overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="pos-overlay z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[343px] max-w-full rounded-xl bg-white shadow-2xl flex flex-col justify-between overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex flex-col gap-3 border-b border-zinc-200 p-4">
           <div className="flex items-center justify-between">
@@ -421,8 +418,8 @@ export function ConfirmMergeModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-      <div className="w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[56px] shadow-2xl">
+    <div className="pos-overlay z-[70] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[56px] shadow-2xl">
         {/* Graphic */}
         <div className="mx-auto flex h-[229px] w-[229px] items-center justify-center rounded-full bg-[#E6F1ED] text-[#026F4F]">
           <GitMerge size={96} strokeWidth={1.8} />

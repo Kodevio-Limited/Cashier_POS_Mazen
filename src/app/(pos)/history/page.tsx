@@ -498,8 +498,8 @@ function RefundItemsModal({
   const confirmLabel = mode === 'refund' ? 'Confirm Refund' : 'Confirm Cancellation';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs">
-      <div className="my-auto w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
+    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-[23px] font-medium leading-[1.4] text-black">{title}</h2>
@@ -651,8 +651,8 @@ function LogWasteModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-xs">
-      <div className="my-auto w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
+    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="pos-overlay__panel w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">
         <div className="flex items-center justify-between">
           <h2 className="text-[23px] font-medium leading-[1.4] text-black">Log Waste</h2>
           <button onClick={onBack} aria-label="Back" className="text-black transition-colors hover:text-zinc-500">

@@ -55,9 +55,9 @@ export default function InventoryPage() {
   // ── Stock ──
   function handleSaveIngredient(f: IngredientForm, existingId?: string) {
     if (existingId) {
-      setIngredients((prev) => prev.map((i) => (i.id === existingId ? { ...i, name: f.name, qty: f.qty, unit: f.unit, threshold: f.threshold, updatedAgo: 'Just now' } : i)));
+      setIngredients((prev) => prev.map((i) => (i.id === existingId ? { ...i, name: f.name, qty: f.qty, unit: f.unit, threshold: f.threshold, avgPrice: f.avgPrice, updatedAgo: 'Just now' } : i)));
     } else {
-      setIngredients((prev) => [...prev, { id: `ing-${Date.now()}`, name: f.name, qty: f.qty, capacity: Math.max(f.qty, f.threshold), unit: f.unit, threshold: f.threshold, updatedAgo: 'Just now' }]);
+      setIngredients((prev) => [...prev, { id: `ing-${Date.now()}`, name: f.name, qty: f.qty, capacity: Math.max(f.qty, f.threshold), unit: f.unit, threshold: f.threshold, avgPrice: f.avgPrice, updatedAgo: 'Just now' }]);
     }
     setDrawer(null);
   }
@@ -70,7 +70,13 @@ export default function InventoryPage() {
   function handleLogPurchase(f: PurchaseForm) {
     const poId = `PO-${886 + purchases.length}`;
     setPurchases((prev) => [{ id: poId, date: today, ingredient: f.ingredientName, qty: f.qty, unit: ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs', avgCost: f.qty > 0 ? f.totalCost / f.qty : 0, total: f.totalCost, supplier: f.supplier }, ...prev]);
-    setIngredients((prev) => prev.map((i) => (i.name === f.ingredientName ? { ...i, qty: i.qty + f.qty, updatedAgo: 'Just now' } : i)));
+    // Weighted moving average: (old stock value + purchase cost) / new stock.
+    setIngredients((prev) => prev.map((i) => {
+      if (i.name !== f.ingredientName) return i;
+      const newQty = i.qty + f.qty;
+      const avgPrice = newQty > 0 ? (i.qty * i.avgPrice + f.totalCost) / newQty : i.avgPrice;
+      return { ...i, qty: newQty, avgPrice, updatedAgo: 'Just now' };
+    }));
     setDrawer(null);
   }
 

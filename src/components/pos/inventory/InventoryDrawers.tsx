@@ -12,6 +12,7 @@ export interface IngredientForm {
   qty: number;
   unit: string;
   threshold: number;
+  avgPrice: number;
 }
 
 export function AddIngredientDrawer({
@@ -27,6 +28,7 @@ export function AddIngredientDrawer({
   const [qty, setQty] = useState(initial ? String(initial.qty) : '');
   const [unit, setUnit] = useState(initial?.unit ?? UNITS[0]);
   const [threshold, setThreshold] = useState(initial ? String(initial.threshold) : '');
+  const [avgPrice, setAvgPrice] = useState(initial ? String(initial.avgPrice) : '');
 
   return (
     <Drawer
@@ -36,7 +38,7 @@ export function AddIngredientDrawer({
       saveLabel="Save"
       onSave={() => {
         if (!name.trim()) return;
-        onSave({ name: name.trim(), qty: parseFloat(qty) || 0, unit, threshold: parseFloat(threshold) || 0 });
+        onSave({ name: name.trim(), qty: parseFloat(qty) || 0, unit, threshold: parseFloat(threshold) || 0, avgPrice: parseFloat(avgPrice) || 0 });
       }}
     >
       <FormCard title="Basic Info">
@@ -54,9 +56,14 @@ export function AddIngredientDrawer({
             <PillSelect ariaLabel="Unit type" value={unit} onChange={setUnit} options={UNITS} />
           </Field>
         </div>
-        <Field label="Low Stock Threshold">
-          <input value={threshold} onChange={(e) => setThreshold(e.target.value)} inputMode="decimal" placeholder="50" className={pillInputClass} />
-        </Field>
+        <div className="grid grid-cols-2 gap-[17px]">
+          <Field label="Low Stock Threshold">
+            <input value={threshold} onChange={(e) => setThreshold(e.target.value)} inputMode="decimal" placeholder="50" className={pillInputClass} />
+          </Field>
+          <Field label="Average Price ($)">
+            <input value={avgPrice} onChange={(e) => setAvgPrice(e.target.value)} inputMode="decimal" placeholder="1.50" className={pillInputClass} />
+          </Field>
+        </div>
       </FormCard>
     </Drawer>
   );
