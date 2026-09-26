@@ -1,157 +1,49 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { ChevronDown, Check, Clock, DollarSign, CreditCard, Lock, Printer, ShieldCheck } from 'lucide-react';
+// Shift & Cash Drawer Management — close the active shift (Z-Report). Guarded:
+// only reachable while a shift is active; closing it ends the shift session and
+// returns the app to the Start Shift screen.
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Check, Clock, CreditCard, DollarSign, Lock, Printer, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { endShift, getActiveShift, subscribeShift, type ActiveShift } from '@/lib/shift-session';
 
-const CASHIERS = ['Alex m', 'Sarah J', 'Mike T'];
+export default function ShiftClosePage() {
+  const router = useRouter();
+  const [shift, setShift] = useState<ActiveShift | null>(null);
 
-export default function ShiftPage() {
-  const [started, setStarted] = useState(false);
-  const [cashier, setCashier] = useState(CASHIERS[0]);
-  const [pin, setPin] = useState('');
-  const [floatInput, setFloatInput] = useState('$50.00');
-  const [formError, setFormError] = useState('');
-
-  function parseFloatAmount(raw: string): number {
-    const n = parseFloat(raw.replace(/[^0-9.]/g, ''));
-    return Number.isFinite(n) ? n : NaN;
-  }
-
-  function handleStartShift() {
-    if (!pin.trim()) {
-      setFormError('Please enter your PIN code to start the shift.');
+  // Guard: no active shift → back to Start Shift.
+  useEffect(() => {
+    const current = getActiveShift();
+    if (!current) {
+      router.replace('/shift');
       return;
     }
-    const amount = parseFloatAmount(floatInput);
-    if (!Number.isFinite(amount)) {
-      setFormError('Please enter a valid starting cash amount.');
-      return;
-    }
-    setFormError('');
-    setStarted(true);
-  }
+    setShift(current);
+    return subscribeShift(() => {
+      const next = getActiveShift();
+      if (!next) router.replace('/shift');
+      else setShift(next);
+    });
+  }, [router]);
 
-  if (!started) {
-    return <StartShiftScreen cashier={cashier} onCashierChange={setCashier} pin={pin} onPinChange={setPin} floatInput={floatInput} onFloatChange={setFloatInput} formError={formError} onStart={handleStartShift} />;
-  }
+  if (!shift) return null;
 
-  return <ShiftDashboard openingFloat={parseFloatAmount(floatInput) || 0} cashierName={cashier} />;
-}
-
-/* ── Start Shift screen — pixel-matched to Figma (737:746) ─────────────── */
-function StartShiftScreen({
-  cashier,
-  onCashierChange,
-  pin,
-  onPinChange,
-  floatInput,
-  onFloatChange,
-  formError,
-  onStart,
-}: {
-  cashier: string;
-  onCashierChange: (v: string) => void;
-  pin: string;
-  onPinChange: (v: string) => void;
-  floatInput: string;
-  onFloatChange: (v: string) => void;
-  formError: string;
-  onStart: () => void;
-}) {
-  return (
-    <div className="flex min-h-[calc(100vh-38px)] items-center justify-center py-8">
-      <div className="w-[690px] max-w-full rounded-[30px] bg-white px-[56px] pb-[76px] pt-[40px] shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <div className="relative h-[54px] w-[184px]">
-            <Image src="/images/logo-69e842.png" alt="Restaurant logo" fill priority sizes="184px" className="object-contain" />
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="mt-[25px] flex flex-col items-center gap-[14px] text-center">
-          <h1 className="text-[31px] font-semibold leading-[1.4] text-black">Start Shift</h1>
-          <p className="text-[19px] font-normal leading-[1.4] text-[#989898]">Ready for a great day</p>
-        </div>
-
-        {/* Form */}
-        <div className="mt-[66px] flex flex-col gap-[31px]">
-          <div className="flex flex-col gap-[8px]">
-            <label htmlFor="cashier-name" className="text-[15px] font-medium leading-[1.4] text-[#686868]">
-              Cashier Name
-            </label>
-            <div className="relative">
-              <select
-                id="cashier-name"
-                value={cashier}
-                onChange={(e) => onCashierChange(e.target.value)}
-                className="h-[53px] w-full appearance-none rounded-[87px] bg-[#F2F2F2] py-[16px] pl-[16px] pr-[52px] font-satoshi text-[16px] font-medium leading-[1.4] text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
-              >
-                {CASHIERS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={24} className="pointer-events-none absolute right-[16px] top-1/2 -translate-y-1/2 text-[#989898]" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-[8px]">
-            <label htmlFor="pin-code" className="text-[15px] font-medium leading-[1.4] text-[#686868]">
-              Pin Code
-            </label>
-            <input
-              id="pin-code"
-              type="password"
-              inputMode="numeric"
-              value={pin}
-              onChange={(e) => onPinChange(e.target.value)}
-              placeholder="********"
-              className="h-[53px] w-full rounded-[87px] bg-[#F2F2F2] p-[16px] font-satoshi text-[16px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
-            />
-          </div>
-
-          <div className="flex flex-col gap-[8px]">
-            <label htmlFor="starting-float" className="text-[15px] font-medium leading-[1.4] text-[#686868]">
-              Enter Starting Cash (Float)
-            </label>
-            <input
-              id="starting-float"
-              type="text"
-              inputMode="decimal"
-              value={floatInput}
-              onChange={(e) => onFloatChange(e.target.value)}
-              placeholder="$50.00"
-              className="h-[53px] w-full rounded-[87px] bg-[#F2F2F2] p-[16px] font-satoshi text-[16px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
-            />
-          </div>
-        </div>
-
-        {formError && <p className="mt-4 text-center text-sm font-medium text-red-600">{formError}</p>}
-
-        {/* Submit */}
-        <button
-          onClick={onStart}
-          className="mt-[60px] flex h-[59px] w-full items-center justify-center rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99]"
-        >
-          Start Shift
-        </button>
-      </div>
-    </div>
-  );
+  return <ShiftDashboard shift={shift} />;
 }
 
 /* ── Shift dashboard (shown after shift starts) ─────────────────────────── */
-function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; cashierName: string }) {
+function ShiftDashboard({ shift }: { shift: ActiveShift }) {
+  const router = useRouter();
+  const { openingFloat, cashierName, startedAt } = shift;
+
   const [actualCash, setActualCash] = useState('650.50');
   const [paidOutAmount, setPaidOutAmount] = useState('');
   const [paidOutReason, setPaidOutReason] = useState('');
   const [showPaidOutModal, setShowPaidOutModal] = useState(false);
   const [paidOutEntries, setPaidOutEntries] = useState<{ amount: number; reason: string }[]>([]);
-  const [shiftClosed, setShiftClosed] = useState(false);
 
   const cashSales = 480.5;
   const cardSales = 840.2;
@@ -162,7 +54,8 @@ function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; c
 
   function handleCloseShift() {
     if (confirm('Are you sure you want to close the current shift and print the Z-Report?')) {
-      setShiftClosed(true);
+      endShift();
+      router.replace('/shift');
     }
   }
 
@@ -175,13 +68,15 @@ function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; c
     setShowPaidOutModal(false);
   }
 
+  const startedLabel = new Date(startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <div className="flex min-h-[calc(100vh-38px)] flex-col gap-3 pb-20">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E9E9E9] bg-white px-5 py-3.5">
         <div className="min-w-0">
-          <h1 className="text-xl font-medium text-black">Shift & Cash Drawer Management</h1>
-          <p className="text-xs font-normal text-neutral-400">Active Cashier: {cashierName} • Shift started just now</p>
+          <h1 className="text-xl font-medium text-black">Shift &amp; Cash Drawer Management</h1>
+          <p className="text-xs font-normal text-neutral-400">Active Cashier: {cashierName} • Shift started {startedLabel}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -193,14 +88,10 @@ function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; c
           </button>
           <button
             onClick={handleCloseShift}
-            disabled={shiftClosed}
-            className={cn(
-              'flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-white shadow-xs transition-colors',
-              shiftClosed ? 'cursor-not-allowed bg-zinc-400' : 'bg-rose-600 hover:bg-rose-700',
-            )}
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-600 px-4 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-rose-700"
           >
             <Lock size={14} />
-            <span>{shiftClosed ? 'Shift Closed' : 'Close Shift & Print Z-Report'}</span>
+            <span>Close Shift &amp; Print Z-Report</span>
           </button>
         </div>
       </div>
@@ -257,7 +148,7 @@ function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; c
                 <span className="font-medium text-black">${openingFloat.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">(+) Total Cash Sales Received</span>
+                <span className="text-neutral-500">(+ ) Total Cash Sales Received</span>
                 <span className="font-medium text-emerald-700">+${cashSales.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-zinc-100 py-2">
@@ -321,11 +212,10 @@ function ShiftDashboard({ openingFloat, cashierName }: { openingFloat: number; c
 
           <button
             onClick={handleCloseShift}
-            disabled={shiftClosed}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#015c42] disabled:bg-zinc-300"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#015c42]"
           >
             <Check size={18} />
-            <span>{shiftClosed ? 'Shift Closed' : 'Confirm & Close Shift'}</span>
+            <span>Confirm &amp; Close Shift</span>
           </button>
         </div>
       </div>

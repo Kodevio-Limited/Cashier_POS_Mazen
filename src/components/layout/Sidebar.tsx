@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Bell,
+  Wallet,
 } from 'lucide-react';
 import { TableRequestModal } from '@/components/pos/TableRequestModal';
 import {
@@ -24,11 +25,13 @@ import {
   type TableRequest,
 } from '@/lib/table-requests';
 import { getOrders, pendingCount, subscribeOrders } from '@/lib/running-orders';
+import { endShift } from '@/lib/shift-session';
 
 const NAV_ITEMS = [
   { id: 'floor-plan', label: 'Floor Plan', icon: LayoutGrid, href: '/floor-plan' },
   { id: 'order', label: 'Order', icon: ShoppingCart, href: '/order' },
   { id: 'running-order', label: 'Running Order', icon: Clock, href: '/running-order' },
+  { id: 'shift', label: 'Shift', icon: Wallet, href: '/shift-close' },
   { id: 'history', label: 'History', icon: History, href: '/history' },
   { id: 'inventory', label: 'Inventory', icon: Package, href: '/inventory' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
@@ -137,10 +140,16 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Logout */}
+        {/* Logout — ends the active shift and returns to Start Shift */}
         <div className="w-full border-t border-[#F2F2F2] py-3 flex justify-center">
           <button
             title="Log Out"
+            onClick={() => {
+              if (confirm('Log out and close the current shift?')) {
+                endShift();
+                window.location.href = '/shift';
+              }
+            }}
             className="flex h-[50px] w-[50px] items-center justify-center rounded-full text-[#989898] transition-colors hover:bg-[#FFE6E6] hover:text-[#E56767]"
           >
             <LogOut size={24} strokeWidth={1.8} />
