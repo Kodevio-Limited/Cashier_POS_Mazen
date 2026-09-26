@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
+import { clearDraft } from '@/lib/order-draft';
+import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
@@ -64,6 +66,15 @@ export default function FloorPlanPage() {
       ),
     );
     setActiveModalTable(null);
+    startOrder('dine-in', table.name, true);
+  }
+
+  // Persist the table / Take Out / Delivery choice, then open the menu to build
+  // the order. `fresh` clears any previous cart so a new order starts empty.
+  function startOrder(type: OrderType, tableName: string | undefined, fresh: boolean) {
+    if (fresh) clearDraft();
+    saveSession({ orderNumber: newOrderNumber(), type, tableName });
+    router.push('/order');
   }
 
   function clearTable(table: FloorTable) {
@@ -134,14 +145,14 @@ export default function FloorPlanPage() {
 
         <div className="flex flex-wrap items-center gap-[20px]">
           <button
-            onClick={() => router.push('/order')}
+            onClick={() => startOrder('take-out', undefined, true)}
             className="flex h-[51px] items-center gap-[6px] rounded-[56px] border border-[#B9B9B9] bg-white px-[19px] text-[18px] font-normal leading-[1.4] text-[#686868] transition-colors hover:border-[#026F4F] hover:text-[#026F4F]"
           >
             <ShoppingBag size={30} strokeWidth={1.4} className="shrink-0" />
             <span>Take Out</span>
           </button>
           <button
-            onClick={() => router.push('/order')}
+            onClick={() => startOrder('delivery', undefined, true)}
             className="flex h-[51px] items-center gap-[6px] rounded-[56px] border border-[#B9B9B9] bg-white px-[19px] text-[18px] font-normal leading-[1.4] text-[#686868] transition-colors hover:border-[#026F4F] hover:text-[#026F4F]"
           >
             <Bike size={30} strokeWidth={1.4} className="shrink-0" />
@@ -226,7 +237,7 @@ export default function FloorPlanPage() {
               {activeModalTable.status === 'occupied' && (
                 <>
                   <button
-                    onClick={() => router.push('/order')}
+                    onClick={() => startOrder('dine-in', activeModalTable.name, false)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white transition-colors hover:bg-[#015c42]"
                   >
                     <Plus size={16} />

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, clearDraft } from '@/lib/order-draft';
+import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 import {
   CollectPaymentModal,
   SplitBillModal,
@@ -38,10 +39,17 @@ export default function PlaceOrderPage() {
   // items only on a direct visit with no draft. Edits here are saved back so
   // the "<-" back-arrow returns to the Menu with the same items.
   const [items, setItems] = useState<OrderLineItem[]>(() => loadDraft() ?? INITIAL_ITEMS);
+  const [session, setSession] = useState<OrderSession | null>(null);
 
   useEffect(() => {
     saveDraft(items);
   }, [items]);
+
+  useEffect(() => {
+    setSession(loadSession());
+  }, []);
+
+  const orderNumber = session?.orderNumber ?? 'ORD-1025';
 
   // Customer details
   const [phone, setPhone] = useState('+1 (555) 234-5678');
@@ -97,7 +105,14 @@ export default function PlaceOrderPage() {
               <ArrowLeft size={18} />
             </Link>
             <div>
-              <h1 className="font-semibold text-[20px] text-[#2D2F33]">Order #ORD-1025</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-semibold text-[20px] text-[#2D2F33]">Order #{orderNumber}</h1>
+                {session && (
+                  <span className="rounded-full bg-[#026F4F] px-2.5 py-0.5 text-[11px] font-medium text-white">
+                    {sessionLabel(session)}
+                  </span>
+                )}
+              </div>
               <p className="text-[13px] text-[#686868]">Review items and customer details</p>
             </div>
           </div>
@@ -432,7 +447,7 @@ export default function PlaceOrderPage() {
             setShowConfirmMergeModal(true);
           }}
           selectedOrders={selectedMergeOrders}
-          currentOrder={{ id: 'current', label: 'ORD-1025', total, itemsCount: items.length }}
+          currentOrder={{ id: 'current', label: orderNumber, total, itemsCount: items.length }}
           onToggleSelect={(id) => {
             setSelectedMergeOrders((prev) =>
               prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
@@ -467,7 +482,7 @@ export default function PlaceOrderPage() {
 
             <h3 className="font-semibold text-2xl text-[#2D2F33]">Order Placed & Paid!</h3>
             <p className="text-sm text-[#686868]">
-              Order <span className="font-medium text-[#2D2F33]">#ORD-1025</span> has been confirmed and dispatched to kitchen.
+              Order <span className="font-medium text-[#2D2F33]">#{orderNumber}</span> has been confirmed and dispatched to kitchen.
             </p>
 
             <div className="w-full bg-[#F2F2F2] rounded-xl p-4 flex justify-between text-sm text-[#2D2F33] my-2">
@@ -481,8 +496,9 @@ export default function PlaceOrderPage() {
                   window.print();
                   setShowSuccessModal(false);
                   clearDraft();
+                  clearSession();
                   setItems([]);
-                  router.push('/order');
+                  router.push('/floor-plan');
                 }}
                 className="flex-1 h-12 rounded-full border border-[#B9B9B9] bg-white text-[#2D2F33] font-medium text-sm hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2"
               >
@@ -493,8 +509,9 @@ export default function PlaceOrderPage() {
                 onClick={() => {
                   setShowSuccessModal(false);
                   clearDraft();
+                  clearSession();
                   setItems([]);
-                  router.push('/order');
+                  router.push('/floor-plan');
                 }}
                 className="flex-1 h-12 rounded-full bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-sm transition-colors shadow-md"
               >

@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Minus, Plus, X, Trash2, Pencil, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadDraft, saveDraft, newLineId } from '@/lib/order-draft';
+import { loadDraft, saveDraft, newLineId, clearDraft } from '@/lib/order-draft';
+import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -92,12 +93,18 @@ export default function OrderPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [orderItems, setOrderItems] = useState<OrderItem[]>(() => loadDraft() ?? []);
+  const [session, setSession] = useState<OrderSession | null>(null);
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
 
   // Keep the draft in sync so /place-order (and the back-arrow there) sees the same cart.
   useEffect(() => {
     saveDraft(orderItems);
   }, [orderItems]);
+
+  // Load the table / Take Out / Delivery selection made on the Floor Plan.
+  useEffect(() => {
+    setSession(loadSession());
+  }, []);
 
   // Filter menu items
   const filtered = MENU_ITEMS.filter((item) => {
@@ -147,8 +154,13 @@ export default function OrderPage() {
     setOrderItems((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function clearOrder() {
+  // Cancel the whole order: wipe the cart + table selection and return to the
+  // Floor Plan, which is the first screen of the order flow.
+  function cancelOrder() {
+    clearDraft();
+    clearSession();
     setOrderItems([]);
+    router.push('/floor-plan');
   }
 
   // Calculations
@@ -223,18 +235,31 @@ export default function OrderPage() {
       {/* ── Right Panel: Current Order (Side Modal - Always visible) ── */}
       <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-md:absolute max-md:inset-y-3 max-md:right-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
           {/* Header */}
-          <div className="px-3 pt-3 pb-2.5 flex justify-between items-center border-b border-zinc-400/40">
-            <div className="flex items-center gap-1.5">
-              <span className="text-black text-lg font-medium font-['Inter'] leading-7">Current Order</span>
-              <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">({itemCount})</span>
+          <div className="px-3 pt-3 pb-2.5 border-b border-zinc-400/40">
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-black text-lg font-medium font-['Inter'] leading-7">Current Order</span>
+                <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">({itemCount})</span>
+              </div>
+              <button
+                onClick={cancelOrder}
+                title="Cancel order"
+                className="shrink-0 h-9 px-3 bg-red-500 hover:bg-red-600 rounded-lg flex items-center gap-1.5 text-white text-[13px] font-medium font-['Inter'] transition-colors"
+              >
+                <Trash2 size={15} strokeWidth={2.2} />
+                Cancel Order
+              </button>
             </div>
-            <button
-              onClick={clearOrder}
-              title="Clear order"
-              className="size-10 bg-red-400 hover:bg-red-500 rounded-lg flex items-center justify-center text-white transition-colors"
-            >
-              <Trash2 size={18} strokeWidth={2} />
-            </button>
+
+            {/* Order number + table / Take Out / Delivery — always visible */}
+            {session && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-[#2D2F33] font-['Inter']">{session.orderNumber}</span>
+                <span className="rounded-full bg-[#026F4F] px-2.5 py-0.5 text-[11px] font-medium text-white">
+                  {sessionLabel(session)}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Items List */}
