@@ -107,7 +107,7 @@ export function Sidebar() {
         <div className="mt-2 h-px w-full bg-[#E9E9E9]" />
 
         {/* Nav */}
-        <nav className="flex flex-1 flex-col items-center justify-start gap-3 overflow-hidden py-3">
+        <nav className="flex w-full flex-1 flex-col items-center justify-start gap-3 overflow-hidden px-2 py-3">
           {NAV_ITEMS.map((item) => {
             const active =
               pathname === item.href ||
