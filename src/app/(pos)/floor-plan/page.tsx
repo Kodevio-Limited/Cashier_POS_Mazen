@@ -193,7 +193,15 @@ export default function FloorPlanPage() {
             bill={table.status === 'occupied' && table.orderTotal ? `$${table.orderTotal.toFixed(2)}` : undefined}
             time={table.status === 'occupied' ? table.timeSeated : undefined}
             requests={requestsForTable(table.name)}
-            onClick={() => setActiveModalTable(table)}
+            onClick={() => {
+              // Available tables skip the modal entirely: seat guests and open
+              // the menu immediately. Reserved/occupied tables keep the modal.
+              if (table.status === 'available') {
+                seatTable(table);
+              } else {
+                setActiveModalTable(table);
+              }
+            }}
           />
         ))}
         {filteredTables.length === 0 && (
