@@ -153,16 +153,17 @@ export default function RunningOrderPage() {
                         <span className="text-[12px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
                       </div>
                       {order.status === 'Placed' && (
-                        <div className="flex items-center gap-[11px]">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               removeOrder(order.id);
                             }}
                             aria-label="Reject order"
-                            className="flex h-[39px] w-[39px] items-center justify-center rounded-[6px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
+                            className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-[10px] bg-[#E85E5E] px-2.5 text-[11.5px] font-medium text-white transition-colors hover:bg-[#d94a4a]"
                           >
-                            <X size={18} strokeWidth={2.5} />
+                            <X size={14} strokeWidth={2.5} />
+                            <span>Reject</span>
                           </button>
                           <button
                             onClick={(e) => {
@@ -170,22 +171,36 @@ export default function RunningOrderPage() {
                               updateOrderStatus(order.id, 'Preparing');
                             }}
                             aria-label="Accept order"
-                            className="flex h-[39px] w-[39px] items-center justify-center rounded-[6px] bg-[#64C864] text-white transition-colors hover:bg-[#4fb84f]"
+                            className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-[10px] bg-[#64C864] px-2.5 text-[11.5px] font-medium text-white transition-colors hover:bg-[#4fb84f]"
                           >
-                            <Check size={18} strokeWidth={3} />
+                            <Check size={14} strokeWidth={2.8} />
+                            <span>Accept</span>
                           </button>
                         </div>
                       )}
                       {order.status === 'Preparing' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateOrderStatus(order.id, 'Ready');
-                          }}
-                          className="rounded-full bg-[#F97316] px-4 py-2 text-xs font-medium text-white shadow-xs transition-all hover:bg-[#ea690b] active:scale-95"
-                        >
-                          Mark Ready
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeOrder(order.id);
+                            }}
+                            aria-label="Reject order"
+                            className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-[10px] bg-[#E85E5E] px-2.5 text-[11.5px] font-medium text-white transition-colors hover:bg-[#d94a4a]"
+                          >
+                            <X size={14} strokeWidth={2.5} />
+                            <span>Reject</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order.id, 'Ready');
+                            }}
+                            className="h-9 shrink-0 rounded-[62px] bg-[#F97316] px-3.5 text-[12px] font-medium text-white transition-all hover:bg-[#ea690b] active:scale-95"
+                          >
+                            Mark Ready
+                          </button>
+                        </div>
                       )}
                       {order.status === 'Ready' && (
                         <button
