@@ -1,8 +1,13 @@
 'use client';
 
-import { Clock } from 'lucide-react';
+import { Bell, CheckCircle2, Clock } from 'lucide-react';
 
 export type FloorTableStatus = 'occupied' | 'available' | 'reserved';
+
+export interface TableRequestBadge {
+  type: 'Waiter Requested' | 'Check Requested';
+  paymentMethod?: 'Card' | 'Cash';
+}
 
 const STATUS: Record<FloorTableStatus, { label: string; body: string; badge: string }> = {
   occupied: { label: 'OCCUPIED', body: '#F9EFA8', badge: '#E8AD0D' },
@@ -17,6 +22,7 @@ interface FloorTableCardProps {
   itemsCount?: number;
   bill?: string;
   time?: string;
+  requests?: TableRequestBadge[];
   onClick?: () => void;
 }
 
@@ -24,9 +30,11 @@ interface FloorTableCardProps {
  * Rail-style table card, pixel-matched to Figma Floor Plan (1759:345).
  * Natural size 256 x 198. Status colors: yellow = occupied, green = available, blue = reserved.
  */
-export function FloorTableCard({ name, zone, status, itemsCount, bill, time, onClick }: FloorTableCardProps) {
+export function FloorTableCard({ name, zone, status, itemsCount, bill, time, requests, onClick }: FloorTableCardProps) {
   const { label, body, badge } = STATUS[status];
   const rail = { backgroundColor: body };
+  const waiterCount = (requests ?? []).filter((r) => r.type === 'Waiter Requested').length;
+  const checkCount = (requests ?? []).filter((r) => r.type === 'Check Requested').length;
 
   return (
     <div
@@ -38,6 +46,24 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, onC
       }}
       className="relative h-[198px] w-[256px] shrink-0 cursor-pointer transition-transform duration-200 hover:-translate-y-1"
     >
+      {/* Active table requests (waiter / check) */}
+      {requests && requests.length > 0 && (
+        <div className="absolute -right-1 -top-3 z-10 flex flex-col items-end gap-1">
+          {waiterCount > 0 && (
+            <span className="flex items-center gap-1 rounded-full bg-fuchsia-600 px-2 py-1 text-[10px] font-semibold text-white shadow-md">
+              <Bell size={12} strokeWidth={2.4} />
+              <span>{waiterCount > 1 ? `${waiterCount} ` : ''}Waiter</span>
+            </span>
+          )}
+          {checkCount > 0 && (
+            <span className="flex items-center gap-1 rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white shadow-md">
+              <CheckCircle2 size={12} strokeWidth={2.4} />
+              <span>{checkCount > 1 ? `${checkCount} ` : ''}Check</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Top / bottom rails */}
       <div className="absolute left-[63px] top-0 h-[13px] w-[130px] rounded-full border border-[#B9B9B9]" style={rail} />
       <div className="absolute bottom-0 left-[63px] h-[13px] w-[130px] rounded-full border border-[#B9B9B9]" style={rail} />

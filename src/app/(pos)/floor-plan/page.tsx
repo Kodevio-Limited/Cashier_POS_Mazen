@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike } from 'lucide-react';
+import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
 import { clearDraft } from '@/lib/order-draft';
 import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
+import { getRequests, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
@@ -51,6 +52,15 @@ export default function FloorPlanPage() {
   const [activeModalTable, setActiveModalTable] = useState<FloorTable | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [targetTransferTable, setTargetTransferTable] = useState('');
+  const [requests, setRequests] = useState<TableRequest[]>([]);
+
+  // Live table requests (waiter / check) surfaced on each table card.
+  useEffect(() => {
+    setRequests(getRequests());
+    return subscribeRequests(() => setRequests(getRequests()));
+  }, []);
+
+  const requestsForTable = (name: string) => requests.filter((r) => r.table === name);
 
   const filteredTables = useMemo(
     () => tables.filter((t) => zoneFilter === 'All' || t.zone === zoneFilter),
@@ -172,6 +182,7 @@ export default function FloorPlanPage() {
             itemsCount={table.status === 'occupied' ? table.itemsCount : undefined}
             bill={table.status === 'occupied' && table.orderTotal ? `$${table.orderTotal.toFixed(2)}` : undefined}
             time={table.status === 'occupied' ? table.timeSeated : undefined}
+            requests={requestsForTable(table.name)}
             onClick={() => setActiveModalTable(table)}
           />
         ))}
@@ -221,6 +232,27 @@ export default function FloorPlanPage() {
               {activeModalTable.status === 'available' && (
                 <p className="text-xs text-neutral-500">This table is free. Seat guests to start a new order.</p>
               )}
+
+              {/* Live requests for this table */}
+              {requestsForTable(activeModalTable.name).map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-3 text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-[#2D2F33]">
+                    {req.type === 'Waiter Requested' ? (
+                      <Bell size={13} className="text-fuchsia-600" />
+                    ) : (
+                      <CheckCircle2 size={13} className="text-blue-600" />
+                    )}
+                    {req.type}
+                    {req.paymentMethod ? ` (${req.paymentMethod})` : ''}
+                  </span>
+                  <button
+                    onClick={() => handleRequest(req.id)}
+                    className="shrink-0 rounded-full bg-orange-500 px-3 py-1 text-[11px] font-medium text-white transition-colors hover:bg-orange-600"
+                  >
+                    Handled
+                  </button>
+                </div>
+              ))}
             </div>
 
             <div className="flex flex-col gap-2 pt-1">

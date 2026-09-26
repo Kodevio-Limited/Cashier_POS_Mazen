@@ -13,7 +13,7 @@ const SIMULATE_TABLE_REQUESTS = true;
 export default function PosLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!SIMULATE_TABLE_REQUESTS) return;
-    const tables = ['Table 2', 'Table 5', 'Table 7', 'Table 11', 'Table 14'];
+    const tables = ['Table A02', 'Table A05', 'Table A07', 'Table B01', 'Table C01'];
     const tick = () => {
       addRequest({
         table: tables[Math.floor(Math.random() * tables.length)],

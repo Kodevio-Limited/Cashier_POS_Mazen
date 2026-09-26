@@ -16,9 +16,9 @@ const KEY = 'pos-table-requests';
 const EVT = 'pos-table-requests-changed';
 
 export const INITIAL_TABLE_REQUESTS: TableRequest[] = [
-  { id: 'tr1', table: 'Table 9', timeAgo: '33 min ago', type: 'Waiter Requested', createdAt: Date.now() - 33 * 60_000 },
-  { id: 'tr2', table: 'Table 9', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Card', createdAt: Date.now() - 33 * 60_000 },
-  { id: 'tr3', table: 'Table 9', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Cash', createdAt: Date.now() - 33 * 60_000 },
+  { id: 'tr1', table: 'Table A05', timeAgo: '33 min ago', type: 'Waiter Requested', createdAt: Date.now() - 33 * 60_000 },
+  { id: 'tr2', table: 'Table A02', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Card', createdAt: Date.now() - 33 * 60_000 },
+  { id: 'tr3', table: 'Table A07', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Cash', createdAt: Date.now() - 33 * 60_000 },
 ];
 
 function emit() {
