@@ -44,7 +44,9 @@ export function recipeAvailable(recipe: Recipe, ingredients: Ingredient[]): bool
   return recipe.maps.every((m) => {
     if (m.missing) return false;
     const ing = ingredients.find((i) => i.id === m.ingredientId);
-    return !!ing && ing.qty >= m.qty;
+    if (!ing) return false;
+    // Compare in the ingredient's stock unit (e.g. 500 g against 1 kg stock).
+    return ing.qty >= convertQty(m.qty, m.unit, ing.unit);
   });
 }
 
@@ -209,3 +211,25 @@ export const VARIANCE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
 export const UNITS = ['pcs', 'kg', 'L', 'g', 'ml', 'box'];
 export const LOCATIONS = ['Downtown (Main)', 'Uptown', 'Warehouse'];
+
+// ─── Compatible sub-units ────────────────────────────────────────────────────
+// A recipe can measure an ingredient in a sub-unit of its stock unit:
+// grams alongside kilograms, millilitres alongside litres.
+
+const UNIT_FACTOR: Record<string, number> = { kg: 1000, g: 1, L: 1000, ml: 1, pcs: 1, box: 1 };
+
+/** Units the cashier may pick for an ingredient stocked in `stockUnit`. */
+export function compatibleUnits(stockUnit: string): string[] {
+  if (stockUnit === 'kg' || stockUnit === 'g') return ['kg', 'g'];
+  if (stockUnit === 'L' || stockUnit === 'ml') return ['L', 'ml'];
+  return [stockUnit];
+}
+
+/** Convert `qty` from one compatible unit to another (identity if incompatible). */
+export function convertQty(qty: number, from: string, to: string): number {
+  if (from === to) return qty;
+  if (!compatibleUnits(from).includes(to)) return qty;
+  const f = UNIT_FACTOR[from] ?? 1;
+  const t = UNIT_FACTOR[to] ?? 1;
+  return (qty * f) / t;
+}

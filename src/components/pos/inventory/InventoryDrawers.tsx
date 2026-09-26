@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UNITS, LOCATIONS, type Ingredient, type RecipeMap } from './types';
+import { UNITS, LOCATIONS, compatibleUnits, convertQty, type Ingredient, type RecipeMap } from './types';
 import { Drawer, FormCard, Field, PillSelect, pillInputClass } from './InventoryShell';
 
 // ─── ADD / EDIT INGREDIENT (Figma 1148:3330) ─────────────────────────────────
@@ -130,6 +130,7 @@ interface MapRow {
   key: number;
   ingredientName: string;
   qty: string;
+  unit: string;
 }
 
 export function RecipeMappingDrawer({
@@ -146,15 +147,42 @@ export function RecipeMappingDrawer({
   onSave: (maps: RecipeMap[]) => void;
 }) {
   const nameOf = (id: string) => ingredients.find((i) => i.id === id)?.name ?? '';
-  const [rows, setRows] = useState<MapRow[]>(
-    initialMaps.length > 0
-      ? initialMaps.map((m, i) => ({ key: i, ingredientName: nameOf(m.ingredientId), qty: String(m.qty) }))
-      : [{ key: 0, ingredientName: ingredients[0]?.name ?? '', qty: '1' }],
-  );
+  const stockUnitOf = (name: string) => ingredients.find((i) => i.name === name)?.unit ?? 'pcs';
+  const [rows, setRows] = useState<MapRow[]>(() => {
+    if (initialMaps.length > 0) {
+      return initialMaps.map((m, i) => {
+        const ing = ingredients.find((x) => x.id === m.ingredientId);
+        const stockUnit = ing?.unit ?? 'pcs';
+        const unit = compatibleUnits(stockUnit).includes(m.unit) ? m.unit : stockUnit;
+        return { key: i, ingredientName: nameOf(m.ingredientId), qty: String(m.qty), unit };
+      });
+    }
+    const first = ingredients[0];
+    return [{ key: 0, ingredientName: first?.name ?? '', qty: '1', unit: first?.unit ?? 'pcs' }];
+  });
+
+  function setRowUnit(row: MapRow, unit: string) {
+    setRows((prev) =>
+      prev.map((r) => {
+        if (r.key !== row.key) return r;
+        const qtyNum = parseFloat(r.qty);
+        const converted = Number.isFinite(qtyNum) ? convertQty(qtyNum, r.unit, unit) : NaN;
+        return {
+          ...r,
+          unit,
+          qty: Number.isFinite(converted) ? String(Math.round(converted * 1000) / 1000) : r.qty,
+        };
+      }),
+    );
+  }
 
   function rowBad(row: MapRow): boolean {
     const ing = ingredients.find((i) => i.name === row.ingredientName);
-    return !ing || ing.qty <= 0;
+    if (!ing) return true;
+    const qtyNum = parseFloat(row.qty) || 0;
+    if (ing.qty <= 0) return true;
+    // Compare in the ingredient's stock unit (e.g. 500 g against 1 kg stock).
+    return convertQty(qtyNum, row.unit, ing.unit) > ing.qty;
   }
 
   return (
@@ -171,7 +199,7 @@ export function RecipeMappingDrawer({
             return {
               ingredientId: ing?.id ?? '',
               qty: parseFloat(r.qty) || 0,
-              unit: ing?.unit ?? 'pcs',
+              unit: r.unit,
               missing: !ing || ing.qty <= 0,
             };
           });
@@ -184,7 +212,10 @@ export function RecipeMappingDrawer({
         <div className="mb-[10px] flex items-center justify-between">
           <p className="text-[12.7px] font-medium leading-[1.4] text-[#2D2F33]">Ingredients</p>
           <button
-            onClick={() => setRows((prev) => [...prev, { key: Date.now(), ingredientName: ingredients[0]?.name ?? '', qty: '1' }])}
+            onClick={() => {
+              const first = ingredients[0];
+              setRows((prev) => [...prev, { key: Date.now(), ingredientName: first?.name ?? '', qty: '1', unit: first?.unit ?? 'pcs' }]);
+            }}
             className="flex items-center gap-1 text-[10.7px] font-medium leading-[1.4] text-[#026F4F]"
           >
             <span className="text-[12.7px]">+</span> Add Row
@@ -194,17 +225,22 @@ export function RecipeMappingDrawer({
           {rows.map((row) => {
             const bad = rowBad(row);
             const ing = ingredients.find((i) => i.name === row.ingredientName);
+            const units = compatibleUnits(ing?.unit ?? 'pcs');
             return (
               <div key={row.key} className="flex items-center gap-[8px]">
                 <div className="min-w-0 flex-1">
                   <PillSelect
                     ariaLabel="Ingredient"
                     value={row.ingredientName}
-                    onChange={(v) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ingredientName: v } : r)))}
+                    onChange={(v) =>
+                      setRows((prev) =>
+                        prev.map((r) => (r.key === row.key ? { ...r, ingredientName: v, unit: stockUnitOf(v) } : r)),
+                      )
+                    }
                     options={ingredients.map((i) => i.name)}
                   />
                 </div>
-                <div className="flex items-center gap-[9px]">
+                <div className="flex items-center gap-[6px]">
                   <input
                     value={row.qty}
                     onChange={(e) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, qty: e.target.value } : r)))}
@@ -212,7 +248,22 @@ export function RecipeMappingDrawer({
                     aria-label="Quantity"
                     className={cn('h-[35px] w-[36px] rounded-[58px] px-1 text-center font-satoshi text-[10.7px] font-medium text-[#989898] outline-none focus:ring-2 focus:ring-[#026F4F]', bad ? 'bg-[#FFE6E6]' : 'bg-[#F2F2F2]')}
                   />
-                  <span className="w-[28px] text-[8.7px] font-medium leading-[1.4] text-[#989898]">{ing?.unit ?? 'pcs'}</span>
+                  {units.length > 1 ? (
+                    <select
+                      value={row.unit}
+                      onChange={(e) => setRowUnit(row, e.target.value)}
+                      aria-label="Unit"
+                      className="h-[35px] shrink-0 cursor-pointer rounded-[58px] bg-[#F2F2F2] px-1 text-center font-satoshi text-[10.7px] font-medium text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
+                    >
+                      {units.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="w-[28px] text-[8.7px] font-medium leading-[1.4] text-[#989898]">{row.unit}</span>
+                  )}
                 </div>
                 <button
                   onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
