@@ -50,8 +50,6 @@ export default function InventoryPage() {
   const [waste, setWaste] = useState<WasteEntry[]>(INITIAL_WASTE);
   const [drawer, setDrawer] = useState<DrawerState>(null);
 
-  const today = 'Jul 28, 2026';
-
   // ── Stock ──
   function handleSaveIngredient(f: IngredientForm, existingId?: string) {
     if (existingId) {
@@ -69,7 +67,7 @@ export default function InventoryPage() {
   // ── Purchases ──
   function handleLogPurchase(f: PurchaseForm) {
     const poId = `PO-${886 + purchases.length}`;
-    setPurchases((prev) => [{ id: poId, date: today, ingredient: f.ingredientName, qty: f.qty, unit: ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs', avgCost: f.qty > 0 ? f.totalCost / f.qty : 0, total: f.totalCost, supplier: f.supplier }, ...prev]);
+    setPurchases((prev) => [{ id: poId, date: f.date, ingredient: f.ingredientName, qty: f.qty, unit: ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs', avgCost: f.qty > 0 ? f.totalCost / f.qty : 0, total: f.totalCost, supplier: f.supplier }, ...prev]);
     // Weighted moving average: (old stock value + purchase cost) / new stock.
     setIngredients((prev) => prev.map((i) => {
       if (i.name !== f.ingredientName) return i;
@@ -90,7 +88,7 @@ export default function InventoryPage() {
   function handleSaveTransfer(f: TransferForm) {
     const trId = `TR-${886 + transfers.length}`;
     const unit = ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs';
-    setTransfers((prev) => [{ id: trId, date: today, ingredient: f.ingredientName, qty: f.qty, unit, from: f.from, to: f.to, status: 'COMPLETED' }, ...prev]);
+    setTransfers((prev) => [{ id: trId, date: f.date, ingredient: f.ingredientName, qty: f.qty, unit, from: f.from, to: f.to, status: 'COMPLETED' }, ...prev]);
     setDrawer(null);
   }
 

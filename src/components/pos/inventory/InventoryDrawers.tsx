@@ -6,6 +6,19 @@ import { cn } from '@/lib/utils';
 import { UNITS, LOCATIONS, compatibleUnits, convertQty, type Ingredient, type RecipeMap } from './types';
 import { Drawer, FormCard, Field, PillSelect, pillInputClass } from './InventoryShell';
 
+function todayISO(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+function formatDisplayDate(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 // ─── ADD / EDIT INGREDIENT (Figma 1148:3330) ─────────────────────────────────
 export interface IngredientForm {
   name: string;
@@ -75,6 +88,7 @@ export interface PurchaseForm {
   qty: number;
   totalCost: number;
   supplier: string;
+  date: string;
 }
 
 export function LogPurchaseDrawer({
@@ -90,6 +104,7 @@ export function LogPurchaseDrawer({
   const [qty, setQty] = useState('');
   const [totalCost, setTotalCost] = useState('');
   const [supplier, setSupplier] = useState('');
+  const [date, setDate] = useState(todayISO());
 
   return (
     <Drawer
@@ -99,10 +114,13 @@ export function LogPurchaseDrawer({
       saveLabel="Log Purchase"
       onSave={() => {
         if (!ingredientName || !qty) return;
-        onSave({ ingredientName, qty: parseFloat(qty) || 0, totalCost: parseFloat(totalCost) || 0, supplier: supplier.trim() || 'General Supplier' });
+        onSave({ ingredientName, qty: parseFloat(qty) || 0, totalCost: parseFloat(totalCost) || 0, supplier: supplier.trim() || 'General Supplier', date: formatDisplayDate(date) });
       }}
     >
       <FormCard>
+        <Field label="Date">
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={pillInputClass} />
+        </Field>
         <Field label="Ingredient Name">
           <PillSelect ariaLabel="Ingredient" value={ingredientName} onChange={setIngredientName} options={ingredients.map((i) => i.name)} />
         </Field>
@@ -290,6 +308,7 @@ export interface TransferForm {
   qty: number;
   from: string;
   to: string;
+  date: string;
 }
 
 export function TransferStockDrawer({
@@ -305,6 +324,7 @@ export function TransferStockDrawer({
   const [qty, setQty] = useState('');
   const [from, setFrom] = useState(LOCATIONS[1]);
   const [to, setTo] = useState(LOCATIONS[0]);
+  const [date, setDate] = useState(todayISO());
 
   return (
     <Drawer
@@ -314,10 +334,13 @@ export function TransferStockDrawer({
       saveLabel="Save"
       onSave={() => {
         if (!ingredientName || !qty || from === to) return;
-        onSave({ ingredientName, qty: parseFloat(qty) || 0, from, to });
+        onSave({ ingredientName, qty: parseFloat(qty) || 0, from, to, date: formatDisplayDate(date) });
       }}
     >
       <FormCard>
+        <Field label="Date">
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={pillInputClass} />
+        </Field>
         <Field label="Ingredient Name">
           <PillSelect ariaLabel="Ingredient" value={ingredientName} onChange={setIngredientName} options={ingredients.map((i) => i.name)} />
         </Field>
