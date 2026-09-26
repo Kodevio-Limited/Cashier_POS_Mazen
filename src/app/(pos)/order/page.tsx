@@ -108,32 +108,25 @@ export default function OrderPage() {
 
   // Clicking a product adds it straight to the Current Order, except items
   // with a Required selection (options) which open the customize modal first.
+  // Every click adds a NEW line (even for the same menu item) so the cashier can
+  // give each copy its own customization; identical configs are only merged by
+  // the customize modal's explicit save.
   function handleProductClick(item: MenuItem) {
     if (item.options && item.options.length > 0) {
       setCustomizingItem({ item });
       return;
     }
-    setOrderItems((prev) => {
-      // Merge only into a line with the exact same configuration (a quick add
-      // is always plain). A Classic Burger with extra mayo must not absorb a
-      // second Classic Burger with different customizations (Bug-10).
-      const plainKey = orderLineKey({ id: item.id });
-      const existingIdx = prev.findIndex((o) => orderLineKey(o) === plainKey);
-      if (existingIdx >= 0) {
-        return prev.map((o, i) => (i === existingIdx ? { ...o, qty: o.qty + 1 } : o));
-      }
-      return [
-        ...prev,
-        {
-          id: item.id,
-          lineId: newLineId(),
-          name: item.name,
-          price: item.price,
-          qty: 1,
-          emoji: item.emoji,
-        },
-      ];
-    });
+    setOrderItems((prev) => [
+      ...prev,
+      {
+        id: item.id,
+        lineId: newLineId(),
+        name: item.name,
+        price: item.price,
+        qty: 1,
+        emoji: item.emoji,
+      },
+    ]);
   }
 
   // Order actions
