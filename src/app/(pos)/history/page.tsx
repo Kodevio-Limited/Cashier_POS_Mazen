@@ -247,7 +247,7 @@ export default function OrderHistoryPage() {
               <p>No past orders for this filter.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-[9px] sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredOrders.map((order) => {
                 const isSelected = order.id === selectedOrderId;
                 return (
@@ -255,63 +255,33 @@ export default function OrderHistoryPage() {
                     key={order.id}
                     onClick={() => setSelectedOrderId(order.id)}
                     className={cn(
-                      'relative flex h-[326px] min-w-0 cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white p-[14px] transition-all hover:shadow-md',
-                      isSelected ? 'ring-2 ring-[#026F4F]/30' : '',
+                      'flex min-w-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl bg-white px-3 py-2.5 transition-all hover:shadow-md',
+                      isSelected ? 'ring-2 ring-[#026F4F]/40' : '',
                     )}
                   >
-                    {/* Header: name + pay pill + order no */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex min-w-0 items-center gap-[9px]">
-                        <span className="truncate text-[16.8px] font-medium leading-[1.4] text-black">{order.customerName}</span>
-                        <span className={cn('shrink-0 rounded-[19.7px] px-[5px] py-[3px] text-[8px] font-normal leading-[1.4]', PAY_PILL[order.payState])}>
-                          {order.payState}
+                    {/* Order no + table/time */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[14px] font-semibold leading-[1.3] text-[#2D2F33]">{order.orderNumber}</span>
+                        <span className="flex shrink-0 items-center gap-1 text-[11px] font-normal leading-[1.3] text-[#989898]">
+                          <UtensilsCrossed size={12} strokeWidth={1.8} />
+                          <span className="truncate">{order.table}</span>
                         </span>
                       </div>
-                      <span className="shrink-0 text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.orderNumber}</span>
+                      <span className="flex items-center gap-1 text-[11px] font-normal leading-[1.3] text-[#989898]">
+                        <Clock size={12} strokeWidth={1.8} />
+                        <span className="truncate">{order.date}</span>
+                      </span>
                     </div>
 
-                    {/* Meta */}
-                    <div className="mt-[9px] flex flex-col gap-[8px]">
-                      <div className="flex items-center gap-[6px]">
-                        <Clock size={15.6} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.date}</span>
-                      </div>
-                      <div className="flex items-center gap-[6px]">
-                        <UtensilsCrossed size={15.6} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.table}</span>
-                      </div>
-                    </div>
-
-                    {/* Items */}
-                    <div className="mt-[15px] flex flex-col">
-                      {order.items.slice(0, 2).map((item, idx) => (
-                        <div key={idx} className="flex items-end justify-between gap-3 py-[14px] first:pt-0">
-                          <div className="flex items-center gap-[12px]">
-                            <div className="flex h-[56px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-[#F2F2F2] text-2xl">
-                              {item.emoji}
-                            </div>
-                            <div className="flex min-w-0 flex-col gap-[7px]">
-                              <span className="truncate text-[11.4px] font-medium leading-[1.4] text-[#2D2F33]">{item.name}</span>
-                              <span className="truncate text-[8px] font-normal leading-[1.4] text-[#989898]">&ldquo;{item.modifier || 'Standard'}&rdquo;</span>
-                              <span className="text-[10.8px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
-                            </div>
-                          </div>
-                          <span className="shrink-0 text-[8px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Footer: status badge + totals */}
-                    <div className="mt-auto flex items-end justify-between">
-                      <span className={cn('flex h-[23px] items-center justify-center rounded-[29px] px-[7px] text-[11px] font-normal leading-[1.4]', FOOTER_BADGE[order.footerState])}>
+                    {/* Pay status + completed/cancelled */}
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium leading-[1.4]', PAY_PILL[order.payState])}>
+                        {order.payState}
+                      </span>
+                      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium leading-[1.4]', FOOTER_BADGE[order.footerState])}>
                         {order.footerState}
                       </span>
-                      <div className="flex flex-col items-end gap-[8px]">
-                        <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">
-                          +{Math.max(0, order.items.length - 2)} Items
-                        </span>
-                        <span className="text-[15px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
-                      </div>
                     </div>
                   </div>
                 );
