@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
 import { clearDraft } from '@/lib/order-draft';
 import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
-import { getRequests, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
+import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
@@ -95,6 +95,16 @@ export default function FloorPlanPage() {
           : t,
       ),
     );
+    setActiveModalTable(null);
+  }
+
+  // Print Bill / Request Check: raise a check request for this table so it
+  // surfaces on the table card + the sidebar request list.
+  function requestCheck(table: FloorTable) {
+    const alreadyRequested = requestsForTable(table.name).some((r) => r.type === 'Check Requested');
+    if (!alreadyRequested) {
+      addRequest({ table: table.name, type: 'Check Requested' });
+    }
     setActiveModalTable(null);
   }
 
@@ -283,7 +293,7 @@ export default function FloorPlanPage() {
                     <span>Transfer Table</span>
                   </button>
                   <button
-                    onClick={() => clearTable(activeModalTable)}
+                    onClick={() => requestCheck(activeModalTable)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 text-sm font-medium text-white transition-colors hover:bg-amber-600"
                   >
                     <Receipt size={16} />
