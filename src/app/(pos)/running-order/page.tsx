@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, Calendar, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Bell, CheckCircle2, Printer } from 'lucide-react';
+import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,14 +31,6 @@ interface RunningOrder {
   subtotal: number;
   serviceCharge: number;
   total: number;
-}
-
-interface TableRequestItem {
-  id: string;
-  table: string;
-  timeAgo: string;
-  type: 'Waiter Requested' | 'Check Requested';
-  paymentMethod?: 'Card' | 'Cash';
 }
 
 const STATUS_STEPS: { key: OrderStatus; label: string; icon: typeof Clock }[] = [
@@ -109,19 +101,10 @@ const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
   },
 ];
 
-const INITIAL_TABLE_REQUESTS: TableRequestItem[] = [
-  { id: 'tr1', table: 'Table 9', timeAgo: '33 min ago', type: 'Waiter Requested' },
-  { id: 'tr2', table: 'Table 9', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Card' },
-  { id: 'tr3', table: 'Table 9', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Cash' },
-];
-
 export default function RunningOrderPage() {
   const [orders, setOrders] = useState<RunningOrder[]>(INITIAL_RUNNING_ORDERS);
-  const [requests, setRequests] = useState<TableRequestItem[]>(INITIAL_TABLE_REQUESTS);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
-  const [showTableRequestModal, setShowTableRequestModal] = useState<boolean>(false);
-
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
   const filteredOrders = orders.filter((o) => {
@@ -144,14 +127,6 @@ export default function RunningOrderPage() {
     updateOrderStatus(order.id, next[order.status]);
   }
 
-  function handleDismissAllRequests() {
-    setRequests([]);
-  }
-
-  function handleRequestHandled(id: string) {
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-  }
-
   return (
     <div className="flex min-h-[calc(100vh-38px)] gap-3 bg-[#F2F2F2] relative">
       {/* ── Left: Running Orders workspace ─────────────────────────────── */}
@@ -162,18 +137,6 @@ export default function RunningOrderPage() {
             <h1 className="text-[19px] font-medium leading-[1.4] text-black">Running Orders</h1>
             <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">Live order tracking & actions</p>
           </div>
-          <button
-            onClick={() => setShowTableRequestModal(true)}
-            className="flex items-center gap-2 rounded-full border border-[#E9E9E9] bg-white px-4 py-1.5 text-xs font-medium text-stone-500 shadow-xs transition-all hover:border-[#026F4F]"
-          >
-            <Bell size={14} className="text-[#026F4F]" />
-            <span>Table Request</span>
-            {requests.length > 0 && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[11px] font-medium text-white">
-                {requests.length}
-              </span>
-            )}
-          </button>
         </div>
 
         {/* Filter pills */}
@@ -469,96 +432,6 @@ export default function RunningOrderPage() {
                     ? 'Serve Order'
                     : 'Completed'}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Table Request Modal ───────────────────────────────────────── */}
-      {showTableRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="flex h-[720px] w-[384px] max-w-full flex-col rounded-lg bg-zinc-100 p-5 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-start justify-between border-b border-zinc-400/40 pb-3">
-              <span className="text-lg font-medium text-black">Table Request</span>
-              <button onClick={() => setShowTableRequestModal(false)} className="flex h-6 w-6 items-center justify-center rounded-full text-black transition-colors hover:bg-zinc-200">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-1 text-xs font-normal text-neutral-400">
-                <Clock size={14} />
-                <span>Sorted by oldest first</span>
-              </div>
-              <button onClick={handleDismissAllRequests} className="text-xs font-medium text-emerald-700 hover:underline">
-                Dismiss All
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              {requests.length === 0 ? (
-                <div className="flex h-64 flex-col items-center justify-center text-xs text-neutral-400">
-                  <CheckCircle2 size={32} className="mb-2 text-[#026F4F]" />
-                  <span>All table requests have been handled.</span>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {requests.map((req) => (
-                    <div key={req.id} className="flex h-36 shrink-0 flex-col justify-between rounded-xl bg-white p-3.5 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-2xl font-medium text-black">{req.table}</span>
-                          {req.paymentMethod && (
-                            <div className="flex items-center gap-1 rounded-[20px] bg-zinc-100 px-1.5 py-1">
-                              <span className={cn('h-2 w-2 rounded-full', req.paymentMethod === 'Card' ? 'bg-yellow-500' : 'bg-green-600')} />
-                              <span className="text-[8px] font-normal text-zinc-800">{req.paymentMethod}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs font-normal text-red-600">
-                          <Clock size={14} />
-                          <span>{req.timeAgo}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {req.type === 'Waiter Requested' ? (
-                          <div className="flex items-center gap-1.5 rounded-2xl bg-fuchsia-200 px-2.5 py-1.5 text-xs font-normal text-fuchsia-800">
-                            <Bell size={13} />
-                            <span>Waiter Requested</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 rounded-2xl bg-blue-100 px-2.5 py-1.5 text-xs font-normal text-blue-900">
-                            <CheckCircle2 size={13} />
-                            <span>Check Requested</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        {req.type === 'Check Requested' && (
-                          <button
-                            onClick={() => alert(`Printing receipt for ${req.table}`)}
-                            className="flex h-9 w-36 items-center justify-center gap-1 rounded-2xl border border-zinc-400 bg-gray-200 text-sm font-medium text-zinc-800 transition-colors hover:bg-gray-300"
-                          >
-                            <Printer size={14} />
-                            <span>Print</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleRequestHandled(req.id)}
-                          className={cn(
-                            'flex h-9 items-center justify-center rounded-2xl bg-orange-500 text-sm font-medium text-white shadow-xs transition-colors hover:bg-orange-600',
-                            req.type === 'Check Requested' ? 'w-36' : 'w-72',
-                          )}
-                        >
-                          Handled
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
