@@ -309,6 +309,7 @@ export interface TransferForm {
   from: string;
   to: string;
   date: string;
+  responsible: string;
 }
 
 export function TransferStockDrawer({
@@ -325,6 +326,7 @@ export function TransferStockDrawer({
   const [from, setFrom] = useState(LOCATIONS[1]);
   const [to, setTo] = useState(LOCATIONS[0]);
   const [date, setDate] = useState(todayISO());
+  const [responsible, setResponsible] = useState('');
 
   return (
     <Drawer
@@ -334,7 +336,7 @@ export function TransferStockDrawer({
       saveLabel="Save"
       onSave={() => {
         if (!ingredientName || !qty || from === to) return;
-        onSave({ ingredientName, qty: parseFloat(qty) || 0, from, to, date: formatDisplayDate(date) });
+        onSave({ ingredientName, qty: parseFloat(qty) || 0, from, to, date: formatDisplayDate(date), responsible: responsible || 'Unassigned' });
       }}
     >
       <FormCard>
@@ -355,6 +357,9 @@ export function TransferStockDrawer({
             <PillSelect ariaLabel="To" value={to} onChange={setTo} options={LOCATIONS} />
           </Field>
         </div>
+        <Field label="Responsible person">
+          <input value={responsible} onChange={(e) => setResponsible(e.target.value)} placeholder="Who is responsible for" className={pillInputClass} />
+        </Field>
       </FormCard>
     </Drawer>
   );

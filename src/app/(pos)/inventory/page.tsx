@@ -88,7 +88,7 @@ export default function InventoryPage() {
   function handleSaveTransfer(f: TransferForm) {
     const trId = `TR-${886 + transfers.length}`;
     const unit = ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs';
-    setTransfers((prev) => [{ id: trId, date: f.date, ingredient: f.ingredientName, qty: f.qty, unit, from: f.from, to: f.to, status: 'COMPLETED' }, ...prev]);
+    setTransfers((prev) => [{ id: trId, date: f.date, ingredient: f.ingredientName, qty: f.qty, unit, from: f.from, to: f.to, status: 'COMPLETED', responsible: f.responsible }, ...prev]);
     setDrawer(null);
   }
 

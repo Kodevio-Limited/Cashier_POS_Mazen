@@ -70,6 +70,7 @@ export interface Transfer {
   from: string;
   to: string;
   status: 'COMPLETED' | 'PENDING';
+  responsible: string;
 }
 
 export interface CountEntry {
@@ -179,10 +180,10 @@ export const INITIAL_PURCHASES: Purchase[] = [
 ];
 
 export const INITIAL_TRANSFERS: Transfer[] = [
-  { id: 'TR-886', date: 'Jul 28, 2026', ingredient: 'Beef Patties', qty: 120, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED' },
-  { id: 'TR-885', date: 'Jul 28, 2026', ingredient: 'Burger Buns', qty: 60, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED' },
-  { id: 'TR-884', date: 'Jul 27, 2026', ingredient: 'Cheddar Cheese', qty: 40, unit: 'pcs', from: 'Downtown (Main)', to: 'Uptown', status: 'COMPLETED' },
-  { id: 'TR-883', date: 'Jul 27, 2026', ingredient: 'Lettuce', qty: 25, unit: 'kg', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED' },
+  { id: 'TR-886', date: 'Jul 28, 2026', ingredient: 'Beef Patties', qty: 120, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED', responsible: 'John. D' },
+  { id: 'TR-885', date: 'Jul 28, 2026', ingredient: 'Burger Buns', qty: 60, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED', responsible: 'Sarah J.' },
+  { id: 'TR-884', date: 'Jul 27, 2026', ingredient: 'Cheddar Cheese', qty: 40, unit: 'pcs', from: 'Downtown (Main)', to: 'Uptown', status: 'COMPLETED', responsible: 'John. D' },
+  { id: 'TR-883', date: 'Jul 27, 2026', ingredient: 'Lettuce', qty: 25, unit: 'kg', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED', responsible: 'Mike T.' },
 ];
 
 export const INITIAL_COUNTS: CountEntry[] = [

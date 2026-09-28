@@ -42,7 +42,7 @@ export function StockTab({
                 <span>INGREDIENT NAME</span>
                 <span>CURRENT STOCK</span>
                 <span>AVERAGE PRICE</span>
-                <span className="flex items-center gap-1">STATUS <ChevronDown size={12} /></span>
+                <span>STATUS</span>
                 <span>LAST UPDATED</span>
                 <span>ACTIONS</span>
               </div>
@@ -190,17 +190,17 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
           <table className="w-full min-w-[840px] table-fixed border-collapse">
             <thead>
               <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[150px] pl-6 pr-2 text-right font-medium">ORDER ID/ DATE</th>
+                <th className="w-[150px] pl-6 pr-2 text-left font-medium">ORDER ID/ DATE</th>
                 <th className="w-[200px] px-2 text-center font-medium">INGREDIENT</th>
                 <th className="w-[150px] px-2 text-center font-medium">QUANTITY BOUGHT</th>
                 <th className="w-[110px] px-2 text-center font-medium">TOTAL</th>
-                <th className="w-[230px] py-2 pl-2 pr-6 text-left font-medium">SUPPLIER</th>
+                <th className="w-[230px] py-2 pl-2 pr-6 text-center font-medium">SUPPLIER</th>
               </tr>
             </thead>
             <tbody>
               {purchases.map((p) => (
                 <tr key={p.id} className="border-b border-[#F2F2F2] last:border-0">
-                  <td className="py-[16px] pl-6 pr-2 text-right align-middle">
+                  <td className="py-[16px] pl-6 pr-2 text-left align-middle">
                     <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{p.id}</div>
                     <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{p.date}</div>
                   </td>
@@ -216,8 +216,8 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
                   <td className="px-2 py-[16px] text-center align-middle text-[12px] font-semibold leading-[1.4] text-[#026F4F]">
                     ${p.total.toFixed(2)}
                   </td>
-                  <td className="py-[16px] pl-2 pr-6 align-middle">
-                    <span className="flex items-center gap-[5px] text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">
+                  <td className="py-[16px] pl-2 pr-6 text-center align-middle">
+                    <span className="inline-flex items-center justify-center gap-[5px] text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">
                       <ReceiptText size={16} className="shrink-0 text-[#989898]" />
                       <span className="truncate">{p.supplier}</span>
                     </span>
@@ -244,20 +244,21 @@ export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer
       </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[840px] table-fixed border-collapse">
+          <table className="w-full min-w-[990px] table-fixed border-collapse">
             <thead>
               <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[150px] pl-6 pr-2 text-right font-medium">TRANSFER ID/ DATE</th>
+                <th className="w-[150px] pl-6 pr-2 text-left font-medium">TRANSFER ID/ DATE</th>
                 <th className="w-[170px] px-2 text-center font-medium">INGREDIENT</th>
                 <th className="w-[130px] px-2 text-center font-medium">QUANTITY</th>
                 <th className="w-[230px] px-2 text-center font-medium">FROM → TO</th>
-                <th className="w-[160px] py-2 pl-2 pr-6 text-left font-medium">STATUS</th>
+                <th className="w-[130px] px-2 text-center font-medium">STATUS</th>
+                <th className="w-[180px] py-2 pl-2 pr-6 text-center font-medium">RESPONSIBLE</th>
               </tr>
             </thead>
             <tbody>
               {transfers.map((t) => (
                 <tr key={t.id} className="border-b border-[#F2F2F2] last:border-0">
-                  <td className="py-[16px] pl-6 pr-2 text-right align-middle">
+                  <td className="py-[16px] pl-6 pr-2 text-left align-middle">
                     <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{t.id}</div>
                     <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{t.date}</div>
                   </td>
@@ -270,13 +271,16 @@ export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer
                   <td className="px-2 py-[16px] text-center align-middle text-[10.7px] font-medium leading-[1.4] text-black">
                     {t.from} → {t.to}
                   </td>
-                  <td className="py-[16px] pl-2 pr-6 align-middle">
+                  <td className="px-2 py-[16px] text-center align-middle">
                     <span className={cn(
                       'inline-flex h-[26.7px] w-[96px] items-center justify-center rounded-[14.7px] px-[10px] text-[10px] font-normal leading-[1.4]',
                       t.status === 'COMPLETED' ? 'bg-[#CEFFD7] text-[#139615]' : 'bg-[#FFF0E6] text-[#E85D00]',
                     )}>
                       {t.status}
                     </span>
+                  </td>
+                  <td className="truncate py-[16px] pl-2 pr-6 text-center align-middle text-[12.7px] font-medium text-[#2D2F33]">
+                    {t.responsible}
                   </td>
                 </tr>
               ))}
@@ -415,8 +419,8 @@ export function PhysicalCountTab({
           <table className="w-full min-w-[620px] table-fixed border-collapse">
             <thead>
               <tr className="h-[40px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[130px] pl-[22px] pr-2 text-right font-medium">DATE</th>
-                <th className="w-[190px] px-2 text-left font-medium">INGREDIENT</th>
+                <th className="w-[130px] pl-[22px] pr-2 text-left font-medium">DATE</th>
+                <th className="w-[190px] px-2 text-center font-medium">INGREDIENT</th>
                 <th className="w-[90px] px-2 text-center font-medium">THEO</th>
                 <th className="w-[90px] px-2 text-center font-medium">PHYS</th>
                 <th className="w-[120px] py-2 pl-2 pr-[22px] text-center font-medium">VARIANCE</th>
@@ -425,8 +429,8 @@ export function PhysicalCountTab({
             <tbody>
               {counts.map((c) => (
                 <tr key={c.id} className="border-b border-[#F7F7F7] last:border-0">
-                  <td className="py-[12px] pl-[22px] pr-2 text-right align-middle text-[10.7px] font-medium text-black">{c.date}</td>
-                  <td className="truncate px-2 py-[12px] align-middle text-[10.7px] font-medium text-black">{c.ingredient}</td>
+                  <td className="py-[12px] pl-[22px] pr-2 text-left align-middle text-[10.7px] font-medium text-black">{c.date}</td>
+                  <td className="truncate px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.ingredient}</td>
                   <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.theo}</td>
                   <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.phys}</td>
                   <td className="py-[12px] pl-2 pr-[22px] text-center align-middle text-[10.7px] font-medium text-[#F23232]">{c.phys - c.theo}</td>
@@ -527,24 +531,24 @@ export function WasteLogTab({
           <table className="w-full min-w-[680px] table-fixed border-collapse">
             <thead>
               <tr className="h-[40px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[110px] pl-[17px] pr-2 text-right font-medium">DATE</th>
-                <th className="w-[190px] px-2 text-left font-medium">ITEM</th>
+                <th className="w-[110px] pl-[17px] pr-2 text-left font-medium">DATE</th>
+                <th className="w-[190px] px-2 text-center font-medium">ITEM</th>
                 <th className="w-[110px] px-2 text-center font-medium">QTY WASTED</th>
                 <th className="w-[120px] px-2 text-center font-medium">REASON</th>
-                <th className="w-[150px] py-2 pl-2 pr-[17px] text-left font-medium">LOGGED BY</th>
+                <th className="w-[150px] py-2 pl-2 pr-[17px] text-center font-medium">RESPONSIBLE</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((w) => (
                 <tr key={w.id} className="border-b border-[#F7F7F7] last:border-0">
-                  <td className="py-[12px] pl-[17px] pr-2 text-right align-middle text-[10.7px] font-medium text-black">{w.date}</td>
-                  <td className="px-2 py-[12px] align-middle">
+                  <td className="py-[12px] pl-[17px] pr-2 text-left align-middle text-[10.7px] font-medium text-black">{w.date}</td>
+                  <td className="px-2 py-[12px] text-center align-middle">
                     <div className="truncate text-[12px] font-medium text-black">{w.item}</div>
                     <div className="mt-[2px] truncate text-[10.7px] font-normal text-[#989898]">{w.note}</div>
                   </td>
                   <td className="whitespace-nowrap px-2 py-[12px] text-center align-middle text-[12px] font-medium text-[#F23232]">{w.qty} {w.unit}</td>
                   <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{w.reason}</td>
-                  <td className="truncate py-[12px] pl-2 pr-[17px] align-middle text-[12px] font-medium text-[#2D2F33]">{w.loggedBy}</td>
+                  <td className="truncate py-[12px] pl-2 pr-[17px] text-center align-middle text-[12px] font-medium text-[#2D2F33]">{w.loggedBy}</td>
                 </tr>
               ))}
             </tbody>

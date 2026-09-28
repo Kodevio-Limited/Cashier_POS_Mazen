@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search } from 'lucide-react';
+import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -406,13 +406,22 @@ export default function OrderHistoryPage() {
                 {selectedOrder.payState === 'Refunded' ? 'Refunded' : 'Cancelled'}
               </button>
             ) : selectedOrder.payState === 'Paid' ? (
-              <button
-                onClick={() => openRefundFlow('refund')}
-                className="flex h-[44px] w-full items-center justify-center gap-[3px] rounded-[30px] bg-[#F97316] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#ea690b] active:scale-[0.99]"
-              >
-                <RotateCcw size={24} />
-                <span>Refund</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[30px] border border-[#B9B9B9] bg-white text-[15px] font-medium leading-[1.4] text-[#2D2F33] transition-all hover:bg-[#F2F2F2] active:scale-[0.99]"
+                >
+                  <Printer size={18} />
+                  <span>Print Receipt</span>
+                </button>
+                <button
+                  onClick={() => openRefundFlow('refund')}
+                  className="flex h-[44px] flex-1 items-center justify-center gap-[3px] rounded-[30px] bg-[#F97316] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#ea690b] active:scale-[0.99]"
+                >
+                  <RotateCcw size={24} />
+                  <span>Refund</span>
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => openRefundFlow('cancel')}
