@@ -141,13 +141,10 @@ export default function OrderPage() {
     setOrderItems((prev) => prev.map((o, i) => (i === index ? { ...o, qty: o.qty + 1 } : o)));
   }
 
+  // Minimum quantity is 1 — decrementing never deletes the line.
+  // Explicit removal stays on the trash icon (removeItem).
   function decQty(index: number) {
-    setOrderItems((prev) => {
-      const item = prev[index];
-      if (!item) return prev;
-      if (item.qty === 1) return prev.filter((_, i) => i !== index);
-      return prev.map((o, i) => (i === index ? { ...o, qty: o.qty - 1 } : o));
-    });
+    setOrderItems((prev) => prev.map((o, i) => (i === index ? { ...o, qty: Math.max(1, o.qty - 1) } : o)));
   }
 
   function removeItem(index: number) {
@@ -477,7 +474,13 @@ function CustomizeItemModal({
   onClose: () => void;
   onSave: (item: OrderItem) => void;
 }) {
-  const optionList: string[] = 'options' in data && Array.isArray(data.options) ? data.options : [];
+  // Cart lines (OrderItem) carry no `options` field, so when editing look the
+  // required selection up from the menu definition — otherwise the Required
+  // section disappears and only the optional stuff (add-ons) would show.
+  const optionList: string[] =
+    'options' in data && Array.isArray(data.options)
+      ? data.options
+      : (MENU_ITEMS.find((m) => m.id === data.id)?.options ?? []);
   const [texture, setTexture] = useState<string>(
     ('texture' in data && data.texture) ? data.texture : (optionList[0] ?? ''),
   );
