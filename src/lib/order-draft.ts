@@ -19,7 +19,6 @@ export interface DraftItem {
   emoji?: string;
   texture?: string;
   options?: string[];
-  ingredients?: string[];
   modifiers?: string[];
   instructions?: string;
 }
