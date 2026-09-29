@@ -1,18 +1,21 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { Bell, CheckCircle2, Clock } from 'lucide-react';
+import { locStr, locTimeAgo } from '@/lib/locale-fields';
 
 export type FloorTableStatus = 'occupied' | 'available' | 'reserved';
 
 export interface TableRequestBadge {
   type: 'Waiter Requested' | 'Check Requested';
   paymentMethod?: 'Card' | 'Cash';
+  timeAgo?: string;
 }
 
-const STATUS: Record<FloorTableStatus, { label: string; body: string; badge: string }> = {
-  occupied: { label: 'OCCUPIED', body: '#F9EFA8', badge: '#E8AD0D' },
-  available: { label: 'AVAILABLE', body: '#A8F9B1', badge: '#1FB711' },
-  reserved: { label: 'RESERVED', body: '#C5F0FB', badge: '#0DADE8' },
+const STATUS: Record<FloorTableStatus, { body: string; badge: string }> = {
+  occupied: { body: '#F9EFA8', badge: '#E8AD0D' },
+  available: { body: '#A8F9B1', badge: '#1FB711' },
+  reserved: { body: '#C5F0FB', badge: '#0DADE8' },
 };
 
 interface FloorTableCardProps {
@@ -31,10 +34,15 @@ interface FloorTableCardProps {
  * Natural size 256 x 198. Status colors: yellow = occupied, green = available, blue = reserved.
  */
 export function FloorTableCard({ name, zone, status, itemsCount, bill, time, requests, onClick }: FloorTableCardProps) {
-  const { label, body, badge } = STATUS[status];
+  const t = useTranslations('floorPlan');
+  const tTime = useTranslations('common.time');
+  const locale = useLocale();
+  const { body, badge } = STATUS[status];
+  const statusLabel = t(`status.${status}`).toUpperCase();
   const rail = { backgroundColor: body };
   const waiterCount = (requests ?? []).filter((r) => r.type === 'Waiter Requested').length;
   const checkCount = (requests ?? []).filter((r) => r.type === 'Check Requested').length;
+  const zoneLabel = t(`zones.${zone.toLowerCase()}`, { default: zone } as never);
 
   return (
     <div
@@ -48,17 +56,17 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
     >
       {/* Active table requests (waiter / check) */}
       {requests && requests.length > 0 && (
-        <div className="absolute -right-1 -top-3 z-10 flex flex-col items-end gap-1">
+        <div className="absolute -end-1 -top-3 z-10 flex flex-col items-end gap-1">
           {waiterCount > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-fuchsia-600 px-2 py-1 text-[10px] font-semibold text-white shadow-md">
               <Bell size={12} strokeWidth={2.4} />
-              <span>{waiterCount > 1 ? `${waiterCount} ` : ''}Waiter</span>
+              <span>{waiterCount > 1 ? `${waiterCount} ` : ''}{t('waiterBadge')}</span>
             </span>
           )}
           {checkCount > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white shadow-md">
               <CheckCircle2 size={12} strokeWidth={2.4} />
-              <span>{checkCount > 1 ? `${checkCount} ` : ''}Check</span>
+              <span>{checkCount > 1 ? `${checkCount} ` : ''}{t('checkBadge')}</span>
             </span>
           )}
         </div>
@@ -83,17 +91,17 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
             className="flex h-[26px] shrink-0 items-center justify-center whitespace-nowrap rounded-full px-[10px] text-[11px] font-medium leading-[1.4] text-white"
             style={{ backgroundColor: badge }}
           >
-            {label}
+            {statusLabel}
           </span>
         </div>
 
         {/* Zone */}
-        <p className="absolute left-[11px] top-[44px] text-[13.5px] font-medium leading-[1.4] text-[#989898]">{zone}</p>
+        <p className="absolute left-[11px] top-[44px] text-[13.5px] font-medium leading-[1.4] text-[#989898]">{zoneLabel}</p>
 
         {/* Items (occupied) */}
         {status === 'occupied' && typeof itemsCount === 'number' && (
           <p className="absolute left-[11px] top-[69px] text-[13px] font-medium leading-[1.4] text-[#2D2F33]">
-            {itemsCount} Items
+            {t('itemsOnTable', { count: itemsCount })}
           </p>
         )}
 
@@ -104,7 +112,7 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
             {time && (
               <span className="flex items-center gap-1">
                 <Clock size={21} strokeWidth={1.5} className="shrink-0 text-[#989898]" />
-                <span className="whitespace-nowrap text-[15.5px] font-normal leading-[1.4] text-[#989898]">{time}</span>
+                <span className="whitespace-nowrap text-[15.5px] font-normal leading-[1.4] text-[#989898]">{locTimeAgo(time, locale, tTime)}</span>
               </span>
             )}
           </div>

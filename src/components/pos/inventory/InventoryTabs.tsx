@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Plus, ShoppingCart, ArrowLeftRight, ChevronDown, ReceiptText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { locStr, locTimeAgo, locUnit, LOCATIONS_KEY } from '@/lib/locale-fields';
 import {
   stockStateOf,
   recipeAvailable,
@@ -29,22 +31,25 @@ export function StockTab({
   onEdit: (ing: Ingredient) => void;
   onDelete: (id: string) => void;
 }) {
+  const t = useTranslations('inventory');
+  const tTime = useTranslations('common.time');
+  const locale = useLocale();
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <PrimaryAction icon={<Plus size={20} />} label="Add Ingredient" onClick={onAdd} />
+        <PrimaryAction icon={<Plus size={20} />} label={t('addIngredient')} onClick={onAdd} />
       </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
           <div className="min-w-[680px]">
             <TableHead>
               <div className="grid w-full grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 px-2">
-                <span>INGREDIENT NAME</span>
-                <span>CURRENT STOCK</span>
-                <span>AVERAGE PRICE</span>
-                <span>STATUS</span>
-                <span>LAST UPDATED</span>
-                <span>ACTIONS</span>
+                <span>{t('col.name')}</span>
+                <span>{t('col.currentStock')}</span>
+                <span>{t('col.avgPrice')}</span>
+                <span>{t('col.status')}</span>
+                <span>{t('col.lastUpdated')}</span>
+                <span>{t('col.actions')}</span>
               </div>
             </TableHead>
             <div className="flex flex-col">
@@ -52,26 +57,26 @@ export function StockTab({
                 const state = stockStateOf(ing);
                 return (
                   <div key={ing.id} className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 border-b border-[#F2F2F2] px-6 py-[14px] last:border-0">
-                    <span className="truncate text-[15.3px] font-medium leading-[1.4] text-[#2D2F33]">{ing.name}</span>
+                    <span className="truncate text-[15.3px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(ing.name, ing.nameAr, locale)}</span>
                     <span className="whitespace-nowrap text-[12.7px] font-medium leading-[1.4] text-black">
-                      {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{ing.unit}</span>
+                      {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{locUnit(ing.unit, t)}</span>
                     </span>
                     <span className="whitespace-nowrap text-[12.7px] font-medium leading-[1.4] text-[#026F4F]">
-                      ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{ing.unit}</span>
+                      ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{locUnit(ing.unit, t)}</span>
                     </span>
                     <span><StockPill state={state} /></span>
-                    <span className="whitespace-nowrap text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{ing.updatedAgo}</span>
+                    <span className="whitespace-nowrap text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{locTimeAgo(ing.updatedAgo, locale, tTime)}</span>
                     <span className="flex items-center gap-[7px]">
                       <button
                         onClick={() => onEdit(ing)}
-                        aria-label={`Edit ${ing.name}`}
+                        aria-label={t('editIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
                         className="flex h-[35px] w-[35px] items-center justify-center rounded-[5px] bg-[#E9E9E9] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                       </button>
                       <button
                         onClick={() => onDelete(ing.id)}
-                        aria-label={`Delete ${ing.name}`}
+                        aria-label={t('deleteIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
                         className="flex h-[35px] w-[35px] items-center justify-center rounded-[5px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -81,7 +86,7 @@ export function StockTab({
                 );
               })}
               {ingredients.length === 0 && (
-                <p className="px-6 py-10 text-center text-sm text-[#989898]">No ingredients yet. Add your first ingredient.</p>
+                <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyIngredients')}</p>
               )}
             </div>
           </div>
@@ -102,22 +107,24 @@ export function RecipeTab({
   onEditRecipe: (r: Recipe) => void;
 }) {
   const [subTab, setSubTab] = useState<'Main Menu Item' | 'Add on & Extras'>('Main Menu Item');
+  const t = useTranslations('inventory');
+  const locale = useLocale();
   const visible = recipes.filter((r) => (subTab === 'Main Menu Item' ? r.kind === 'main' : r.kind === 'addon'));
   const compact = subTab === 'Add on & Extras';
   return (
     <div className="flex flex-col gap-4">
       {/* Sub tabs */}
       <div className="flex items-center gap-6 border-b border-[#B9B9B9] px-1">
-        {(['Main Menu Item', 'Add on & Extras'] as const).map((t) => (
+        {(['Main Menu Item', 'Add on & Extras'] as const).map((st) => (
           <button
-            key={t}
-            onClick={() => setSubTab(t)}
+            key={st}
+            onClick={() => setSubTab(st)}
             className={cn(
               'border-b-4 px-4 py-[10px] text-[14px] font-normal leading-[1.4] transition-colors',
-              subTab === t ? 'border-[#026F4F] text-[#026F4F]' : 'border-transparent text-[#989898] hover:text-[#2D2F33]',
+              subTab === st ? 'border-[#026F4F] text-[#026F4F]' : 'border-transparent text-[#989898] hover:text-[#2D2F33]',
             )}
           >
-            {t}
+            {st === 'Main Menu Item' ? t('subTab.main') : t('subTab.addon')}
           </button>
         ))}
       </div>
@@ -130,20 +137,20 @@ export function RecipeTab({
               {!compact && (
                 <div className="relative flex h-[176px] items-center justify-center overflow-hidden rounded-[7.5px] bg-[#F2F2F2] text-[64px]">
                   {recipe.emoji}
-                  <span className={cn('absolute left-[6px] top-[7px] rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
-                    {available ? 'AVAILABLE' : 'OUT OF STOCK'}
+                  <span className={cn('absolute start-[6px] top-[7px] rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
+                    {available ? t('stockState.in') : t('stockState.out')}
                   </span>
                 </div>
               )}
               {compact && (
                 <span className={cn('self-start rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
-                  {available ? 'AVAILABLE' : 'OUT OF STOCK'}
+                  {available ? t('stockState.in') : t('stockState.out')}
                 </span>
               )}
-              <p className={cn('truncate font-satoshi text-[14.3px] font-medium leading-[1.4] text-[#2D2F33]', compact ? 'mt-[22px]' : 'mt-[8px]')}>{recipe.name}</p>
+              <p className={cn('truncate font-satoshi text-[14.3px] font-medium leading-[1.4] text-[#2D2F33]', compact ? 'mt-[22px]' : 'mt-[8px]')}>{locStr(recipe.name, recipe.nameAr, locale)}</p>
               <div className="mt-[8px] flex min-h-[53px] flex-col justify-center gap-[9px] rounded-[3.3px] bg-[#F2F2F2] px-[9px] py-[7px]">
                 {recipe.maps.length === 0 ? (
-                  <span className="text-[10.7px] font-normal leading-[1.4] text-[#989898]">No ingredients mapped</span>
+                  <span className="text-[10.7px] font-normal leading-[1.4] text-[#989898]">{t('noIngredientsMapped')}</span>
                 ) : (
                   (compact ? recipe.maps.slice(0, 1) : recipe.maps).map((m, i) => {
                     const ing = ingredients.find((x) => x.id === m.ingredientId);
@@ -151,10 +158,10 @@ export function RecipeTab({
                     return (
                       <div key={i} className="flex items-center justify-between text-[10.7px] leading-[1.4]">
                         <span className={cn('font-normal', bad ? 'text-[#EE2929]' : 'text-[#989898]')}>
-                          {ing ? ing.name : 'Missing ingredient'}
+                          {ing ? locStr(ing.name, ing.nameAr, locale) : t('missingIngredient')}
                         </span>
                         <span className={cn('font-normal', bad ? 'text-[#EE2929]' : 'text-[#989898]')}>
-                          {m.qty} {m.unit}
+                          {m.qty} {locUnit(m.unit, t)}
                         </span>
                       </div>
                     );
@@ -165,13 +172,13 @@ export function RecipeTab({
                 onClick={() => onEditRecipe(recipe)}
                 className="mt-[14px] flex h-[35px] w-full items-center justify-center rounded-[30px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
               >
-                Edit Recipe
+                {t('editRecipe')}
               </button>
             </div>
           );
         })}
         {visible.length === 0 && (
-          <p className="py-10 text-center text-sm text-[#989898]">No recipes in this section yet.</p>
+          <p className="py-10 text-center text-sm text-[#989898]">{t('emptyRecipes')}</p>
         )}
       </div>
     </div>
@@ -180,46 +187,48 @@ export function RecipeTab({
 
 // ─── PURCHASES ────────────────────────────────────────────────────────────────
 export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase[]; onLogPurchase: () => void }) {
+  const t = useTranslations('inventory');
+  const locale = useLocale();
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <PrimaryAction icon={<ShoppingCart size={20} />} label="Log Purchase" onClick={onLogPurchase} />
+        <PrimaryAction icon={<ShoppingCart size={20} />} label={t('logPurchase')} onClick={onLogPurchase} />
       </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[840px] table-fixed border-collapse">
             <thead>
               <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[150px] pl-6 pr-2 text-left font-medium">ORDER ID/ DATE</th>
-                <th className="w-[200px] px-2 text-center font-medium">INGREDIENT</th>
-                <th className="w-[150px] px-2 text-center font-medium">QUANTITY BOUGHT</th>
-                <th className="w-[110px] px-2 text-center font-medium">TOTAL</th>
-                <th className="w-[230px] py-2 pl-2 pr-6 text-center font-medium">SUPPLIER</th>
+                <th className="w-[150px] ps-6 pe-2 text-start font-medium">{t('col.orderDate')}</th>
+                <th className="w-[200px] px-2 text-center font-medium">{t('col.ingredient')}</th>
+                <th className="w-[150px] px-2 text-center font-medium">{t('col.qtyBought')}</th>
+                <th className="w-[110px] px-2 text-center font-medium">{t('col.total')}</th>
+                <th className="w-[230px] py-2 ps-2 pe-6 text-center font-medium">{t('col.supplier')}</th>
               </tr>
             </thead>
             <tbody>
               {purchases.map((p) => (
                 <tr key={p.id} className="border-b border-[#F2F2F2] last:border-0">
-                  <td className="py-[16px] pl-6 pr-2 text-left align-middle">
+                  <td className="py-[16px] ps-6 pe-2 text-start align-middle">
                     <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{p.id}</div>
-                    <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{p.date}</div>
+                    <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{locStr(p.date, p.dateAr, locale)}</div>
                   </td>
                   <td className="px-2 py-[16px] text-center align-middle">
-                    <div className="truncate text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{p.ingredient}</div>
+                    <div className="truncate text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(p.ingredient, p.ingredientAr, locale)}</div>
                     <div className="mx-auto mt-[9px] w-fit whitespace-nowrap rounded-[14px] bg-[#B7FABB] px-[7px] py-[4px] text-[9.3px] font-normal leading-[1.4] text-[#218944]">
-                      Avg Cost: ${p.avgCost.toFixed(2)}/{p.unit}
+                      {t('avgCost', { price: p.avgCost.toFixed(2), unit: locUnit(p.unit, t) })}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-2 py-[16px] text-center align-middle text-[12.7px] font-medium leading-[1.4] text-black">
-                    {p.qty} <span className="font-normal text-[#989898]">{p.unit}</span>
+                    {p.qty} <span className="font-normal text-[#989898]">{locUnit(p.unit, t)}</span>
                   </td>
                   <td className="px-2 py-[16px] text-center align-middle text-[12px] font-semibold leading-[1.4] text-[#026F4F]">
                     ${p.total.toFixed(2)}
                   </td>
-                  <td className="py-[16px] pl-2 pr-6 text-center align-middle">
+                  <td className="py-[16px] ps-2 pe-6 text-center align-middle">
                     <span className="inline-flex items-center justify-center gap-[5px] text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">
                       <ReceiptText size={16} className="shrink-0 text-[#989898]" />
-                      <span className="truncate">{p.supplier}</span>
+                      <span className="truncate">{locStr(p.supplier, p.supplierAr, locale)}</span>
                     </span>
                   </td>
                 </tr>
@@ -227,7 +236,7 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
             </tbody>
           </table>
           {purchases.length === 0 && (
-            <p className="px-6 py-10 text-center text-sm text-[#989898]">No purchases logged yet.</p>
+            <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyPurchases')}</p>
           )}
         </div>
       </div>
@@ -237,57 +246,63 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
 
 // ─── TRANSFERS ────────────────────────────────────────────────────────────────
 export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer[]; onNewTransfer: () => void }) {
+  const t = useTranslations('inventory');
+  const tStatus = useTranslations('inventory.transferStatus');
+  const tLoc = useTranslations('inventory.locations');
+  const locale = useLocale();
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <PrimaryAction icon={<ArrowLeftRight size={18} />} label="New Transfer" onClick={onNewTransfer} />
+        <PrimaryAction icon={<ArrowLeftRight size={18} />} label={t('newTransfer')} onClick={onNewTransfer} />
       </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[990px] table-fixed border-collapse">
             <thead>
               <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[150px] pl-6 pr-2 text-left font-medium">TRANSFER ID/ DATE</th>
-                <th className="w-[170px] px-2 text-center font-medium">INGREDIENT</th>
-                <th className="w-[130px] px-2 text-center font-medium">QUANTITY</th>
-                <th className="w-[230px] px-2 text-center font-medium">FROM → TO</th>
-                <th className="w-[130px] px-2 text-center font-medium">STATUS</th>
-                <th className="w-[180px] py-2 pl-2 pr-6 text-center font-medium">RESPONSIBLE</th>
+                <th className="w-[150px] ps-6 pe-2 text-start font-medium">{t('col.transferDate')}</th>
+                <th className="w-[170px] px-2 text-center font-medium">{t('col.ingredient')}</th>
+                <th className="w-[130px] px-2 text-center font-medium">{t('col.qty')}</th>
+                <th className="w-[230px] px-2 text-center font-medium">{t('col.fromTo')}</th>
+                <th className="w-[130px] px-2 text-center font-medium">{t('col.status')}</th>
+                <th className="w-[180px] py-2 ps-2 pe-6 text-center font-medium">{t('col.responsible')}</th>
               </tr>
             </thead>
             <tbody>
-              {transfers.map((t) => (
-                <tr key={t.id} className="border-b border-[#F2F2F2] last:border-0">
-                  <td className="py-[16px] pl-6 pr-2 text-left align-middle">
-                    <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{t.id}</div>
-                    <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{t.date}</div>
+              {transfers.map((tr) => (
+                <tr key={tr.id} className="border-b border-[#F2F2F2] last:border-0">
+                  <td className="py-[16px] ps-6 pe-2 text-start align-middle">
+                    <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{tr.id}</div>
+                    <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{locStr(tr.date, tr.dateAr, locale)}</div>
                   </td>
                   <td className="truncate px-2 py-[16px] text-center align-middle text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">
-                    {t.ingredient}
+                    {locStr(tr.ingredient, tr.ingredientAr, locale)}
                   </td>
                   <td className="whitespace-nowrap px-2 py-[16px] text-center align-middle text-[12.7px] font-medium leading-[1.4] text-black">
-                    {t.qty} <span className="font-normal text-[#989898]">{t.unit}</span>
+                    {tr.qty} <span className="font-normal text-[#989898]">{locUnit(tr.unit, t)}</span>
                   </td>
                   <td className="px-2 py-[16px] text-center align-middle text-[10.7px] font-medium leading-[1.4] text-black">
-                    {t.from} → {t.to}
+                    <span dir="auto">
+                      {LOCATIONS_KEY[tr.from] ? tLoc(LOCATIONS_KEY[tr.from]) : tr.from} → {LOCATIONS_KEY[tr.to] ? tLoc(LOCATIONS_KEY[tr.to]) : tr.to}
+                    </span>
                   </td>
                   <td className="px-2 py-[16px] text-center align-middle">
                     <span className={cn(
                       'inline-flex h-[26.7px] w-[96px] items-center justify-center rounded-[14.7px] px-[10px] text-[10px] font-normal leading-[1.4]',
-                      t.status === 'COMPLETED' ? 'bg-[#CEFFD7] text-[#139615]' : 'bg-[#FFF0E6] text-[#E85D00]',
+                      tr.status === 'COMPLETED' ? 'bg-[#CEFFD7] text-[#139615]' : 'bg-[#FFF0E6] text-[#E85D00]',
                     )}>
-                      {t.status}
+                      {tStatus(tr.status === 'COMPLETED' ? 'completed' : 'pending')}
                     </span>
                   </td>
-                  <td className="truncate py-[16px] pl-2 pr-6 text-center align-middle text-[12.7px] font-medium text-[#2D2F33]">
-                    {t.responsible}
+                  <td className="truncate py-[16px] ps-2 pe-6 text-center align-middle text-[12.7px] font-medium text-[#2D2F33]">
+                    {tr.responsible}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {transfers.length === 0 && (
-            <p className="px-6 py-10 text-center text-sm text-[#989898]">No transfers yet.</p>
+            <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyTransfers')}</p>
           )}
         </div>
       </div>
@@ -307,6 +322,10 @@ export function PhysicalCountTab({
 }) {
   const [ingredientId, setIngredientId] = useState('');
   const [phys, setPhys] = useState('');
+  const t = useTranslations('inventory');
+  const locale = useLocale();
+  const tDays = useTranslations('inventory.days');
+  const tSeries = useTranslations('inventory.series');
 
   const maxV = 100;
   return (
@@ -314,22 +333,28 @@ export function PhysicalCountTab({
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[324px_1fr]">
         {/* Log form */}
         <div className="rounded-[12px] bg-white p-[15px]">
-          <p className="text-center text-[16px] font-medium leading-[1.4] text-black">Log Physical Count</p>
+          <p className="text-center text-[16px] font-medium leading-[1.4] text-black">{t('logPhysicalCount')}</p>
           <div className="mt-[20px] flex flex-col gap-[23px]">
-            <Field label="Quantity">
+            <Field label={t('col.ingredient')}>
               <PillSelect
-                ariaLabel="Ingredient"
+                ariaLabel={t('col.ingredient')}
                 value={ingredientId}
                 onChange={setIngredientId}
                 options={['', ...ingredients.map((i) => i.id)]}
+                getLabel={(v) => {
+                  if (!v) return t('chooseIngredient');
+                  const ing = ingredients.find((i) => i.id === v);
+                  return ing ? locStr(ing.name, ing.nameAr, locale) : v;
+                }}
               />
             </Field>
-            <Field label="Actual Physical Count">
+            <Field label={t('actualPhysicalCount')}>
               <input
                 value={phys}
                 onChange={(e) => setPhys(e.target.value)}
                 inputMode="decimal"
-                placeholder="$120.00"
+                dir="ltr"
+                placeholder="120"
                 className={cn(pillInputClass, 'h-[41px]')}
               />
             </Field>
@@ -342,16 +367,16 @@ export function PhysicalCountTab({
             }}
             className="mt-[20px] flex h-[39px] w-full items-center justify-center rounded-[20px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
           >
-            Submit Count
+            {t('submitCount')}
           </button>
         </div>
 
         {/* Variance chart */}
         <div className="min-w-0 rounded-[12px] bg-white p-[15px]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[16px] font-medium leading-[1.4] text-black">Weekly Variance Trend (Spoilage/Overportioning)</p>
+            <p className="text-[16px] font-medium leading-[1.4] text-black">{t('weeklyVariance')}</p>
             <span className="flex items-center gap-2 rounded-[6px] bg-[rgba(233,233,233,0.42)] px-[18px] py-[6px] font-satoshi text-[16px] text-[#686868]">
-              Week <ChevronDown size={14} />
+              {t('week')} <ChevronDown size={14} />
             </span>
           </div>
           {/* Variance chart */}
@@ -359,7 +384,7 @@ export function PhysicalCountTab({
             <div className="min-w-[420px]">
               <div className="flex gap-2">
                 {/* Y axis */}
-                <div className="flex h-[200px] w-[30px] shrink-0 flex-col justify-between text-right text-[12px] leading-[1] text-[rgba(0,0,0,0.7)]">
+                <div className="flex h-[200px] w-[30px] shrink-0 flex-col justify-between text-end text-[12px] leading-[1] text-[rgba(0,0,0,0.7)]">
                   {[100, 80, 60, 40, 20, 0].map((v) => (
                     <span key={v}>{v}</span>
                   ))}
@@ -381,7 +406,7 @@ export function PhysicalCountTab({
                           return (
                             <div
                               key={s.label}
-                              title={`${s.label}: ${s.values[gi]}`}
+                              title={`${tSeries(s.label === 'Buns' ? 'buns' : s.label === 'Cheese' ? 'cheese' : 'beef')}: ${s.values[gi]}`}
                               className="w-full max-w-[24px] rounded-t-[2px] opacity-80"
                               style={{ height: `${pct}%`, minHeight: 4, backgroundColor: s.color }}
                             />
@@ -393,9 +418,8 @@ export function PhysicalCountTab({
                 </div>
               </div>
               {/* X labels */}
-              <div className="ml-[38px] flex justify-around">
-                {VARIANCE_DAYS.map((day) => (
-                  <span key={day} className="flex-1 text-center text-[12px] text-[rgba(0,0,0,0.7)]">{day}</span>
+              <div className="ms-[38px] flex justify-around">                        {VARIANCE_DAYS.map((day) => (
+                  <span key={day} className="flex-1 text-center text-[12px] text-[rgba(0,0,0,0.7)]">{tDays(day.toLowerCase())}</span>
                 ))}
               </div>
             </div>
@@ -405,7 +429,7 @@ export function PhysicalCountTab({
             {VARIANCE_SERIES.map((s) => (
               <span key={s.label} className="flex items-center gap-1 p-1 text-[12px] text-[rgba(0,0,0,0.7)]">
                 <span className="h-[12px] w-[12px] border border-white" style={{ backgroundColor: s.color }} />
-                {s.label}
+                {tSeries(s.label === 'Buns' ? 'buns' : s.label === 'Cheese' ? 'cheese' : 'beef')}
               </span>
             ))}
           </div>
@@ -414,26 +438,26 @@ export function PhysicalCountTab({
 
       {/* Recent counts */}
       <div className="overflow-hidden rounded-[12px] bg-white">
-        <p className="px-[22px] pt-[14px] text-[16px] font-medium leading-[1.4] text-black">Recent Counts</p>
+        <p className="px-[22px] pt-[14px] text-[16px] font-medium leading-[1.4] text-black">{t('recentCounts')}</p>
         <div className="mt-[14px] overflow-x-auto pb-[18px]">
           <table className="w-full min-w-[620px] table-fixed border-collapse">
             <thead>
               <tr className="h-[40px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[130px] pl-[22px] pr-2 text-left font-medium">DATE</th>
-                <th className="w-[190px] px-2 text-center font-medium">INGREDIENT</th>
-                <th className="w-[90px] px-2 text-center font-medium">THEO</th>
-                <th className="w-[90px] px-2 text-center font-medium">PHYS</th>
-                <th className="w-[120px] py-2 pl-2 pr-[22px] text-center font-medium">VARIANCE</th>
+                <th className="w-[130px] ps-[22px] pe-2 text-start font-medium">{t('col.date')}</th>
+                <th className="w-[190px] px-2 text-center font-medium">{t('col.ingredient')}</th>
+                <th className="w-[90px] px-2 text-center font-medium">{t('col.theo')}</th>
+                <th className="w-[90px] px-2 text-center font-medium">{t('col.phys')}</th>
+                <th className="w-[120px] py-2 ps-2 pe-[22px] text-center font-medium">{t('col.variance')}</th>
               </tr>
             </thead>
             <tbody>
               {counts.map((c) => (
                 <tr key={c.id} className="border-b border-[#F7F7F7] last:border-0">
-                  <td className="py-[12px] pl-[22px] pr-2 text-left align-middle text-[10.7px] font-medium text-black">{c.date}</td>
-                  <td className="truncate px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.ingredient}</td>
+                  <td className="py-[12px] ps-[22px] pe-2 text-start align-middle text-[10.7px] font-medium text-black">{locStr(c.date, c.dateAr, locale)}</td>
+                  <td className="truncate px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{locStr(c.ingredient, c.ingredientAr, locale)}</td>
                   <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.theo}</td>
                   <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.phys}</td>
-                  <td className="py-[12px] pl-2 pr-[22px] text-center align-middle text-[10.7px] font-medium text-[#F23232]">{c.phys - c.theo}</td>
+                  <td className="py-[12px] ps-2 pe-[22px] text-center align-middle text-[10.7px] font-medium text-[#F23232]">{c.phys - c.theo}</td>
                 </tr>
               ))}
             </tbody>
@@ -446,6 +470,17 @@ export function PhysicalCountTab({
 
 // ─── WASTE LOG ────────────────────────────────────────────────────────────────
 const WASTE_REASONS = ['Burned', 'Spoiled', 'Overportion', 'Expired', 'Dropped'];
+
+function wasteReasonKey(reason: string): string {
+  switch (reason) {
+    case 'Burned': return 'burned';
+    case 'Spoiled': return 'spoiled';
+    case 'Overportion': return 'overportion';
+    case 'Expired': return 'expired';
+    case 'Dropped': return 'dropped';
+    default: return 'dropped';
+  }
+}
 
 export function WasteLogTab({
   entries,
@@ -461,46 +496,66 @@ export function WasteLogTab({
   const [reason, setReason] = useState(WASTE_REASONS[0]);
   const [responsible, setResponsible] = useState('');
   const [notes, setNotes] = useState('');
+  const t = useTranslations('inventory');
+  const tReason = useTranslations('inventory.wasteReasons');
+  const locale = useLocale();
 
-  const unit = ingredients.find((i) => i.id === ingredientId)?.unit ?? 'pcs';
+  const selected = ingredients.find((i) => i.id === ingredientId);
+  const unit = selected?.unit ?? 'pcs';
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[324px_1fr]">
       {/* Log form */}
       <div className="rounded-[12px] bg-white p-[15px]">
-        <p className="text-center text-[16px] font-medium leading-[1.4] text-black">Log Wasted Item</p>
+        <p className="text-center text-[16px] font-medium leading-[1.4] text-black">{t('logWastedItem')}</p>
         <div className="mt-[20px] flex flex-col gap-[13px]">
-          <Field label="Ingredient">
-            <PillSelect ariaLabel="Ingredient" value={ingredientId} onChange={setIngredientId} options={ingredients.map((i) => i.id)} />
+          <Field label={t('col.ingredient')}>
+            <PillSelect
+              ariaLabel={t('col.ingredient')}
+              value={ingredientId}
+              onChange={setIngredientId}
+              options={ingredients.map((i) => i.id)}
+              getLabel={(v) => {
+                const ing = ingredients.find((i) => i.id === v);
+                return ing ? locStr(ing.name, ing.nameAr, locale) : v;
+              }}
+            />
           </Field>
-          <Field label="Quantity Wasted">
+          <Field label={t('qtyWasted')}>
             <div className="relative">
               <input
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
                 inputMode="decimal"
-                placeholder="e.g. 2"
-                className={cn(pillInputClass, 'h-[41px] pr-[48px]')}
+                dir="ltr"
+                placeholder="2"
+                className={cn(pillInputClass, 'h-[41px] pe-[48px]')}
               />
-              <span className="absolute right-[14px] top-1/2 -translate-y-1/2 font-satoshi text-[10.7px] text-[#989898]">{unit.toUpperCase()}</span>
+              <span className="absolute end-[14px] top-1/2 -translate-y-1/2 font-satoshi text-[10.7px] text-[#989898]">{locUnit(unit, t).toUpperCase()}</span>
             </div>
           </Field>
-          <Field label="Reason for Waste">
-            <PillSelect ariaLabel="Reason" value={reason} onChange={setReason} options={WASTE_REASONS} />
+          <Field label={t('reasonForWaste')}>
+            <PillSelect
+              ariaLabel={t('reasonForWaste')}
+              value={reason}
+              onChange={setReason}
+              options={WASTE_REASONS}
+              getLabel={(v) => tReason(wasteReasonKey(v))}
+            />
           </Field>
-          <Field label="Responsible">
+          <Field label={t('responsible')}>
             <input
               value={responsible}
               onChange={(e) => setResponsible(e.target.value)}
-              placeholder="Choose who is responsible for"
+              placeholder={t('chooseResponsible')}
               className={cn(pillInputClass, 'h-[41px]')}
             />
           </Field>
-          <Field label="Notes (Optional)">
+          <Field label={t('notesOptional')}>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add Context..."
+              placeholder={t('addContext')}
               rows={3}
               className="h-[74px] w-full resize-none rounded-[9px] bg-[#F2F2F2] p-[11px] font-satoshi text-[10.7px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
             />
@@ -509,46 +564,46 @@ export function WasteLogTab({
         <button
           onClick={() => {
             if (!ingredientId || !qty) return;
-            onSubmit({ ingredientId, qty: parseFloat(qty) || 0, unit, reason, responsible: responsible || 'Unassigned', notes });
+            onSubmit({ ingredientId, qty: parseFloat(qty) || 0, unit, reason, responsible: responsible || t('unassigned'), notes: notes || tReason(wasteReasonKey(reason)) });
             setQty('');
             setNotes('');
           }}
           className="mt-[20px] flex h-[39px] w-full items-center justify-center rounded-[20px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
         >
-          Submit Count
+          {t('submitCount')}
         </button>
       </div>
 
       {/* History */}
       <div className="min-w-0 overflow-hidden rounded-[12px] bg-white">
         <div className="flex flex-wrap items-center justify-between gap-2 px-[17px] pt-[14px]">
-          <p className="text-[16px] font-medium leading-[1.4] text-black">Waste Log History</p>
+          <p className="text-[16px] font-medium leading-[1.4] text-black">{t('wasteLogHistory')}</p>
           <span className="flex items-center gap-2 rounded-[37px] border border-[#B9B9B9] bg-white px-[12.5px] py-[8px] text-[11.9px] text-[#686868]">
-            Per Month <ChevronDown size={12} />
+            {t('perMonth')} <ChevronDown size={12} />
           </span>
         </div>
         <div className="mt-[14px] overflow-x-auto pb-[14px]">
           <table className="w-full min-w-[680px] table-fixed border-collapse">
             <thead>
               <tr className="h-[40px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[110px] pl-[17px] pr-2 text-left font-medium">DATE</th>
-                <th className="w-[190px] px-2 text-center font-medium">ITEM</th>
-                <th className="w-[110px] px-2 text-center font-medium">QTY WASTED</th>
-                <th className="w-[120px] px-2 text-center font-medium">REASON</th>
-                <th className="w-[150px] py-2 pl-2 pr-[17px] text-center font-medium">RESPONSIBLE</th>
+                <th className="w-[110px] ps-[17px] pe-2 text-start font-medium">{t('col.date')}</th>
+                <th className="w-[190px] px-2 text-center font-medium">{t('col.item')}</th>
+                <th className="w-[110px] px-2 text-center font-medium">{t('col.qtyWasted')}</th>
+                <th className="w-[120px] px-2 text-center font-medium">{t('col.reason')}</th>
+                <th className="w-[150px] py-2 ps-2 pe-[17px] text-center font-medium">{t('col.responsible')}</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((w) => (
                 <tr key={w.id} className="border-b border-[#F7F7F7] last:border-0">
-                  <td className="py-[12px] pl-[17px] pr-2 text-left align-middle text-[10.7px] font-medium text-black">{w.date}</td>
+                  <td className="py-[12px] ps-[17px] pe-2 text-start align-middle text-[10.7px] font-medium text-black">{locStr(w.date, w.dateAr, locale)}</td>
                   <td className="px-2 py-[12px] text-center align-middle">
-                    <div className="truncate text-[12px] font-medium text-black">{w.item}</div>
-                    <div className="mt-[2px] truncate text-[10.7px] font-normal text-[#989898]">{w.note}</div>
+                    <div className="truncate text-[12px] font-medium text-black">{locStr(w.item, w.itemAr, locale)}</div>
+                    <div className="mt-[2px] truncate text-[10.7px] font-normal text-[#989898]">{locStr(w.note, w.noteAr, locale)}</div>
                   </td>
-                  <td className="whitespace-nowrap px-2 py-[12px] text-center align-middle text-[12px] font-medium text-[#F23232]">{w.qty} {w.unit}</td>
-                  <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{w.reason}</td>
-                  <td className="truncate py-[12px] pl-2 pr-[17px] text-center align-middle text-[12px] font-medium text-[#2D2F33]">{w.loggedBy}</td>
+                  <td className="whitespace-nowrap px-2 py-[12px] text-center align-middle text-[12px] font-medium text-[#F23232]">{w.qty} {locUnit(w.unit, t)}</td>
+                  <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{tReason(wasteReasonKey(w.reason))}</td>
+                  <td className="truncate py-[12px] ps-2 pe-[17px] text-center align-middle text-[12px] font-medium text-[#2D2F33]">{w.loggedBy}</td>
                 </tr>
               ))}
             </tbody>

@@ -8,9 +8,13 @@ export type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
 
 export interface RunningOrderItem {
   name: string;
+  /** Arabic twin of `name` for mock data (picked by active locale). */
+  nameAr?: string;
   qty: number;
   price: number;
   modifier?: string;
+  /** Arabic twin of `modifier`. */
+  modifierAr?: string;
   emoji: string;
 }
 
@@ -18,10 +22,14 @@ export interface RunningOrder {
   id: string;
   orderNumber: string;
   customerName: string;
+  /** Arabic twin of `customerName` for mock data. */
+  customerNameAr?: string;
   phone?: string;
   email?: string;
   isPaid: boolean;
   date: string;
+  /** Arabic twin of `date` (mock data). */
+  dateAr?: string;
   table: string;
   type: 'Dine In' | 'Takeaway' | 'Delivery';
   status: OrderStatus;
@@ -39,16 +47,18 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     id: 'ro1',
     orderNumber: '#044',
     customerName: 'Robert Fox',
+    customerNameAr: 'روبرت فوكس',
     phone: '+01284980',
     email: 'mike.t@example.com',
     isPaid: true,
     date: '7 Apr, 11:30 AM',
+    dateAr: '٧ أبريل، ١١:٣٠ ص',
     table: 'Table 03',
     type: 'Dine In',
     status: 'Preparing',
     items: [
-      { name: 'Shoyu Ramen', qty: 1, price: 15.99, modifier: 'No Spice', emoji: '🍜' },
-      { name: 'Iced Green Tea', qty: 1, price: 15.99, modifier: 'No Spice', emoji: '🍵' },
+      { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍜' },
+      { name: 'Iced Green Tea', nameAr: 'شاي أخضر مثلج', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍵' },
     ],
     subtotal: 25.99,
     serviceCharge: 2.6,
@@ -58,16 +68,18 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     id: 'ro2',
     orderNumber: '#045',
     customerName: 'Mike Thompson',
+    customerNameAr: 'مايك تومسون',
     phone: '+01284980',
     email: 'mike.t@example.com',
     isPaid: true,
     date: '7 Apr, 11:45 AM',
+    dateAr: '٧ أبريل، ١١:٤٥ ص',
     table: 'Table 07',
     type: 'Dine In',
     status: 'Ready',
     items: [
-      { name: 'Shoyu Ramen', qty: 1, price: 15.99, modifier: 'Extra Chili', emoji: '🍜' },
-      { name: 'Coca-Cola', qty: 1, price: 2.99, modifier: 'Standard', emoji: '🥤' },
+      { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'Extra Chili', modifierAr: 'فلفل إضافي', emoji: '🍜' },
+      { name: 'Coca-Cola', nameAr: 'كوكا كولا', qty: 1, price: 2.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🥤' },
     ],
     subtotal: 18.98,
     serviceCharge: 1.9,
@@ -77,16 +89,18 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     id: 'ro3',
     orderNumber: '#046',
     customerName: 'David K.',
+    customerNameAr: 'ديفيد ك.',
     phone: '+01284980',
     email: 'david.k@example.com',
     isPaid: false,
     date: '7 Apr, 12:00 PM',
+    dateAr: '٧ أبريل، ١٢:٠٠ م',
     table: 'Takeaway #12',
     type: 'Takeaway',
     status: 'Placed',
     items: [
-      { name: 'Classic Burger', qty: 2, price: 15.99, modifier: 'Standard', emoji: '🍔' },
-      { name: 'French Fries', qty: 1, price: 4.99, modifier: 'Standard', emoji: '🍟' },
+      { name: 'Classic Burger', nameAr: 'برجر كلاسيك', qty: 2, price: 15.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🍔' },
+      { name: 'French Fries', nameAr: 'بطاطس مقلية', qty: 1, price: 4.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🍟' },
     ],
     subtotal: 36.97,
     serviceCharge: 3.7,

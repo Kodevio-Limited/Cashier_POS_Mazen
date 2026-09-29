@@ -10,12 +10,23 @@ export interface OrderSession {
   type: OrderType;
   /** e.g. 'Table A02' — only for dine-in. */
   tableName?: string;
+  /** Arabic twin of `tableName` (mock data), set when the locale is ar. */
+  tableNameAr?: string;
 }
 
 const KEY = 'pos-order-session';
 
-/** Human label shown next to the order number. */
-export function sessionLabel(s: OrderSession): string {
+/**
+ * Human label shown next to the order number. Pass the active locale: the
+ * type labels are localized (messages/orderSession.*) and Arabic table names
+ * come from the session itself when available. English stays the default.
+ */
+export function sessionLabel(s: OrderSession, locale = 'en', labels?: { takeOut: string; delivery: string; dineIn: string }): string {
+  if (locale === 'ar' && labels) {
+    if (s.type === 'take-out') return labels.takeOut;
+    if (s.type === 'delivery') return labels.delivery;
+    return s.tableNameAr ?? labels.dineIn;
+  }
   if (s.type === 'take-out') return 'Take Out';
   if (s.type === 'delivery') return 'Delivery';
   return s.tableName ?? 'Dine In';
@@ -33,7 +44,12 @@ export function loadSession(): OrderSession | null {
     const s = JSON.parse(raw);
     if (!s || typeof s.orderNumber !== 'string' || typeof s.type !== 'string') return null;
     if (!['dine-in', 'take-out', 'delivery'].includes(s.type)) return null;
-    return { orderNumber: s.orderNumber, type: s.type, tableName: s.tableName };
+    return {
+      orderNumber: s.orderNumber,
+      type: s.type,
+      tableName: s.tableName,
+      tableNameAr: typeof s.tableNameAr === 'string' ? s.tableNameAr : undefined,
+    };
   } catch {
     return null;
   }

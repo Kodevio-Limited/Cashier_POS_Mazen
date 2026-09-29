@@ -1,9 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Search, Check, X, Split, GitMerge, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { mapEnum } from '@/lib/locale-fields';
+
+const ORDER_TYPE_KEY_MAP: Record<string, string> = {
+  'Dine In': 'dineIn',
+  Takeaway: 'takeaway',
+  Delivery: 'delivery',
+  All: 'all',
+};
 
 export interface OrderLine {
   id: string;
@@ -46,6 +55,8 @@ export function CollectPaymentModal({
   const receivedNum = parseFloat(received) || 0;
   const change = Math.max(0, receivedNum - total);
   useBodyScrollLock(true);
+  const t = useTranslations('collectPayment');
+  const tCommon = useTranslations('common.actions');
 
   // Auto-focus the amount field so the tablet numpad keyboard opens immediately.
   const amountRef = useRef<HTMLInputElement>(null);
@@ -59,8 +70,8 @@ export function CollectPaymentModal({
       <div className="pos-overlay__panel w-[651px] max-w-full rounded-[17px] bg-white px-[32px] pb-[27px] pt-[26px] shadow-2xl">
         {/* Title & Close */}
         <div className="flex items-center justify-between">
-          <h2 className="text-[23px] font-medium leading-[1.4] text-black">Collect Payment</h2>
-          <button onClick={onClose} aria-label="Close" className="text-black transition-colors hover:text-zinc-500">
+          <h2 className="text-[23px] font-medium leading-[1.4] text-black">{t('title')}</h2>
+          <button onClick={onClose} aria-label={tCommon('close')} className="text-black transition-colors hover:text-zinc-500">
             <X size={24} />
           </button>
         </div>
@@ -73,7 +84,7 @@ export function CollectPaymentModal({
             className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-100 text-xs font-medium text-emerald-700 outline outline-1 outline-offset-[-1px] outline-emerald-700 transition-colors hover:bg-emerald-50"
           >
             <Split size={15} className="shrink-0" />
-            <span>Split Bill</span>
+            <span>{t('splitBill')}</span>
           </button>
           <button
             type="button"
@@ -81,19 +92,19 @@ export function CollectPaymentModal({
             className="flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-zinc-100 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-200"
           >
             <GitMerge size={15} className="shrink-0" />
-            <span>Merge Bill</span>
+            <span>{t('mergeBill')}</span>
           </button>
         </div>
 
         {/* Total Due Box */}
         <div className="mt-[25px] flex h-[105px] w-full flex-col items-center justify-center gap-[12px] rounded-[9px] border border-[#B9B9B9] bg-[#F2F2F2]">
-          <span className="text-[13px] font-medium leading-[1.4] text-[#686868]">Total Due</span>
+          <span className="text-[13px] font-medium leading-[1.4] text-[#686868]">{t('totalDue')}</span>
           <span className="text-[36px] font-semibold leading-[1.4] text-black">${total.toFixed(2)}</span>
         </div>
 
         {/* Amount Received */}
         <div className="mt-[29px] flex flex-col gap-[13px]">
-          <label className="text-[16px] font-normal leading-[1.4] text-[#686868]">Amount Received ($)</label>
+          <label className="text-[16px] font-normal leading-[1.4] text-[#686868]">{t('amountReceived')}</label>
           <div className="relative">
             <span className="pointer-events-none absolute left-[17px] top-1/2 -translate-y-1/2 text-[21px] font-medium leading-[1.4] text-[#989898]">
               $
@@ -112,7 +123,7 @@ export function CollectPaymentModal({
 
         {/* Change Due */}
         <div className="mt-[19px] flex items-center justify-between">
-          <span className="text-[21px] font-medium leading-[1.4] text-black">Change Due:</span>
+          <span className="text-[21px] font-medium leading-[1.4] text-black">{t('changeDue')}</span>
           <span className="text-[28px] font-semibold leading-[1.4] text-black">${change.toFixed(2)}</span>
         </div>
 
@@ -123,14 +134,14 @@ export function CollectPaymentModal({
             onClick={onClose}
             className="h-[52px] w-full rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[19px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0] sm:w-[280px]"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="h-[52px] w-full rounded-[30px] bg-[#026F4F] font-satoshi text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99] sm:w-[280px]"
           >
-            Complete Order
+            {t('complete')}
           </button>
         </div>
       </div>
@@ -149,6 +160,8 @@ export function SplitBillModal({
   onClose: () => void;
 }) {
   const [ways, setWays] = useState(2);
+  const t = useTranslations('splitBill');
+  const tCommon = useTranslations('common.actions');
 
   // Distribute the total across N bills, last bill absorbs the cent remainder.
   const perBill = Math.floor((total / ways) * 100) / 100;
@@ -160,27 +173,27 @@ export function SplitBillModal({
       <div className="pos-overlay__panel w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[26px] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-[23px] font-medium leading-[1.4] text-black">Split Bill</h2>
-          <button onClick={onClose} aria-label="Close" className="text-black transition-colors hover:text-zinc-500">
+          <h2 className="text-[23px] font-medium leading-[1.4] text-black">{t('title')}</h2>
+          <button onClick={onClose} aria-label={tCommon('close')} className="text-black transition-colors hover:text-zinc-500">
             <X size={24} />
           </button>
         </div>
 
         <p className="mt-2 text-[13px] font-normal leading-[1.4] text-[#989898]">
-          Split {items.length} {items.length === 1 ? 'item' : 'items'} • Total ${total.toFixed(2)}
+          {t('summary', { count: items.length, total: total.toFixed(2) })}
         </p>
 
         {/* Ways stepper */}
         <div className="mt-6 flex items-center justify-between rounded-[10px] bg-[#F2F2F2] p-4">
           <div>
-            <p className="text-[15px] font-medium leading-[1.4] text-[#2D2F33]">Split into</p>
-            <p className="text-[12px] leading-[1.4] text-[#989898]">Equal ways</p>
+            <p className="text-[15px] font-medium leading-[1.4] text-[#2D2F33]">{t('splitInto')}</p>
+            <p className="text-[12px] leading-[1.4] text-[#989898]">{t('equalWays')}</p>
           </div>
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setWays((w) => Math.max(2, w - 1))}
-              aria-label="Fewer ways"
+              aria-label={t('fewerWays')}
               className="flex size-9 items-center justify-center rounded-full bg-emerald-200 text-emerald-900 transition-colors hover:bg-emerald-300"
             >
               <Minus size={16} strokeWidth={2.4} />
@@ -189,7 +202,7 @@ export function SplitBillModal({
             <button
               type="button"
               onClick={() => setWays((w) => Math.min(8, w + 1))}
-              aria-label="More ways"
+              aria-label={t('moreWays')}
               className="flex size-9 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xs transition-colors hover:bg-emerald-800"
             >
               <Plus size={16} strokeWidth={2.4} />
@@ -206,7 +219,7 @@ export function SplitBillModal({
                 key={i}
                 className="flex items-center justify-between rounded-[10px] border border-[#E9E9E9] bg-white px-4 py-3"
               >
-                <span className="text-[14px] font-medium text-[#2D2F33]">Bill {i + 1}</span>
+                <span className="text-[14px] font-medium text-[#2D2F33]">{t('billN', { number: i + 1 })}</span>
                 <span className="text-[16px] font-semibold text-[#026F4F]">${amount.toFixed(2)}</span>
               </div>
             );
@@ -220,14 +233,14 @@ export function SplitBillModal({
             onClick={onClose}
             className="h-[52px] w-full rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[19px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0] sm:w-[241px]"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="h-[52px] w-full rounded-[30px] bg-[#026F4F] font-satoshi text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99] sm:w-[241px]"
           >
-            Confirm Split
+            {t('confirm')}
           </button>
         </div>
       </div>
@@ -251,6 +264,8 @@ export function MergeOrdersModal({
 }) {
   const [filter, setFilter] = useState<'All' | 'Dine In' | 'Takeaway' | 'Delivery'>('All');
   const [search, setSearch] = useState('');
+  const t = useTranslations('mergeOrders');
+  const tTypes = useTranslations('common.orderTypes');
 
   // Lock background scrolling while the merge modal is open; only the order list scrolls.
   useBodyScrollLock(true);
@@ -269,7 +284,7 @@ export function MergeOrdersModal({
         {/* Header */}
         <div className="flex flex-col gap-3 border-b border-zinc-200 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-zinc-800">Merge Orders</h3>
+            <h3 className="text-lg font-medium text-zinc-800">{t('title')}</h3>
             <button onClick={onClose} className="text-neutral-400 hover:text-zinc-800">
               <X size={20} />
             </button>
@@ -281,7 +296,7 @@ export function MergeOrdersModal({
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by Order ID or Table Number..."
+              placeholder={t('searchPlaceholder')}
               className="w-full bg-transparent text-xs text-[#2D2F33] outline-none placeholder:text-[#989898]"
             />
           </div>
@@ -299,7 +314,7 @@ export function MergeOrdersModal({
                     : 'bg-[#F2F2F2] text-[#989898] hover:text-[#2D2F33]',
                 )}
               >
-                {t}
+                {tTypes(mapEnum(t, ORDER_TYPE_KEY_MAP))}
               </button>
             ))}
           </div>
@@ -318,15 +333,15 @@ export function MergeOrdersModal({
                     </div>
                     <span className="text-sm font-semibold text-[#2D2F33]">{currentOrder.label}</span>
                     <span className="rounded bg-[#026F4F] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
-                      Current Order
+                      {t('currentOrder')}
                     </span>
                   </div>
                   <span className="text-sm font-semibold text-[#026F4F]">${currentOrder.total.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center gap-2 pl-7 text-xs text-[#686868]">
-                  <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">This Check</span>
+                <div className="flex items-center gap-2 ps-7 text-xs text-[#686868]">
+                  <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">{t('thisCheck')}</span>
                   <span>•</span>
-                  <span>{currentOrder.itemsCount} Items</span>
+                  <span>{t('itemsCount', { count: currentOrder.itemsCount })}</span>
                 </div>
               </div>
             </div>
@@ -361,10 +376,10 @@ export function MergeOrdersModal({
                   </div>
                   <span className="text-sm font-semibold text-[#026F4F]">${order.total.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center gap-2 pl-7 text-xs text-[#686868]">
+                <div className="flex items-center gap-2 ps-7 text-xs text-[#686868]">
                   <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">{order.table}</span>
                   <span>•</span>
-                  <span>{order.itemsCount} Items</span>
+                  <span>{t('itemsCount', { count: order.itemsCount })}</span>
                 </div>
               </div>
             );
@@ -375,9 +390,9 @@ export function MergeOrdersModal({
         {/* Bottom Bar */}
         <div className="flex flex-col gap-2 border-t border-zinc-200 p-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#2D2F33]">Selected Orders ({selectedOrders.length})</span>
+            <span className="font-medium text-[#2D2F33]">{t('selectedOrders', { count: selectedOrders.length })}</span>
             <div className="text-right">
-              <p className="text-[10px] text-[#989898]">Combined Total</p>
+              <p className="text-[10px] text-[#989898]">{t('combinedTotal')}</p>
               <p className="text-sm font-semibold text-[#026F4F]">
                 ${selectedOrders.reduce((s, id) => {
                   const o = SAMPLE_RUNNING_ORDERS.find((r) => r.id === id);
@@ -397,7 +412,7 @@ export function MergeOrdersModal({
                 : 'cursor-not-allowed bg-zinc-300 shadow-none',
             )}
           >
-            Merge {selectedOrders.length} Orders
+            {t('mergeN', { count: selectedOrders.length })}
           </button>
         </div>
       </div>
@@ -417,6 +432,8 @@ export function ConfirmMergeModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const t = useTranslations('confirmMerge');
+  const tCommon = useTranslations('common.actions');
   return (
     <div className="pos-overlay z-[70] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
       <div className="pos-overlay__panel w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[56px] shadow-2xl">
@@ -427,19 +444,17 @@ export function ConfirmMergeModal({
 
         {/* Title */}
         <h3 className="mt-[36px] text-center font-satoshi text-[28px] font-medium leading-[1.4] text-black">
-          Confirm Merge?
+          {t('title')}
         </h3>
 
         {/* Subtitle */}
         <p className="mx-auto mt-[17px] w-[448px] max-w-full text-center text-[16px] font-normal leading-[1.4] text-[#989898]">
-          You are about to merge{' '}
-          <span className="text-[18px] font-medium text-[#1E1E1E]">{ordersCount} orders</span> into one bill. This
-          action cannot be undone.
+          {t('body', { count: ordersCount })}
         </p>
 
         {/* Combined Total Box */}
         <div className="mt-[23px] flex h-[106px] w-full flex-col items-center justify-center rounded-[7px] bg-[#F2F2F2]">
-          <span className="text-[15px] font-medium leading-[1.4] text-[#989898]">New Combined Total</span>
+          <span className="text-[15px] font-medium leading-[1.4] text-[#989898]">{t('newTotal')}</span>
           <span className="text-[37px] font-semibold leading-[1.4] text-[#026F4F]">${combinedTotal.toFixed(2)}</span>
         </div>
 
@@ -450,14 +465,14 @@ export function ConfirmMergeModal({
             onClick={onClose}
             className="h-[52px] w-full rounded-[30px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[19px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0] sm:w-[241px]"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="h-[52px] w-full rounded-[30px] bg-[#026F4F] font-satoshi text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99] sm:w-[241px]"
           >
-            Confirm Merge
+            {t('confirm')}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
@@ -8,12 +9,13 @@ import { INV_TABS, type InvTab, type StockState } from './types';
 
 // ─── Page header + horizontal tab bar (Figma 1996:2494) ───────────────────────
 export function InventoryHeader({ activeTab, onTabChange }: { activeTab: InvTab; onTabChange: (t: InvTab) => void }) {
+  const t = useTranslations('inventory');
   return (
     <div className="flex flex-col gap-[19px]">
       <div className="flex flex-col gap-[3px]">
-        <h1 className="text-[26.7px] font-medium leading-[1.4] text-[#2D2F33]">Inventory & Recipes</h1>
+        <h1 className="text-[26.7px] font-medium leading-[1.4] text-[#2D2F33]">{t('title')}</h1>
         <p className="whitespace-nowrap text-[15.4px] font-normal leading-[1.4] text-[#989898]">
-          Manage stock, map ingredients, and automate availability.
+          {t('subtitle')}
         </p>
       </div>
       <div className="max-w-full overflow-x-auto rounded-[33.4px] bg-[#E3E3E3] p-[2.3px]">
@@ -27,13 +29,25 @@ export function InventoryHeader({ activeTab, onTabChange }: { activeTab: InvTab;
                 activeTab === tab ? 'bg-white font-medium text-[#026F4F] shadow-xs' : 'font-normal text-[#989898] hover:text-[#2D2F33]',
               )}
             >
-              {tab}
+              {t(`tabs.${tabKey(tab)}`)}
             </button>
           ))}
         </div>
       </div>
     </div>
   );
+}
+
+// Locale-neutral tab keys for translation lookup.
+function tabKey(tab: InvTab): string {
+  switch (tab) {
+    case 'Stock': return 'stock';
+    case 'Recipe': return 'recipe';
+    case 'Purchases': return 'purchases';
+    case 'Transfers': return 'transfers';
+    case 'Physical Count': return 'physicalCount';
+    case 'Waste log': return 'wasteLog';
+  }
 }
 
 // ─── Primary pill action button (top-right of content) ───────────────────────
@@ -57,9 +71,11 @@ const STOCK_PILL: Record<StockState, string> = {
 };
 
 export function StockPill({ state }: { state: StockState }) {
+  const t = useTranslations('inventory.stockState');
+  const label = state === 'IN STOCK' ? t('in') : state === 'LOW STOCK' ? t('low') : t('out');
   return (
     <span className={cn('inline-flex h-[26.6px] w-[96px] items-center justify-center rounded-[14.7px] px-[10px] text-[10px] font-normal leading-[1.4]', STOCK_PILL[state])}>
-      {state}
+      {label}
     </span>
   );
 }
@@ -90,17 +106,19 @@ export function Drawer({
   children: ReactNode;
 }) {
   useBodyScrollLock(true);
+  const tCommon = useTranslations('common.actions');
+  const tBack = useTranslations('history');
   return (
     <div className="pos-overlay z-50 bg-black/40">
-      <aside className="absolute bottom-3 right-3 top-3 flex w-[413px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-[#F2F2F2] shadow-2xl animate-in slide-in-from-right-8 duration-200">
+      <aside className="absolute bottom-3 end-3 top-3 flex w-[413px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-[#F2F2F2] shadow-2xl animate-in slide-in-from-right-8 duration-200">
         {/* Header */}
         <div className="flex items-center gap-3 px-[20px] pt-[33px]">
           <button
             onClick={onBack}
-            aria-label="Back"
+            aria-label={tBack('back')}
             className="flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full bg-[#E9E9E9] text-black transition-colors hover:bg-[#E0E0E0]"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={16} className="rtl:scale-x-[-1]" />
           </button>
           <h2 className="flex-1 text-center text-[22px] font-medium leading-[1.4] text-black">{title}</h2>
           <div className="h-[33px] w-[33px] shrink-0" />
@@ -115,7 +133,7 @@ export function Drawer({
             onClick={onCancel}
             className="h-[39px] w-[185px] max-w-[48%] rounded-[20px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[12.7px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={onSave}
@@ -164,11 +182,14 @@ export function PillSelect({
   onChange,
   options,
   ariaLabel,
+  getLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: string[];
   ariaLabel?: string;
+  /** Optional display label per option value (values stay the stored keys). */
+  getLabel?: (value: string) => string;
 }) {
   return (
     <div className="relative">
@@ -176,15 +197,15 @@ export function PillSelect({
         aria-label={ariaLabel}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-[35px] w-full appearance-none rounded-[58px] bg-[#F2F2F2] py-[10px] pl-[11px] pr-[32px] font-satoshi text-[12px] font-medium leading-[1.4] text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
+        className="h-[35px] w-full appearance-none rounded-[58px] bg-[#F2F2F2] py-[10px] ps-[11px] pe-[32px] font-satoshi text-[12px] font-medium leading-[1.4] text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
       >
         {options.map((o) => (
           <option key={o} value={o}>
-            {o}
+            {getLabel ? getLabel(o) : o}
           </option>
         ))}
       </select>
-      <ChevronDown size={14} className="pointer-events-none absolute right-[11px] top-1/2 -translate-y-1/2 text-[#989898]" />
+      <ChevronDown size={14} className="pointer-events-none absolute end-[11px] top-1/2 -translate-y-1/2 text-[#989898]" />
     </div>
   );
 }
@@ -224,8 +245,9 @@ export function DeleteBtn({ onClick, label }: { onClick: (e: React.MouseEvent) =
 
 // ─── Modal close X ───────────────────────────────────────────────────────────
 export function CloseX({ onClick }: { onClick: () => void }) {
+  const t = useTranslations('common.actions');
   return (
-    <button onClick={onClick} aria-label="Close" className="text-black transition-colors hover:text-zinc-500">
+    <button onClick={onClick} aria-label={t('close')} className="text-black transition-colors hover:text-zinc-500">
       <X size={24} />
     </button>
   );

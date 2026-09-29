@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 
@@ -73,4 +74,22 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #B9B9B9;
   border-radius: 99px;
+}
+
+html[lang="ar"] {
+  font-family: 'Noto Sans Arabic', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+html[lang="ar"] body {
+  line-height: 1.7;
+}
+
+html[lang="ar"] * {
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  font-style: normal !important;
+}
+
+html[lang="ar"] .font-satoshi {
+  font-family: 'Noto Sans Arabic', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }

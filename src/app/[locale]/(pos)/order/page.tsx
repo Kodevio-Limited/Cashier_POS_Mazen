@@ -1,16 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useLocale, useTranslations } from 'next-intl';
 import { Search, Minus, Plus, X, Trash2, Pencil, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, newLineId, clearDraft } from '@/lib/order-draft';
+import { locStr } from '@/lib/locale-fields';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
   id: string;
   name: string;
+  /** Arabic twin of `name` for mock data (picked by active locale). */
+  nameAr?: string;
   category: string;
   price: number;
   emoji: string;
@@ -22,6 +26,8 @@ interface OrderItem {
   /** Unique cart-line id — menu `id` is shared by lines that differ only in customization. */
   lineId: string;
   name: string;
+  /** Arabic twin of `name` (carried with the cart line so it survives editing). */
+  nameAr?: string;
   price: number;
   qty: number;
   texture?: string;
@@ -30,26 +36,46 @@ interface OrderItem {
   emoji?: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-const CATEGORIES = ['All', 'Burgers', 'Ramen', 'Sides', 'Drinks', 'Desserts'];
+// ─── Data ─────────────────────────────────────────────────────────────────
+const CATEGORIES = ['All', 'Burgers', 'Ramen', 'Sides', 'Drinks', 'Desserts'] as const;
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'm1', name: 'Classic Burger', category: 'Burgers', price: 15.99, emoji: '🍔' },
-  { id: 'm2', name: 'Shoyu Ramen', category: 'Ramen', price: 15.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm3', name: 'Tonkotsu Ramen', category: 'Ramen', price: 18.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm4', name: 'Miso Ramen', category: 'Ramen', price: 16.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm5', name: 'Cheese Burger', category: 'Burgers', price: 17.99, emoji: '🍔' },
-  { id: 'm6', name: 'BBQ Bacon Burger', category: 'Burgers', price: 19.99, emoji: '🍔' },
-  { id: 'm7', name: 'Veggie Burger', category: 'Burgers', price: 14.99, emoji: '🥙' },
-  { id: 'm8', name: 'Chicken Burger', category: 'Burgers', price: 16.49, emoji: '🍔' },
-  { id: 'm9', name: 'French Fries', category: 'Sides', price: 4.99, emoji: '🍟' },
-  { id: 'm10', name: 'Onion Rings', category: 'Sides', price: 5.49, emoji: '🧅' },
-  { id: 'm11', name: 'Coca-Cola', category: 'Drinks', price: 2.99, emoji: '🥤' },
-  { id: 'm12', name: 'Lemonade', category: 'Drinks', price: 3.49, emoji: '🍋' },
+  { id: 'm1', name: 'Classic Burger', nameAr: 'برجر كلاسيك', category: 'Burgers', price: 15.99, emoji: '🍔' },
+  { id: 'm2', name: 'Shoyu Ramen', nameAr: 'رامن شويو', category: 'Ramen', price: 15.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
+  { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', category: 'Ramen', price: 18.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
+  { id: 'm4', name: 'Miso Ramen', nameAr: 'رامن ميسو', category: 'Ramen', price: 16.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
+  { id: 'm5', name: 'Cheese Burger', nameAr: 'برجر بالجبن', category: 'Burgers', price: 17.99, emoji: '🍔' },
+  { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', category: 'Burgers', price: 19.99, emoji: '🍔' },
+  { id: 'm7', name: 'Veggie Burger', nameAr: 'برجر نباتي', category: 'Burgers', price: 14.99, emoji: '🥙' },
+  { id: 'm8', name: 'Chicken Burger', nameAr: 'برجر دجاج', category: 'Burgers', price: 16.49, emoji: '🍔' },
+  { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', category: 'Sides', price: 4.99, emoji: '🍟' },
+  { id: 'm10', name: 'Onion Rings', nameAr: 'حلقات البصل', category: 'Sides', price: 5.49, emoji: '🧅' },
+  { id: 'm11', name: 'Coca-Cola', nameAr: 'كوكا كولا', category: 'Drinks', price: 2.99, emoji: '🥤' },
+  { id: 'm12', name: 'Lemonade', nameAr: 'ليموناضة', category: 'Drinks', price: 3.49, emoji: '🍋' },
 ];
+
+// Arabic twins for the required noodle-texture options.
+const OPTION_AR: Record<string, string> = {
+  'Firm (Kata)': 'قوام صلب (كاتا)',
+  'Medium': 'متوسط',
+  'Soft (Yawa)': 'قوام طري (ياوا)',
+};
+
+// Arabic twins for the optional add-on modifiers.
+const MODIFIER_AR: Record<string, string> = {
+  'Mayo': 'مايونيز',
+  'Extra Chili': 'فلفل إضافي',
+  'Boiled Egg': 'بيضة مسلوقة',
+  'Bamboo Shoots': 'براعم الخيزران',
+  'No Spice': 'بدون بهار',
+  'Standard': 'عادي',
+};
 
 // ─── Menu Item Card ───────────────────────────────────────────────────────────
 function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void }) {
+  const t = useTranslations('order');
+  const tCat = useTranslations('order.categories');
+  const locale = useLocale();
   return (
     <button
       onClick={onSelect}
@@ -60,10 +86,10 @@ function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void 
       </div>
       <div className="w-full mt-2 flex flex-col justify-start items-start gap-1">
         <div className="w-full text-zinc-800 text-base font-medium font-['Inter'] leading-5 truncate">
-          {item.name}
+          {locStr(item.name, item.nameAr, locale)}
         </div>
         <div className="w-full text-neutral-400 text-xs font-normal font-['Inter'] leading-4 uppercase tracking-wider">
-          {item.category}
+          {tCat(item.category.toLowerCase())}
         </div>
         <div className="w-full text-emerald-700 text-base font-medium font-['Inter'] leading-5">
           ${item.price.toFixed(2)}
@@ -90,10 +116,14 @@ function orderLineKey(o: Pick<OrderItem, 'id' | 'texture' | 'modifiers' | 'instr
 // ─── Main Order Page ───────────────────────────────────────────────────────────
 export default function OrderPage() {
   const router = useRouter();
+  const t = useTranslations('order');
+  const tCat = useTranslations('order.categories');
+  const locale = useLocale();
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [orderItems, setOrderItems] = useState<OrderItem[]>(() => loadDraft() ?? []);
   const [session, setSession] = useState<OrderSession | null>(null);
+  const tSess = useTranslations('orderSession');
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
 
   // Keep the draft in sync so /place-order (and the back-arrow there) sees the same cart.
@@ -129,6 +159,7 @@ export default function OrderPage() {
         id: item.id,
         lineId: newLineId(),
         name: item.name,
+        nameAr: item.nameAr,
         price: item.price,
         qty: 1,
         emoji: item.emoji,
@@ -173,8 +204,8 @@ export default function OrderPage() {
         {/* Header row */}
         <div className="flex flex-wrap items-center justify-between px-5 pt-4 pb-3 border-b border-[#F2F2F2] gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-[19px] text-[#2D2F33]">Menu</span>
-            <span className="text-[13px] text-[#989898]">({MENU_ITEMS.length} items)</span>
+            <span className="font-medium text-[19px] text-[#2D2F33]">{t('title')}</span>
+            <span className="text-[13px] text-[#989898]">{t('itemCount', { count: MENU_ITEMS.length })}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -184,7 +215,7 @@ export default function OrderPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search menu..."
+                placeholder={t('searchPlaceholder')}
                 className="bg-transparent outline-none text-[13px] text-[#2D2F33] placeholder:text-[#989898] w-36"
               />
             </div>
@@ -204,7 +235,7 @@ export default function OrderPage() {
                   : 'bg-white border border-[#E9E9E9] text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
               )}
             >
-              {cat}
+              {tCat(cat.toLowerCase())}
             </button>
           ))}
         </div>
@@ -213,7 +244,7 @@ export default function OrderPage() {
         <div className="flex-1 overflow-y-auto p-5">
           {filtered.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-[#989898] text-[14px]">
-              No items found.
+              {t('noItemsFound')}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -230,21 +261,21 @@ export default function OrderPage() {
       </div>
 
       {/* ── Right Panel: Current Order (Side Modal - Always visible) ── */}
-      <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-md:absolute max-md:inset-y-3 max-md:right-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
+      <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-md:absolute max-md:inset-y-3 max-md:end-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
           {/* Header */}
           <div className="px-3 pt-3 pb-2.5 border-b border-zinc-400/40">
             <div className="flex justify-between items-center gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-black text-lg font-medium font-['Inter'] leading-7">Current Order</span>
+                <span className="text-black text-lg font-medium font-['Inter'] leading-7">{t('currentOrder')}</span>
                 <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">({itemCount})</span>
               </div>
               <button
                 onClick={cancelOrder}
-                title="Cancel order"
+                title={t('cancelOrder')}
                 className="shrink-0 h-9 px-3 bg-red-500 hover:bg-red-600 rounded-lg flex items-center gap-1.5 text-white text-[13px] font-medium font-['Inter'] transition-colors"
               >
                 <Trash2 size={15} strokeWidth={2.2} />
-                Cancel Order
+                {t('cancelOrder')}
               </button>
             </div>
 
@@ -253,7 +284,11 @@ export default function OrderPage() {
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-[#2D2F33] font-['Inter']">{session.orderNumber}</span>
                 <span className="rounded-full bg-[#026F4F] px-2.5 py-0.5 text-[11px] font-medium text-white">
-                  {sessionLabel(session)}
+                  {sessionLabel(session, locale, {
+                    takeOut: tSess('takeOut'),
+                    delivery: tSess('delivery'),
+                    dineIn: tSess('dineIn'),
+                  })}
                 </span>
               </div>
             )}
@@ -263,9 +298,9 @@ export default function OrderPage() {
           <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-4 divide-y divide-zinc-400/30">
             {orderItems.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-1 py-10 text-center">
-                <p className="text-zinc-800 text-sm font-medium font-['Inter']">No items yet</p>
+                <p className="text-zinc-800 text-sm font-medium font-['Inter']">{t('noItemsYet')}</p>
                 <p className="text-neutral-400 text-xs font-normal font-['Inter']">
-                  Tap any menu item to add it here.
+                  {t('noItemsHint')}
                 </p>
               </div>
             ) : (
@@ -273,7 +308,7 @@ export default function OrderPage() {
               <div
                 key={item.lineId}
                 onClick={() => setCustomizingItem({ item, isEditingIndex: idx })}
-                title="Edit item"
+                title={t('editItem')}
                 className="w-full flex items-start gap-2.5 pt-3.5 first:pt-0 cursor-pointer"
               >
                 {/* Thumbnail */}
@@ -285,10 +320,10 @@ export default function OrderPage() {
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <p
-                      title={item.name}
+                      title={locStr(item.name, item.nameAr, locale)}
                       className="min-w-0 flex-1 break-words text-zinc-800 text-base font-medium font-['Inter'] leading-5 line-clamp-2"
                     >
-                      {item.name}
+                      {locStr(item.name, item.nameAr, locale)}
                     </p>
                     <p className="shrink-0 text-emerald-700 text-lg font-semibold font-['Inter'] leading-6">
                       ${(item.price * item.qty).toFixed(2)}
@@ -308,7 +343,7 @@ export default function OrderPage() {
                       {item.modifiers.map((mod, mi) => (
                         <span key={mi} className="break-words">
                           <span className="text-green-500 text-sm font-normal font-['Inter'] leading-5">+</span>
-                          <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5 ml-0.5">{mod}</span>
+                          <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5 ms-0.5">{mod}</span>
                         </span>
                       ))}
                     </div>
@@ -336,7 +371,7 @@ export default function OrderPage() {
                           e.stopPropagation();
                           setCustomizingItem({ item, isEditingIndex: idx });
                         }}
-                        title="Edit Item"
+                        title={t('editItemAria')}
                         className="size-6 relative flex items-center justify-center text-neutral-400 hover:text-zinc-800 transition-colors"
                       >
                         <Pencil size={18} strokeWidth={1.8} />
@@ -346,7 +381,7 @@ export default function OrderPage() {
                           e.stopPropagation();
                           removeItem(idx);
                         }}
-                        title="Delete Item"
+                        title={t('deleteItemAria')}
                         className="size-6 relative flex items-center justify-center text-red-600 hover:text-red-700 transition-colors"
                       >
                         <Trash2 size={18} strokeWidth={1.8} />
@@ -388,12 +423,12 @@ export default function OrderPage() {
           <div className="px-3 pb-3 pt-2 flex flex-col gap-3.5 bg-white">
             <div className="self-stretch relative bg-zinc-100 rounded-md p-2.5 flex flex-col gap-3">
               <div className="text-zinc-800 text-base font-medium font-['Inter'] leading-5">
-                Payments Details
+                {t('paymentsDetails')}
               </div>
               <div className="flex flex-col gap-2">
                 <div className="self-stretch inline-flex justify-between items-center">
                   <div className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">
-                    Subtotal ({itemCount} items)
+                    {t('subtotal', { count: itemCount })}
                   </div>
                   <div className="text-stone-500 text-xs font-medium font-['Inter'] leading-5">
                     ${subtotal.toFixed(2)}
@@ -401,7 +436,7 @@ export default function OrderPage() {
                 </div>
                 <div className="self-stretch inline-flex justify-between items-center">
                   <div className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">
-                    Service Charge (10%)
+                    {t('serviceCharge')}
                   </div>
                   <div className="text-stone-500 text-xs font-medium font-['Inter'] leading-5">
                     ${serviceCharge.toFixed(2)}
@@ -410,7 +445,7 @@ export default function OrderPage() {
               </div>
               <div className="w-full h-0 border-t border-dashed border-neutral-400" />
               <div className="self-stretch inline-flex justify-between items-center">
-                <div className="text-black text-sm font-medium font-['Inter'] leading-5">Total</div>
+                <div className="text-black text-sm font-medium font-['Inter'] leading-5">{t('total')}</div>
                 <div className="text-emerald-700 text-sm font-semibold font-['Inter'] leading-5">
                   ${total.toFixed(2)}
                 </div>
@@ -428,7 +463,7 @@ export default function OrderPage() {
                   : 'bg-[#B9B9B9] cursor-not-allowed shadow-none',
               )}
             >
-              Place Order
+              {t('placeOrder')}
             </button>
           </div>
         </div>
@@ -474,6 +509,9 @@ function CustomizeItemModal({
   onClose: () => void;
   onSave: (item: OrderItem) => void;
 }) {
+  const t = useTranslations('order');
+  const tc = useTranslations('order.customize');
+  const locale = useLocale();
   // Cart lines (OrderItem) carry no `options` field, so when editing look the
   // required selection up from the menu definition — otherwise the Required
   // section disappears and only the optional stuff (add-ons) would show.
@@ -505,8 +543,8 @@ function CustomizeItemModal({
       <div className="pos-overlay__panel w-[651px] max-w-full rounded-[17px] bg-white px-8 pb-8 pt-[26px] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-[23px] font-medium leading-[1.4] text-black">Current Order</h2>
-          <button onClick={onClose} aria-label="Close" className="text-black transition-colors hover:text-zinc-500">
+          <h2 className="text-[23px] font-medium leading-[1.4] text-black">{tc('title')}</h2>
+          <button onClick={onClose} aria-label={tc('title')} className="text-black transition-colors hover:text-zinc-500">
             <X size={24} strokeWidth={2} />
           </button>
         </div>
@@ -518,7 +556,7 @@ function CustomizeItemModal({
               {data.emoji ?? '🍜'}
             </div>
             <div className="flex flex-col items-start gap-[15px] leading-[1.4]">
-              <p className="text-[19px] font-medium text-[#2D2F33]">{data.name}</p>
+              <p className="text-[19px] font-medium text-[#2D2F33]">{locStr(data.name, data.nameAr, locale)}</p>
               <p className="text-[17.5px] font-semibold text-[#026F4F]">${data.price.toFixed(2)}</p>
             </div>
           </div>
@@ -527,9 +565,9 @@ function CustomizeItemModal({
           {optionList.length > 0 && (
             <div className="flex flex-col gap-[29px]">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">Noodle Texture</p>
+                <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">{tc('noodleTexture')}</p>
                 <span className="flex w-[86px] shrink-0 items-center justify-center whitespace-nowrap rounded-[16px] bg-[#2D2F33] px-[10px] py-[3px] text-[13px] font-normal leading-[1.63] text-white">
-                  Required
+                  {tc('required')}
                 </span>
               </div>
               <div className="flex flex-col gap-[21px]">
@@ -540,9 +578,9 @@ function CustomizeItemModal({
                     onClick={() => setTexture(opt)}
                     className="flex w-full items-center justify-between gap-2 text-left"
                   >
-                    <span className="text-[16px] font-normal leading-[1.4] text-[#2D2F33]">{opt}</span>
+                    <span className="text-[16px] font-normal leading-[1.4] text-[#2D2F33]">{locale === 'ar' ? OPTION_AR[opt] ?? opt : opt}</span>
                     <span className="flex items-center gap-[13px]">
-                      <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">Free</span>
+                      <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">{tc('free')}</span>
                       <span
                         className={cn(
                           'flex size-6 items-center justify-center rounded-full border-2 transition-all',
@@ -560,7 +598,7 @@ function CustomizeItemModal({
 
           {/* Extra add-ons */}
           <div className="flex flex-col gap-2.5">
-            <p className="text-sm font-semibold text-[#2D2F33]">Extra Add-ons</p>
+            <p className="text-sm font-semibold text-[#2D2F33]">{tc('extraAddons')}</p>
             <div className="flex flex-wrap gap-2">
               {['Mayo', 'Extra Chili', 'Boiled Egg', 'Bamboo Shoots'].map((mod) => {
                 const isSelected = modifiers.includes(mod);
@@ -576,7 +614,7 @@ function CustomizeItemModal({
                         : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
                     )}
                   >
-                    + {mod}
+                    + {locale === 'ar' ? MODIFIER_AR[mod] ?? mod : mod}
                   </button>
                 );
               })}
@@ -585,11 +623,11 @@ function CustomizeItemModal({
 
           {/* Special instructions */}
           <div className="flex flex-col gap-[17px]">
-            <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">Special instructions</p>
+            <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">{tc('specialInstructions')}</p>
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="Add note (e.g. no spicy, less salt)"
+              placeholder={tc('notePlaceholder')}
               rows={4}
               className="h-[105px] w-full resize-none rounded-[9px] border border-[#B9B9B9] bg-[#F2F2F2] p-[15px] pt-[11px] text-[13px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:border-[#026F4F]"
             />
@@ -601,7 +639,7 @@ function CustomizeItemModal({
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
-                aria-label="Decrease quantity"
+                aria-label={tc('decreaseQty')}
                 className="flex size-10 items-center justify-center rounded-full bg-emerald-200 text-emerald-900 transition-colors hover:bg-emerald-300"
               >
                 <Minus size={18} strokeWidth={2.4} />
@@ -610,7 +648,7 @@ function CustomizeItemModal({
               <button
                 type="button"
                 onClick={() => setQty((q) => q + 1)}
-                aria-label="Increase quantity"
+                aria-label={tc('increaseQty')}
                 className="flex size-10 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xs transition-colors hover:bg-emerald-800"
               >
                 <Plus size={18} strokeWidth={2.4} />
@@ -624,6 +662,7 @@ function CustomizeItemModal({
                   id: data.id,
                   lineId: 'lineId' in data && data.lineId ? data.lineId : '',
                   name: data.name,
+                  nameAr: data.nameAr,
                   price: data.price,
                   qty,
                   texture: texture || undefined,
@@ -634,7 +673,7 @@ function CustomizeItemModal({
               }}
               className="h-[55px] w-[438px] max-w-full shrink rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#015c42] active:scale-[0.99]"
             >
-              Done
+              {tc('done')}
             </button>
           </div>
         </div>

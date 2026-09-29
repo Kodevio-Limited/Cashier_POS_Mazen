@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link } from '@/i18n/routing';
+import { useRouter } from '@/i18n/routing';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, clearDraft } from '@/lib/order-draft';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
+import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import {
   CollectPaymentModal,
   SplitBillModal,
@@ -19,6 +21,8 @@ interface OrderLineItem {
   /** Unique cart-line id — several lines can share the same menu `id`. */
   lineId: string;
   name: string;
+  /** Arabic twin of `name` (cart lines carry it through edits). */
+  nameAr?: string;
   price: number;
   qty: number;
   emoji?: string;
@@ -28,13 +32,16 @@ interface OrderLineItem {
 }
 
 const INITIAL_ITEMS: OrderLineItem[] = [
-  { id: '1', lineId: 'demo-1', name: 'Shoyu Ramen', price: 15.99, qty: 2, emoji: '🍜', modifiers: ['Mayo', 'Extra Chili'] },
-  { id: '2', lineId: 'demo-2', name: 'Classic Burger', price: 15.99, qty: 1, emoji: '🍔' },
-  { id: '3', lineId: 'demo-3', name: 'Coca-Cola', price: 2.99, qty: 2, emoji: '🥤' },
+  { id: '1', lineId: 'demo-1', name: 'Shoyu Ramen', nameAr: 'رامن شويو', price: 15.99, qty: 2, emoji: '🍜', modifiers: ['Mayo', 'Extra Chili'] },
+  { id: '2', lineId: 'demo-2', name: 'Classic Burger', nameAr: 'برجر كلاسيك', price: 15.99, qty: 1, emoji: '🍔' },
+  { id: '3', lineId: 'demo-3', name: 'Coca-Cola', nameAr: 'كوكا كولا', price: 2.99, qty: 2, emoji: '🥤' },
 ];
 
 export default function PlaceOrderPage() {
   const router = useRouter();
+  const t = useTranslations('placeOrder');
+  const tSess = useTranslations('orderSession');
+  const locale = useLocale();
   // Prefer the live cart drafted on the Menu (/order) page; fall back to demo
   // items only on a direct visit with no draft. Edits here are saved back so
   // the "<-" back-arrow returns to the Menu with the same items.
@@ -52,9 +59,11 @@ export default function PlaceOrderPage() {
   const orderNumber = session?.orderNumber ?? 'ORD-1025';
 
   // Customer details
-  const [phone, setPhone] = useState('+1 (555) 234-5678');
-  const [name, setName] = useState('Sarah Jessie');
-  const [email, setEmail] = useState('sarah.jessie@example.com');
+  // Demo customer defaults are localized at first render via messages
+  // (placeOrder.demo*) so the seeded form matches the active locale.
+  const [phone, setPhone] = useState(() => t('demoPhone'));
+  const [name, setName] = useState(() => t('demoName'));
+  const [email, setEmail] = useState(() => t('demoEmail'));
   const [notes, setNotes] = useState('');
 
   // Checkout options
@@ -102,44 +111,48 @@ export default function PlaceOrderPage() {
               href="/order"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2F2F2] text-[#2D2F33] hover:bg-[#E9E9E9] transition-colors"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={18} className="rtl:scale-x-[-1]" />
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-semibold text-[20px] text-[#2D2F33]">Order #{orderNumber}</h1>
+                <h1 className="font-semibold text-[20px] text-[#2D2F33]">{t('orderTitle', { number: orderNumber })}</h1>
                 {session && (
                   <span className="rounded-full bg-[#026F4F] px-2.5 py-0.5 text-[11px] font-medium text-white">
-                    {sessionLabel(session)}
+                    {sessionLabel(session, locale, {
+                      takeOut: tSess('takeOut'),
+                      delivery: tSess('delivery'),
+                      dineIn: tSess('dineIn'),
+                    })}
                   </span>
                 )}
               </div>
-              <p className="text-[13px] text-[#686868]">Review items and customer details</p>
+              <p className="text-[13px] text-[#686868]">{t('reviewSubtitle')}</p>
             </div>
           </div>
         </div>
 
         {/* Current Details Header */}
         <div className="pt-4 pb-2 flex justify-between items-center">
-          <h2 className="font-medium text-[15px] text-[#2D2F33]">Current Details</h2>
-          <span className="text-xs text-[#989898]">{items.length} items</span>
+          <h2 className="font-medium text-[15px] text-[#2D2F33]">{t('currentDetails')}</h2>
+          <span className="text-xs text-[#989898]">{t('itemsCount', { count: items.length })}</span>
         </div>
 
         {/* Items Table */}
-        <div className="flex-1 overflow-y-auto pr-1">
+        <div className="flex-1 overflow-y-auto pe-1">
           {/* Table Header */}
           <div className="grid grid-cols-12 gap-3 px-4 py-2.5 bg-[#F2F2F2] rounded-lg text-xs font-medium text-[#686868] mb-3">
-            <div className="col-span-6">Dish</div>
-            <div className="col-span-2 text-right">Amount</div>
-            <div className="col-span-2 text-center">Quantity</div>
-            <div className="col-span-2 text-right">Actions</div>
+            <div className="col-span-6">{t('colDish')}</div>
+            <div className="col-span-2 text-end">{t('colAmount')}</div>
+            <div className="col-span-2 text-center">{t('colQuantity')}</div>
+            <div className="col-span-2 text-end">{t('colActions')}</div>
           </div>
 
           {/* Table Rows */}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-[#989898] text-sm">
-              <p>No items in this check.</p>
+              <p>{t('emptyCheck')}</p>
               <Link href="/order" className="mt-2 text-[#026F4F] font-medium hover:underline">
-                + Add items from menu
+                {t('addFromMenu')}
               </Link>
             </div>
           ) : (
@@ -155,7 +168,7 @@ export default function PlaceOrderPage() {
                       {item.emoji ?? '🍜'}
                     </div>
                     <div>
-                      <p className="font-medium text-[14px] text-[#2D2F33]">{item.name}</p>
+                      <p className="font-medium text-[14px] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</p>
                       {item.modifiers && item.modifiers.length > 0 && (
                         <p className="text-xs text-[#989898] mt-0.5">
                           + {item.modifiers.join(', ')}
@@ -174,7 +187,7 @@ export default function PlaceOrderPage() {
                     <button
                       onClick={() => decQty(item.lineId)}
                       disabled={item.qty <= 1}
-                      title={item.qty <= 1 ? 'Minimum quantity is 1' : 'Decrease quantity'}
+                      title={item.qty <= 1 ? t('minQty') : t('decQty')}
                       className={cn(
                         'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
                         item.qty <= 1
@@ -198,7 +211,7 @@ export default function PlaceOrderPage() {
                     <button
                       onClick={() => removeItem(item.lineId)}
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                      title="Remove item"
+                      title={t('removeItem')}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -216,7 +229,7 @@ export default function PlaceOrderPage() {
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-[#026F4F] bg-emerald-50 hover:bg-emerald-100 transition-colors"
           >
             <Plus size={15} />
-            <span>Add More Items</span>
+            <span>{t('addMoreItems')}</span>
           </Link>
         </div>
       </div>
@@ -225,7 +238,7 @@ export default function PlaceOrderPage() {
       <div className="w-[343px] shrink-0 flex flex-col bg-white rounded-xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)]">
         {/* Header */}
         <div className="px-4 py-3 border-b border-[rgba(185,185,185,0.37)] flex justify-between items-center">
-          <h2 className="font-medium text-[19px] text-[#2D2F33]">Customer Details</h2>
+          <h2 className="font-medium text-[19px] text-[#2D2F33]">{t('customerDetails')}</h2>
           <button
             onClick={() => {
               setPhone('');
@@ -234,7 +247,7 @@ export default function PlaceOrderPage() {
               setNotes('');
             }}
             className="w-9 h-9 rounded-lg bg-red-400 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
-            title="Clear customer fields"
+            title={t('clearFields')}
           >
             <Trash2 size={18} />
           </button>
@@ -246,13 +259,13 @@ export default function PlaceOrderPage() {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[#686868] flex items-center gap-1">
               <Phone size={12} />
-              <span>Phone Number (Optional)</span>
+              <span>{t('phoneLabel')}</span>
             </label>
             <input
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 (555) 000-0000"
+              placeholder={t('phonePlaceholder')}
               className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
             />
           </div>
@@ -261,44 +274,44 @@ export default function PlaceOrderPage() {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[#686868] flex items-center gap-1">
               <User size={12} />
-              <span>Full Name (Optional)</span>
+              <span>{t('nameLabel')}</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Customer Name"
+              placeholder={t('namePlaceholder')}
               className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
             />
           </div>
 
           {/* Email */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#686868]">Send Receipt to Email (Optional)</label>
+            <label className="text-xs text-[#686868]">{t('emailLabel')}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="customer@email.com"
+              placeholder={t('emailPlaceholder')}
               className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
             />
           </div>
 
           {/* Promo code input (no apply button) */}
           <div className="border border-[#B9B9B9] rounded-xl p-1 flex items-center gap-2 bg-white mt-1">
-            <Tag size={16} className="text-[#989898] ml-3 shrink-0" />
+            <Tag size={16} className="text-[#989898] ms-3 shrink-0" />
             <input
               type="text"
               value={promo}
               onChange={(e) => setPromo(e.target.value.toUpperCase())}
-              placeholder="ENTER PROMO CODE"
+              placeholder={t('promoPlaceholder')}
               className="flex-1 bg-transparent text-xs uppercase font-medium text-[#2D2F33] placeholder:text-[#B9B9B9] outline-none"
             />
           </div>
 
           {/* Payment Method Switcher */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-medium text-[#2D2F33]">Payment Method</label>
+            <label className="text-xs font-medium text-[#2D2F33]">{t('paymentMethod')}</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -311,7 +324,7 @@ export default function PlaceOrderPage() {
                 )}
               >
                 <Banknote size={16} />
-                <span>Cash</span>
+                <span>{t('payMethod.cash')}</span>
               </button>
               <button
                 type="button"
@@ -324,31 +337,31 @@ export default function PlaceOrderPage() {
                 )}
               >
                 <CreditCard size={16} />
-                <span>Card</span>
+                <span>{t('payMethod.card')}</span>
               </button>
             </div>
           </div>
 
           {/* Payment Details Box */}
           <div className="bg-[#F2F2F2] rounded-lg p-3 flex flex-col gap-2">
-            <p className="font-medium text-[14px] text-[#2D2F33]">Payments Details</p>
+            <p className="font-medium text-[14px] text-[#2D2F33]">{t('paymentsDetails')}</p>
             <div className="flex justify-between text-xs text-[#686868]">
-              <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} items)</span>
+              <span>{t('subtotalItems', { count: items.reduce((s, i) => s + i.qty, 0) })}</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-xs text-emerald-700">
-                <span>Promo Discount (10%)</span>
+                <span>{t('promoDiscount')}</span>
                 <span>-${discount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-xs text-[#686868]">
-              <span>Service Charge (10%)</span>
+              <span>{t('serviceCharge')}</span>
               <span>${serviceCharge.toFixed(2)}</span>
             </div>
             <div className="border-t border-dashed border-[#989898] my-0.5" />
             <div className="flex justify-between text-sm font-medium text-[#2D2F33]">
-              <span>Total</span>
+              <span>{t('total')}</span>
               <span className="font-semibold text-[#026F4F]">${total.toFixed(2)}</span>
             </div>
           </div>
@@ -368,7 +381,7 @@ export default function PlaceOrderPage() {
               )}
             >
               <Split size={15} className="shrink-0" />
-              <span>Split Bill</span>
+              <span>{t('splitBill')}</span>
             </button>
             <button
               type="button"
@@ -380,7 +393,7 @@ export default function PlaceOrderPage() {
               )}
             >
               <GitMerge size={15} className="shrink-0" />
-              <span>Merge Bill</span>
+              <span>{t('mergeBill')}</span>
             </button>
           </div>
 
@@ -390,7 +403,7 @@ export default function PlaceOrderPage() {
             className="w-full h-[46px] rounded-full border border-[#B9B9B9] bg-[#E9E9E9] hover:bg-[#E0E0E0] text-[#2D2F33] text-sm font-medium flex items-center justify-center gap-2 transition-colors"
           >
             <PauseCircle size={18} className="text-[#686868]" />
-            <span>Keep Check Running</span>
+            <span>{t('keepRunning')}</span>
           </button>
 
           {/* Confirm & Pay */}
@@ -414,7 +427,7 @@ export default function PlaceOrderPage() {
             )}
           >
             <Check size={20} />
-            <span>Confirm & Pay</span>
+            <span>{t('confirmPay')}</span>
           </button>
         </div>
       </div>
@@ -480,13 +493,13 @@ export default function PlaceOrderPage() {
               <Check size={36} strokeWidth={3} />
             </div>
 
-            <h3 className="font-semibold text-2xl text-[#2D2F33]">Order Placed & Paid!</h3>
+            <h3 className="font-semibold text-2xl text-[#2D2F33]">{t('successTitle')}</h3>
             <p className="text-sm text-[#686868]">
-              Order <span className="font-medium text-[#2D2F33]">#{orderNumber}</span> has been confirmed and dispatched to kitchen.
+              {t('successBody', { number: orderNumber })}
             </p>
 
             <div className="w-full bg-[#F2F2F2] rounded-xl p-4 flex justify-between text-sm text-[#2D2F33] my-2">
-              <span>Total Paid ({paymentMethod}):</span>
+              <span>{t('totalPaid', { method: t('payMethod.' + paymentMethod.toLowerCase()) })}</span>
               <span className="font-bold text-[#026F4F]">${total.toFixed(2)}</span>
             </div>
 
@@ -503,7 +516,7 @@ export default function PlaceOrderPage() {
                 className="flex-1 h-12 rounded-full border border-[#B9B9B9] bg-white text-[#2D2F33] font-medium text-sm hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2"
               >
                 <Printer size={16} />
-                Print Receipt
+                {t('printReceipt')}
               </button>
               <button
                 onClick={() => {
@@ -515,7 +528,7 @@ export default function PlaceOrderPage() {
                 }}
                 className="flex-1 h-12 rounded-full bg-[#026F4F] hover:bg-[#015c42] text-white font-medium text-sm transition-colors shadow-md"
               >
-                New Order
+                {t('newOrder')}
               </button>
             </div>
           </div>

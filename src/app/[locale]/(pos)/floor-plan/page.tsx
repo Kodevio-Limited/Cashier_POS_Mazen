@@ -1,19 +1,23 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useLocale, useTranslations } from 'next-intl';
 import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
 import { clearDraft } from '@/lib/order-draft';
 import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
 import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
+import { locStr, locTimeAgo } from '@/lib/locale-fields';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
 interface FloorTable {
   id: string;
   name: string;
+  /** Arabic twin of `name` for mock data (picked by active locale). */
+  nameAr?: string;
   capacity: number;
   status: FloorTableStatus;
   zone: Zone;
@@ -24,22 +28,24 @@ interface FloorTable {
   timeSeated?: string;
   reservedTime?: string;
   reservedName?: string;
+  /** Arabic twin of `reservedName`. */
+  reservedNameAr?: string;
 }
 
 const INITIAL_TABLES: FloorTable[] = [
-  { id: 't1', name: 'Table A01', capacity: 2, status: 'available', zone: 'Indoor' },
-  { id: 't2', name: 'Table A02', capacity: 4, status: 'occupied', zone: 'Indoor', guestsCount: 3, itemsCount: 4, orderId: '#044', orderTotal: 15.99, timeSeated: '35 mins' },
-  { id: 't3', name: 'Table A03', capacity: 4, status: 'available', zone: 'Indoor' },
-  { id: 't4', name: 'Table A04', capacity: 2, status: 'reserved', zone: 'Indoor', reservedTime: '7:30 PM', reservedName: 'John Smith' },
-  { id: 't5', name: 'Table A05', capacity: 6, status: 'occupied', zone: 'Indoor', guestsCount: 4, itemsCount: 2, orderId: '#045', orderTotal: 42.5, timeSeated: '20 mins' },
-  { id: 't6', name: 'Table A06', capacity: 4, status: 'available', zone: 'Indoor' },
-  { id: 't7', name: 'Table A07', capacity: 2, status: 'occupied', zone: 'Indoor', guestsCount: 2, itemsCount: 3, orderId: '#048', orderTotal: 28.75, timeSeated: '50 mins' },
-  { id: 't8', name: 'Table A08', capacity: 8, status: 'available', zone: 'Indoor' },
-  { id: 't9', name: 'Table B01', capacity: 4, status: 'available', zone: 'Outdoor' },
-  { id: 't10', name: 'Table B02', capacity: 4, status: 'occupied', zone: 'Outdoor', guestsCount: 4, itemsCount: 5, orderId: '#051', orderTotal: 82.1, timeSeated: '15 mins' },
-  { id: 't11', name: 'Table B03', capacity: 6, status: 'reserved', zone: 'Outdoor', reservedTime: '8:00 PM', reservedName: 'Sarah Lee' },
-  { id: 't12', name: 'Table C01', capacity: 4, status: 'occupied', zone: 'Patio', guestsCount: 3, itemsCount: 2, orderId: '#053', orderTotal: 33.98, timeSeated: '10 mins' },
-  { id: 't13', name: 'Table C02', capacity: 2, status: 'available', zone: 'Patio' },
+  { id: 't1', name: 'Table A01', nameAr: 'طاولة A01', capacity: 2, status: 'available', zone: 'Indoor' },
+  { id: 't2', name: 'Table A02', nameAr: 'طاولة A02', capacity: 4, status: 'occupied', zone: 'Indoor', guestsCount: 3, itemsCount: 4, orderId: '#044', orderTotal: 15.99, timeSeated: '35 mins' },
+  { id: 't3', name: 'Table A03', nameAr: 'طاولة A03', capacity: 4, status: 'available', zone: 'Indoor' },
+  { id: 't4', name: 'Table A04', nameAr: 'طاولة A04', capacity: 2, status: 'reserved', zone: 'Indoor', reservedTime: '7:30 PM', reservedName: 'John Smith', reservedNameAr: 'جون سميث' },
+  { id: 't5', name: 'Table A05', nameAr: 'طاولة A05', capacity: 6, status: 'occupied', zone: 'Indoor', guestsCount: 4, itemsCount: 2, orderId: '#045', orderTotal: 42.5, timeSeated: '20 mins' },
+  { id: 't6', name: 'Table A06', nameAr: 'طاولة A06', capacity: 4, status: 'available', zone: 'Indoor' },
+  { id: 't7', name: 'Table A07', nameAr: 'طاولة A07', capacity: 2, status: 'occupied', zone: 'Indoor', guestsCount: 2, itemsCount: 3, orderId: '#048', orderTotal: 28.75, timeSeated: '50 mins' },
+  { id: 't8', name: 'Table A08', nameAr: 'طاولة A08', capacity: 8, status: 'available', zone: 'Indoor' },
+  { id: 't9', name: 'Table B01', nameAr: 'طاولة B01', capacity: 4, status: 'available', zone: 'Outdoor' },
+  { id: 't10', name: 'Table B02', nameAr: 'طاولة B02', capacity: 4, status: 'occupied', zone: 'Outdoor', guestsCount: 4, itemsCount: 5, orderId: '#051', orderTotal: 82.1, timeSeated: '15 mins' },
+  { id: 't11', name: 'Table B03', nameAr: 'طاولة B03', capacity: 6, status: 'reserved', zone: 'Outdoor', reservedTime: '8:00 PM', reservedName: 'Sarah Lee', reservedNameAr: 'سارة لي' },
+  { id: 't12', name: 'Table C01', nameAr: 'طاولة C01', capacity: 4, status: 'occupied', zone: 'Patio', guestsCount: 3, itemsCount: 2, orderId: '#053', orderTotal: 33.98, timeSeated: '10 mins' },
+  { id: 't13', name: 'Table C02', nameAr: 'طاولة C02', capacity: 2, status: 'available', zone: 'Patio' },
 ];
 
 const ZONE_FILTERS = ['All', 'Indoor', 'Outdoor', 'Patio'] as const;
@@ -47,6 +53,10 @@ type ZoneFilter = (typeof ZONE_FILTERS)[number];
 
 export default function FloorPlanPage() {
   const router = useRouter();
+  const t = useTranslations('floorPlan');
+  const tTime = useTranslations('common.time');
+  const tc = useTranslations('common.actions');
+  const locale = useLocale();
   const [tables, setTables] = useState<FloorTable[]>(INITIAL_TABLES);
   const [zoneFilter, setZoneFilter] = useState<ZoneFilter>('All');
   const [activeModalTable, setActiveModalTable] = useState<FloorTable | null>(null);
@@ -81,9 +91,16 @@ export default function FloorPlanPage() {
 
   // Persist the table / Take Out / Delivery choice, then open the menu to build
   // the order. `fresh` clears any previous cart so a new order starts empty.
+  // Both name twins are stored so the session renders in either locale.
   function startOrder(type: OrderType, tableName: string | undefined, fresh: boolean) {
     if (fresh) clearDraft();
-    saveSession({ orderNumber: newOrderNumber(), type, tableName });
+    const table = tables.find((tbl) => tbl.name === tableName);
+    saveSession({
+      orderNumber: newOrderNumber(),
+      type,
+      tableName,
+      tableNameAr: table?.nameAr,
+    });
     router.push('/order');
   }
 
@@ -143,7 +160,7 @@ export default function FloorPlanPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-[19px]">
           <h1 className="text-[19px] font-medium leading-[1.4] text-black">
-            Floor Plan <span className="text-[13px] font-normal text-[#989898]">({tables.length} tables)</span>
+            {t('title')} <span className="text-[13px] font-normal text-[#989898]">{t('tablesCount', { count: tables.length })}</span>
           </h1>
           <div className="flex flex-wrap items-center gap-[13px]">
             {ZONE_FILTERS.map((zone) => (
@@ -157,7 +174,7 @@ export default function FloorPlanPage() {
                     : 'bg-white text-[#686868] hover:text-[#026F4F]',
                 )}
               >
-                {zone}
+                {zone === 'All' ? t('zones.all') : zone === 'Indoor' ? t('zones.indoor') : zone === 'Outdoor' ? t('zones.outdoor') : t('zones.patio')}
               </button>
             ))}
           </div>
@@ -169,14 +186,14 @@ export default function FloorPlanPage() {
             className="flex h-[51px] items-center gap-[6px] rounded-[56px] border border-[#B9B9B9] bg-white px-[19px] text-[18px] font-normal leading-[1.4] text-[#686868] transition-colors hover:border-[#026F4F] hover:text-[#026F4F]"
           >
             <ShoppingBag size={30} strokeWidth={1.4} className="shrink-0" />
-            <span>Take Out</span>
+            <span>{t('takeOut')}</span>
           </button>
           <button
             onClick={() => startOrder('delivery', undefined, true)}
             className="flex h-[51px] items-center gap-[6px] rounded-[56px] border border-[#B9B9B9] bg-white px-[19px] text-[18px] font-normal leading-[1.4] text-[#686868] transition-colors hover:border-[#026F4F] hover:text-[#026F4F]"
           >
             <Bike size={30} strokeWidth={1.4} className="shrink-0" />
-            <span>Delivery</span>
+            <span>{t('delivery')}</span>
           </button>
         </div>
       </div>
@@ -186,13 +203,13 @@ export default function FloorPlanPage() {
         {filteredTables.map((table) => (
           <FloorTableCard
             key={table.id}
-            name={table.name}
+            name={locStr(table.name, table.nameAr, locale)}
             zone={table.zone}
             status={table.status}
             itemsCount={table.status === 'occupied' ? table.itemsCount : undefined}
             bill={table.status === 'occupied' && table.orderTotal ? `$${table.orderTotal.toFixed(2)}` : undefined}
             time={table.status === 'occupied' ? table.timeSeated : undefined}
-            requests={requestsForTable(table.name)}
+            requests={requestsForTable(table.name).map((r) => ({ ...r, timeAgo: locTimeAgo(r.timeAgo, locale, tTime) }))}
             onClick={() => {
               // Available tables skip the modal entirely: seat guests and open
               // the menu immediately. Reserved/occupied tables keep the modal.
@@ -205,7 +222,7 @@ export default function FloorPlanPage() {
           />
         ))}
         {filteredTables.length === 0 && (
-          <p className="py-16 text-sm text-[#989898]">No tables in this zone yet.</p>
+          <p className="py-16 text-sm text-[#989898]">{t('noTables')}</p>
         )}
       </div>
 
@@ -215,15 +232,15 @@ export default function FloorPlanPage() {
           <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
               <div>
-                <h3 className="text-xl font-bold text-black">{activeModalTable.name}</h3>
+                <h3 className="text-xl font-bold text-black">{locStr(activeModalTable.name, activeModalTable.nameAr, locale)}</h3>
                 <p className="text-xs text-neutral-400">
-                  {activeModalTable.zone} • {activeModalTable.capacity} Seats •{' '}
-                  <span className="font-semibold uppercase text-[#2D2F33]">{activeModalTable.status}</span>
+                  {t(`zones.${activeModalTable.zone.toLowerCase()}`)} • {activeModalTable.capacity} {t('modal.seats')} •{' '}
+                  <span className="font-semibold uppercase text-[#2D2F33]">{t(`status.${activeModalTable.status}`)}</span>
                 </p>
               </div>
               <button
                 onClick={() => setActiveModalTable(null)}
-                aria-label="Close"
+                aria-label={tc('close')}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition-colors hover:text-black"
               >
                 <X size={18} />
@@ -233,7 +250,7 @@ export default function FloorPlanPage() {
             <div className="flex flex-col gap-2 rounded-xl bg-zinc-100 p-3.5">
               {activeModalTable.orderId && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-500">Active Order</span>
+                  <span className="text-neutral-500">{t('modal.activeOrder')}</span>
                   <span className="font-semibold text-emerald-700">
                     {activeModalTable.orderId} (${activeModalTable.orderTotal?.toFixed(2) ?? '0.00'})
                   </span>
@@ -241,36 +258,36 @@ export default function FloorPlanPage() {
               )}
               {activeModalTable.reservedName && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-500">Reserved For</span>
+                  <span className="text-neutral-500">{t('modal.reservedFor')}</span>
                   <span className="font-semibold text-blue-700">
-                    {activeModalTable.reservedName} • {activeModalTable.reservedTime}
+                    {locStr(activeModalTable.reservedName, activeModalTable.reservedNameAr, locale)} • {activeModalTable.reservedTime}
                   </span>
                 </div>
               )}
               {activeModalTable.status === 'available' && (
-                <p className="text-xs text-neutral-500">This table is free. Seat guests to start a new order.</p>
+                <p className="text-xs text-neutral-500">{t('modal.tableIsFree')}</p>
               )}
 
               {/* Live requests for this table */}
-              {requestsForTable(activeModalTable.name).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-xs">
-                  <span className="flex items-center gap-1.5 font-medium text-[#2D2F33]">
-                    {req.type === 'Waiter Requested' ? (
-                      <Bell size={13} className="text-fuchsia-600" />
-                    ) : (
-                      <CheckCircle2 size={13} className="text-blue-600" />
-                    )}
-                    {req.type}
-                    {req.paymentMethod ? ` (${req.paymentMethod})` : ''}
-                  </span>
-                  <button
-                    onClick={() => handleRequest(req.id)}
-                    className="shrink-0 rounded-full bg-orange-500 px-3 py-1 text-[11px] font-medium text-white transition-colors hover:bg-orange-600"
-                  >
-                    Handled
-                  </button>
-                </div>
-              ))}
+                  {requestsForTable(activeModalTable.name).map((req) => (
+                  <div key={req.id} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-[#2D2F33]">
+                      {req.type === 'Waiter Requested' ? (
+                        <Bell size={13} className="text-fuchsia-600" />
+                      ) : (
+                        <CheckCircle2 size={13} className="text-blue-600" />
+                      )}
+                      {req.type === 'Waiter Requested' ? t('modal.waiterRequested') : t('modal.checkRequested')}
+                      {req.paymentMethod ? ` (${t('paymentMethod.' + req.paymentMethod.toLowerCase())})` : ''}
+                    </span>
+                    <button
+                      onClick={() => handleRequest(req.id)}
+                      className="shrink-0 rounded-full bg-orange-500 px-3 py-1 text-[11px] font-medium text-white transition-colors hover:bg-orange-600"
+                    >
+                      {t('modal.handled')}
+                    </button>
+                  </div>
+                ))}
             </div>
 
             <div className="flex flex-col gap-2 pt-1">
@@ -280,7 +297,7 @@ export default function FloorPlanPage() {
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white transition-colors hover:bg-[#015c42]"
                 >
                   <Plus size={16} />
-                  <span>Start New Order & Seat Guests</span>
+                  <span>{t('modal.startNewOrder')}</span>
                 </button>
               )}
 
@@ -291,30 +308,28 @@ export default function FloorPlanPage() {
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white transition-colors hover:bg-[#015c42]"
                   >
                     <Plus size={16} />
-                    <span>Add Items to Order</span>
+                    <span>{t('modal.addItems')}</span>
                   </button>
                   <button
                     onClick={() => setShowTransferModal(true)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-100 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
                   >
                     <ArrowRightLeft size={16} />
-                    <span>Transfer Table</span>
+                    <span>{t('modal.transferTable')}</span>
                   </button>
                   <button
                     onClick={() => requestCheck(activeModalTable)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 text-sm font-medium text-white transition-colors hover:bg-amber-600"
                   >
                     <Receipt size={16} />
-                    <span>Print Bill / Request Check</span>
+                    <span>{t('modal.printBill')}</span>
                   </button>
                   <button
-                    onClick={() => {
-                      clearTable(activeModalTable);
-                    }}
+                    onClick={() => { clearTable(activeModalTable); }}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-medium text-white transition-colors hover:bg-green-700"
                   >
                     <CreditCard size={16} />
-                    <span>Collect Payment & Clear Table</span>
+                    <span>{t('modal.collectPayment')}</span>
                   </button>
                 </>
               )}
@@ -328,9 +343,9 @@ export default function FloorPlanPage() {
         <div className="pos-overlay z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="pos-overlay__panel flex w-[380px] max-w-full flex-col gap-4 rounded-2xl bg-white p-5 shadow-2xl">
             <div>
-              <h4 className="text-lg font-bold text-black">Transfer {activeModalTable.name}</h4>
+              <h4 className="text-lg font-bold text-black">{t('transfer.title', { name: activeModalTable.name })}</h4>
               <p className="mt-1 text-xs text-neutral-400">
-                Select an available target table to transfer active order {activeModalTable.orderId}
+                {t('transfer.subtitle', { orderId: activeModalTable.orderId ?? '' })}
               </p>
             </div>
             <select
@@ -338,12 +353,12 @@ export default function FloorPlanPage() {
               onChange={(e) => setTargetTransferTable(e.target.value)}
               className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm text-black outline-none focus:border-[#026F4F]"
             >
-              <option value="">Select Target Table</option>
+              <option value="">{t('transfer.selectTarget')}</option>
               {tables
-                .filter((t) => t.status === 'available')
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.zone} - {t.capacity} seats)
+                .filter((tbl) => tbl.status === 'available')
+                .map((tbl) => (
+                  <option key={tbl.id} value={tbl.id}>
+                    {locStr(tbl.name, tbl.nameAr, locale)} ({t('zones.' + tbl.zone.toLowerCase())} - {tbl.capacity} {t('modal.seats')})
                   </option>
                 ))}
             </select>
@@ -352,14 +367,14 @@ export default function FloorPlanPage() {
                 onClick={() => setShowTransferModal(false)}
                 className="h-10 flex-1 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
               >
-                Cancel
+                {tc('cancel')}
               </button>
               <button
                 onClick={handleTransferTable}
                 disabled={!targetTransferTable}
                 className="h-10 flex-1 rounded-xl bg-[#026F4F] text-xs font-medium text-white transition-colors hover:bg-[#015c42] disabled:cursor-not-allowed disabled:bg-zinc-300"
               >
-                Confirm Transfer
+                {t('transfer.confirmTransfer')}
               </button>
             </div>
           </div>

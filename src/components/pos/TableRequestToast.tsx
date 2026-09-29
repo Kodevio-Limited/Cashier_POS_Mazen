@@ -1,11 +1,25 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Bell, CheckCircle2, X } from 'lucide-react';
 import { getRequests, subscribeRequests, type TableRequest } from '@/lib/table-requests';
+import { mapEnum, locTimeAgo, locTable } from '@/lib/locale-fields';
+
+const REQUEST_TYPE_KEY_MAP: Record<string, string> = {
+  'Waiter Requested': 'waiterRequested',
+  'Check Requested': 'checkRequested',
+};
+
+const PAYMENT_METHOD_KEY_MAP: Record<string, string> = { Card: 'card', Cash: 'cash' };
 
 /** Small transient notification for a newly arrived table request. */
 export function TableRequestToast() {
+  const t = useTranslations('tableRequests');
+  const tType = useTranslations('floorPlan.modal');
+  const tTime = useTranslations('common.time');
+  const tTable = useTranslations('common.table');
+  const locale = useLocale();
   const [toast, setToast] = useState<TableRequest | null>(null);
   const known = useRef<Set<string> | null>(null);
 
@@ -37,7 +51,7 @@ export function TableRequestToast() {
         window.dispatchEvent(new Event('pos-open-table-requests'));
         setToast(null);
       }}
-      className="fixed bottom-6 right-6 z-[80] flex w-[320px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-xl bg-white p-4 text-left shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5 animate-in slide-in-from-bottom-4 fade-in duration-300"
+      className="fixed bottom-6 end-6 z-[80] flex w-[320px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-xl bg-white p-4 text-start shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5 animate-in slide-in-from-bottom-4 fade-in duration-300"
     >
       <span
         className={
@@ -50,17 +64,17 @@ export function TableRequestToast() {
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-[#2D2F33]">New Table Request</span>
-          <span className="text-[11px] text-[#989898]">Just now</span>
+          <span className="text-sm font-semibold text-[#2D2F33]">{t('newToast')}</span>
+          <span className="text-[11px] text-[#989898]">{locTimeAgo(toast.timeAgo, locale, tTime)}</span>
         </span>
         <span className="mt-0.5 block truncate text-[13px] text-[#686868]">
-          <span className="font-medium text-[#026F4F]">{toast.table}</span> · {toast.type}
+          <span className="font-medium text-[#026F4F]">{locTable(toast.table, locale, tTable)}</span> · {tType(mapEnum(toast.type, REQUEST_TYPE_KEY_MAP))}
         </span>
       </span>
       <span
         role="button"
         tabIndex={0}
-        aria-label="Dismiss notification"
+        aria-label={t('dismissToast')}
         onClick={(e) => {
           e.stopPropagation();
           setToast(null);

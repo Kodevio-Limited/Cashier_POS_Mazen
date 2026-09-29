@@ -4,7 +4,7 @@
 // Once a shift is running, go straight to the Floor Plan.
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { getActiveShift, subscribeShift } from '@/lib/shift-session';
 
 export default function Home() {

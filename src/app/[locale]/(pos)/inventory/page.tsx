@@ -67,7 +67,8 @@ export default function InventoryPage() {
   // ── Purchases ──
   function handleLogPurchase(f: PurchaseForm) {
     const poId = `PO-${886 + purchases.length}`;
-    setPurchases((prev) => [{ id: poId, date: f.date, ingredient: f.ingredientName, qty: f.qty, unit: ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs', avgCost: f.qty > 0 ? f.totalCost / f.qty : 0, total: f.totalCost, supplier: f.supplier }, ...prev]);
+    const ing = ingredients.find((i) => i.name === f.ingredientName);
+    setPurchases((prev) => [{ id: poId, date: f.date, ingredient: f.ingredientName, ingredientAr: ing?.nameAr, qty: f.qty, unit: ing?.unit ?? 'pcs', avgCost: f.qty > 0 ? f.totalCost / f.qty : 0, total: f.totalCost, supplier: f.supplier }, ...prev]);
     // Weighted moving average: (old stock value + purchase cost) / new stock.
     setIngredients((prev) => prev.map((i) => {
       if (i.name !== f.ingredientName) return i;
@@ -87,8 +88,9 @@ export default function InventoryPage() {
   // ── Transfers ──
   function handleSaveTransfer(f: TransferForm) {
     const trId = `TR-${886 + transfers.length}`;
-    const unit = ingredients.find((i) => i.name === f.ingredientName)?.unit ?? 'pcs';
-    setTransfers((prev) => [{ id: trId, date: f.date, ingredient: f.ingredientName, qty: f.qty, unit, from: f.from, to: f.to, status: 'COMPLETED', responsible: f.responsible }, ...prev]);
+    const ing = ingredients.find((i) => i.name === f.ingredientName);
+    const unit = ing?.unit ?? 'pcs';
+    setTransfers((prev) => [{ id: trId, date: f.date, ingredient: f.ingredientName, ingredientAr: ing?.nameAr, qty: f.qty, unit, from: f.from, to: f.to, status: 'COMPLETED', responsible: f.responsible }, ...prev]);
     setDrawer(null);
   }
 
@@ -96,14 +98,14 @@ export default function InventoryPage() {
   function handleSubmitCount(ingredientId: string, phys: number) {
     const ing = ingredients.find((i) => i.id === ingredientId);
     if (!ing) return;
-    setCounts((prev) => [{ id: `c-${Date.now()}`, date: '2023-10-25', ingredient: ing.name, theo: ing.qty, phys }, ...prev]);
+    setCounts((prev) => [{ id: `c-${Date.now()}`, date: '2023-10-25', ingredient: ing.name, ingredientAr: ing.nameAr, theo: ing.qty, phys }, ...prev]);
   }
 
   // ── Waste ──
   function handleSubmitWaste(e: { ingredientId: string; qty: number; unit: string; reason: string; responsible: string; notes: string }) {
     const ing = ingredients.find((i) => i.id === e.ingredientId);
     if (!ing) return;
-    setWaste((prev) => [{ id: `w-${Date.now()}`, date: '2023-10-25', item: ing.name, note: e.notes || e.reason, qty: e.qty, unit: e.unit, reason: e.reason, loggedBy: e.responsible }, ...prev]);
+    setWaste((prev) => [{ id: `w-${Date.now()}`, date: '2023-10-25', item: ing.name, itemAr: ing.nameAr, note: e.notes || e.reason, qty: e.qty, unit: e.unit, reason: e.reason, loggedBy: e.responsible }, ...prev]);
     setIngredients((prev) => prev.map((i) => (i.id === e.ingredientId ? { ...i, qty: Math.max(0, i.qty - e.qty), updatedAgo: 'Just now' } : i)));
   }
 

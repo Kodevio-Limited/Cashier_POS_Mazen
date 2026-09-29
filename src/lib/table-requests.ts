@@ -20,6 +20,9 @@ export const INITIAL_TABLE_REQUESTS: TableRequest[] = [
   { id: 'tr2', table: 'Table A02', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Card', createdAt: Date.now() - 33 * 60_000 },
   { id: 'tr3', table: 'Table A07', timeAgo: '33 min ago', type: 'Check Requested', paymentMethod: 'Cash', createdAt: Date.now() - 33 * 60_000 },
 ];
+// Table names (Table A05) and time-ago strings are localized at render time via
+// locTimeAgo() + table-<locale> formatting; the type is an enum mapped through
+// messages. Nothing here needs an explicit Arabic twin.
 
 function emit() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVT));

@@ -5,7 +5,8 @@
 // returns the app to the Start Shift screen.
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { Check, Clock, CreditCard, DollarSign, Printer, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { endShift, getActiveShift, subscribeShift, type ActiveShift } from '@/lib/shift-session';
@@ -37,6 +38,7 @@ export default function ShiftClosePage() {
 /* ── Shift dashboard (shown after shift starts) ─────────────────────────── */
 function ShiftDashboard({ shift }: { shift: ActiveShift }) {
   const router = useRouter();
+  const t = useTranslations('shiftClose');
   const { openingFloat, cashierName, startedAt } = shift;
 
   const [actualCash, setActualCash] = useState('');
@@ -53,11 +55,11 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
 
   function handleCloseShift() {
     if (!hasCount) {
-      setCashError('Please enter the actual cash counted in the drawer to close the shift.');
+      setCashError(t('errNoCount'));
       return;
     }
     setCashError('');
-    if (confirm('Are you sure you want to close the current shift and print the Z-Report?')) {
+    if (confirm(t('confirmCloseDialog'))) {
       endShift();
       router.replace('/shift');
     }
@@ -70,8 +72,8 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E9E9E9] bg-white px-5 py-3.5">
         <div className="min-w-0">
-          <h1 className="text-xl font-medium text-black">Shift &amp; Cash Drawer Management</h1>
-          <p className="text-xs font-normal text-neutral-400">Active Cashier: {cashierName} • Shift started {startedLabel}</p>
+          <h1 className="text-xl font-medium text-black">{t('heading')}</h1>
+          <p className="text-xs font-normal text-neutral-400">{t('activeCashier', { name: cashierName, time: startedLabel })}</p>
         </div>
       </div>
 
@@ -79,7 +81,7 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
           <div>
-            <p className="text-xs font-normal text-neutral-400">Opening Cash Float</p>
+            <p className="text-xs font-normal text-neutral-400">{t('openingFloat')}</p>
             <p className="text-xl font-bold text-black">${openingFloat.toFixed(2)}</p>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 font-bold text-zinc-700">$</div>
@@ -87,7 +89,7 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
 
         <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
           <div>
-            <p className="text-xs font-normal text-neutral-400">Cash Sales Today</p>
+            <p className="text-xs font-normal text-neutral-400">{t('cashSales')}</p>
             <p className="text-xl font-bold text-emerald-700">${cashSales.toFixed(2)}</p>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
@@ -97,7 +99,7 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
 
         <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
           <div>
-            <p className="text-xs font-normal text-neutral-400">Card / Digital Sales</p>
+            <p className="text-xs font-normal text-neutral-400">{t('cardSales')}</p>
             <p className="text-xl font-bold text-blue-700">${cardSales.toFixed(2)}</p>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
@@ -107,7 +109,7 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
 
         <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
           <div>
-            <p className="text-xs font-normal text-neutral-400">Total Net Revenue</p>
+            <p className="text-xs font-normal text-neutral-400">{t('netRevenue')}</p>
             <p className="text-xl font-bold text-[#026F4F]">${(cashSales + cardSales).toFixed(2)}</p>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-[#026F4F]">
@@ -120,42 +122,42 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
       <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
         <div className="flex flex-col justify-between rounded-xl border border-[#E9E9E9] bg-white p-5">
           <div>
-            <h3 className="mb-4 text-lg font-semibold text-black">Cash Drawer Calculation</h3>
+            <h3 className="mb-4 text-lg font-semibold text-black">{t('drawerCalc')}</h3>
             <div className="flex flex-col gap-3 text-xs">
               <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">Starting Cash Float</span>
+                <span className="text-neutral-500">{t('startingFloat')}</span>
                 <span className="font-medium text-black">${openingFloat.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">(+ ) Total Cash Sales Received</span>
+                <span className="text-neutral-500">{t('cashSalesReceived')}</span>
                 <span className="font-medium text-emerald-700">+${cashSales.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">(-) Paid Out / Expenses</span>
+                <span className="text-neutral-500">{t('paidOut')}</span>
                 <span className="font-medium text-rose-600">-${paidOutTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 py-2 text-sm font-bold">
-                <span className="text-black">Expected Drawer Balance</span>
+                <span className="text-black">{t('expectedBalance')}</span>
                 <span className="text-[#026F4F]">${expectedCash.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           <button
-            onClick={() => alert('Printing X-Report Shift Breakdown...')}
+            onClick={() => alert(t('xReportAlert'))}
             className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
           >
             <Printer size={16} />
-            <span>Print Mid-Shift X-Report</span>
+            <span>{t('printXReport')}</span>
           </button>
         </div>
 
         <div className="flex flex-col justify-between rounded-xl border border-[#E9E9E9] bg-white p-5">
           <div className="flex flex-col gap-4">
-            <h3 className="text-lg font-semibold text-black">Shift Reconciliation Count</h3>
+            <h3 className="text-lg font-semibold text-black">{t('reconCount')}</h3>
             <div className="flex flex-col gap-2">
               <label htmlFor="actual-cash" className="text-xs font-medium text-stone-500">
-                Actual Cash Counted in Drawer ($)
+                {t('actualCashLabel')}
               </label>
               <input
                 id="actual-cash"
@@ -186,16 +188,16 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
               <div>
                 <p className="flex items-center gap-1.5 text-xs font-semibold">
                   <Clock size={14} />
-                  Cash Variance
+                  {t('cashVariance')}
                 </p>
                 <p className="text-xs opacity-80">
                   {!hasCount
-                    ? 'Awaiting cash count'
+                    ? t('awaitingCount')
                     : variance === 0
-                      ? 'Drawer perfectly balanced'
+                      ? t('balanced')
                       : variance > 0
-                        ? 'Over cash in drawer'
-                        : 'Shortage detected'}
+                        ? t('over')
+                        : t('short')}
                 </p>
               </div>
               <span className="text-lg font-bold">
@@ -209,7 +211,7 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#015c42]"
           >
             <Check size={18} />
-            <span>Confirm &amp; Close Shift</span>
+            <span>{t('confirmClose')}</span>
           </button>
         </div>
       </div>

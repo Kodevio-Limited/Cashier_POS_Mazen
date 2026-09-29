@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TableRequestToast } from '@/components/pos/TableRequestToast';
 import { addRequest } from '@/lib/table-requests';
@@ -30,6 +30,8 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
   // Mock customer table requests (unchanged).
   useEffect(() => {
     if (!SIMULATE_TABLE_REQUESTS) return;
+    // Table codes (A02…) are locale-neutral; the “Table ” prefix is added at
+    // render time by the localized components, so seeds stay language-agnostic.
     const tables = ['Table A02', 'Table A05', 'Table A07', 'Table B01', 'Table C01'];
     const tick = () => {
       addRequest({
@@ -58,7 +60,9 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#F2F2F2]">
       <Sidebar />
-      <div className="pl-[119px] pr-[15px] pt-[26px] pb-3 min-h-screen">
+      {/* Offset equals the fixed sidebar (start-3 + w-[89px] + gap) — logical
+          properties so the content shifts correctly in RTL too. */}
+      <div className="ps-[119px] pe-[15px] pt-[26px] pb-3 min-h-screen">
         {children}
       </div>
       <TableRequestToast />

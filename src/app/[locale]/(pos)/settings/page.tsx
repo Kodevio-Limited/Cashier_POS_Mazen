@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -51,7 +52,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: () => void; la
       <span
         className={cn(
           'absolute top-[2px] h-[20px] w-[20px] rounded-full bg-white shadow transition-all',
-          on ? 'left-[27px]' : 'left-[2px]',
+          on ? 'start-[27px]' : 'start-[2px]',
         )}
       />
     </button>
@@ -77,6 +78,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
   const [values, setValues] = useState<Record<SettingKey, boolean>>(DEFAULTS);
   const [language, setLanguage] = useState(LANGUAGES[0]);
 
@@ -88,52 +90,52 @@ export default function SettingsPage() {
     <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[19px] bg-[#F2F2F2]">
       {/* Header */}
       <div className="flex flex-col gap-[7px]">
-        <h1 className="text-[19px] font-medium leading-[1.4] text-black">Settings</h1>
-        <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">Manage system preferences and configurations</p>
+        <h1 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h1>
+        <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
       </div>
 
       {/* Cards */}
       <div className="grid grid-cols-1 gap-[18px] pb-20 lg:grid-cols-2">
-        <Card title="Payment Settings">
-          <SettingRow label="Cash Payments" settingKey="cashPayments" values={values} onToggle={toggle} />
-          <SettingRow label="Card Payments" settingKey="cardPayments" values={values} onToggle={toggle} />
-          <SettingRow label="Wallet Payments" settingKey="walletPayments" values={values} onToggle={toggle} />
+        <Card title={t('paymentSettings')}>
+          <SettingRow label={t('cashPayments')} settingKey="cashPayments" values={values} onToggle={toggle} />
+          <SettingRow label={t('cardPayments')} settingKey="cardPayments" values={values} onToggle={toggle} />
+          <SettingRow label={t('walletPayments')} settingKey="walletPayments" values={values} onToggle={toggle} />
         </Card>
 
-        <Card title="Printer Settings">
-          <SettingRow label="Auto Print Receipt" settingKey="autoPrintReceipt" values={values} onToggle={toggle} />
-          <SettingRow label="Auto Print KOT" settingKey="autoPrintKOT" values={values} onToggle={toggle} />
+        <Card title={t('printerSettings')}>
+          <SettingRow label={t('autoPrintReceipt')} settingKey="autoPrintReceipt" values={values} onToggle={toggle} />
+          <SettingRow label={t('autoPrintKOT')} settingKey="autoPrintKOT" values={values} onToggle={toggle} />
           <button
-            onClick={() => alert('Test page sent to printer!')}
+            onClick={() => alert(t('testPrintAlert'))}
             className="flex h-[36px] w-full items-center justify-center rounded-[10px] bg-[#F2F2F2] text-[13px] font-medium leading-[1.4] text-black transition-colors hover:bg-[#E9E9E9]"
           >
-            Test Print
+            {t('testPrint')}
           </button>
         </Card>
 
-        <Card title="Inventory Settings">
-          <SettingRow label="Enable Inventory Tracking" settingKey="enableInventoryTracking" values={values} onToggle={toggle} />
-          <SettingRow label="Auto Hid unavailable items" settingKey="autoHideUnavailable" values={values} onToggle={toggle} />
-          <SettingRow label="Low Stock alerts" settingKey="lowStockAlerts" values={values} onToggle={toggle} />
+        <Card title={t('inventorySettings')}>
+          <SettingRow label={t('enableTracking')} settingKey="enableInventoryTracking" values={values} onToggle={toggle} />
+          <SettingRow label={t('autoHide')} settingKey="autoHideUnavailable" values={values} onToggle={toggle} />
+          <SettingRow label={t('lowStockAlerts')} settingKey="lowStockAlerts" values={values} onToggle={toggle} />
         </Card>
 
-        <Card title="Session Settings">
-          <SettingRow label="Require opening Cash float" settingKey="requireOpeningFloat" values={values} onToggle={toggle} />
-          <SettingRow label="Require Counted cash on close" settingKey="requireCountedCash" values={values} onToggle={toggle} />
+        <Card title={t('sessionSettings')}>
+          <SettingRow label={t('requireFloat')} settingKey="requireOpeningFloat" values={values} onToggle={toggle} />
+          <SettingRow label={t('requireCounted')} settingKey="requireCountedCash" values={values} onToggle={toggle} />
         </Card>
 
-        <Card title="Notifications">
-          <SettingRow label="Order Alerts" settingKey="orderAlerts" values={values} onToggle={toggle} />
-          <SettingRow label="Low Stock Alerts" settingKey="lowStockNotif" values={values} onToggle={toggle} />
+        <Card title={t('notifications')}>
+          <SettingRow label={t('orderAlerts')} settingKey="orderAlerts" values={values} onToggle={toggle} />
+          <SettingRow label={t('lowStockNotif')} settingKey="lowStockNotif" values={values} onToggle={toggle} />
         </Card>
 
         <section className="flex min-w-0 flex-col gap-[18px] rounded-[10px] bg-white p-[25px]">
-          <h2 className="text-[19px] font-medium leading-[1.4] text-black">Language & Regional Settings</h2>
+          <h2 className="text-[19px] font-medium leading-[1.4] text-black">{t('languageRegional')}</h2>
           <div className="flex flex-col gap-[18px]">
-            <span className="text-[16px] font-normal leading-[1.4] text-black">System Language</span>
+            <span className="text-[16px] font-normal leading-[1.4] text-black">{t('systemLanguage')}</span>
             <div className="relative">
               <select
-                aria-label="System language"
+                aria-label={t('systemLanguageAria')}
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 className="h-[43px] w-full appearance-none rounded-[7px] border border-[#989898] bg-white py-[11px] pl-[17px] pr-[40px] text-[14px] font-normal leading-[1.4] text-[#989898] outline-none focus:border-[#026F4F]"

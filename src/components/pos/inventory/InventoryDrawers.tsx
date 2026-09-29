@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { locStr, locUnit, LOCATIONS_KEY } from '@/lib/locale-fields';
 import { UNITS, LOCATIONS, compatibleUnits, convertQty, type Ingredient, type RecipeMap } from './types';
 import { Drawer, FormCard, Field, PillSelect, pillInputClass } from './InventoryShell';
 
@@ -13,10 +15,16 @@ function todayISO(): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-function formatDisplayDate(iso: string): string {
+function formatDisplayDate(iso: string, locale: string): string {
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // Latin digits in both locales (seed data keeps numbers Western by design).
+  return d.toLocaleDateString(locale === 'ar' ? 'ar-u-nu-latn' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function locationLabel(v: string, t: (key: string) => string): string {
+  const key = LOCATIONS_KEY[v];
+  return key ? t(key) : v;
 }
 
 // ─── ADD / EDIT INGREDIENT (Figma 1148:3330) ─────────────────────────────────
@@ -37,6 +45,8 @@ export function AddIngredientDrawer({
   onBack: () => void;
   onSave: (f: IngredientForm) => void;
 }) {
+  const t = useTranslations('inventory');
+  const tActions = useTranslations('common.actions');
   const [name, setName] = useState(initial?.name ?? '');
   const [qty, setQty] = useState(initial ? String(initial.qty) : '');
   const [unit, setUnit] = useState(initial?.unit ?? UNITS[0]);
@@ -45,36 +55,36 @@ export function AddIngredientDrawer({
 
   return (
     <Drawer
-      title={initial ? 'Edit Ingredient' : 'Add Ingredient'}
+      title={initial ? t('editIngredient') : t('addIngredient')}
       onBack={onBack}
       onCancel={onBack}
-      saveLabel="Save"
+      saveLabel={tActions('save')}
       onSave={() => {
         if (!name.trim()) return;
         onSave({ name: name.trim(), qty: parseFloat(qty) || 0, unit, threshold: parseFloat(threshold) || 0, avgPrice: parseFloat(avgPrice) || 0 });
       }}
     >
-      <FormCard title="Basic Info">
-        <Field label="Ingredient Name">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Beef Patties" className={pillInputClass} />
+      <FormCard title={t('formBasicInfo')}>
+        <Field label={t('fieldNameIngredient')}>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('phIngredientName')} className={pillInputClass} />
         </Field>
       </FormCard>
 
-      <FormCard title="Stock Tracking">
+      <FormCard title={t('formStockTracking')}>
         <div className="grid grid-cols-2 gap-[17px]">
-          <Field label="Initial Quantity">
+          <Field label={t('fieldNameInitialQty')}>
             <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal" placeholder="120" className={pillInputClass} />
           </Field>
-          <Field label="Unit Type">
-            <PillSelect ariaLabel="Unit type" value={unit} onChange={setUnit} options={UNITS} />
+          <Field label={t('fieldNameUnitType')}>
+            <PillSelect ariaLabel={t('fieldNameUnitType')} value={unit} onChange={setUnit} options={UNITS} getLabel={(u) => locUnit(u, t)} />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-[17px]">
-          <Field label="Low Stock Threshold">
+          <Field label={t('fieldNameThreshold')}>
             <input value={threshold} onChange={(e) => setThreshold(e.target.value)} inputMode="decimal" placeholder="50" className={pillInputClass} />
           </Field>
-          <Field label="Average Price ($)">
-            <input value={avgPrice} onChange={(e) => setAvgPrice(e.target.value)} inputMode="decimal" placeholder="1.50" className={pillInputClass} />
+          <Field label={t('fieldNameAvgPrice')}>
+            <input value={avgPrice} onChange={(e) => setAvgPrice(e.target.value)} inputMode="decimal" dir="ltr" placeholder="1.50" className={pillInputClass} />
           </Field>
         </div>
       </FormCard>
@@ -100,6 +110,9 @@ export function LogPurchaseDrawer({
   onBack: () => void;
   onSave: (f: PurchaseForm) => void;
 }) {
+  const t = useTranslations('inventory');
+  const tActions = useTranslations('common.actions');
+  const locale = useLocale();
   const [ingredientName, setIngredientName] = useState(ingredients[0]?.name ?? '');
   const [qty, setQty] = useState('');
   const [totalCost, setTotalCost] = useState('');
@@ -108,35 +121,44 @@ export function LogPurchaseDrawer({
 
   return (
     <Drawer
-      title="Log Purchase Order"
+      title={t('drawerLogPurchase')}
       onBack={onBack}
       onCancel={onBack}
-      saveLabel="Log Purchase"
+      saveLabel={t('saveLogPurchase')}
       onSave={() => {
         if (!ingredientName || !qty) return;
-        onSave({ ingredientName, qty: parseFloat(qty) || 0, totalCost: parseFloat(totalCost) || 0, supplier: supplier.trim() || 'General Supplier', date: formatDisplayDate(date) });
+        onSave({ ingredientName, qty: parseFloat(qty) || 0, totalCost: parseFloat(totalCost) || 0, supplier: supplier.trim() || t('defaultSupplier'), date: formatDisplayDate(date, locale) });
       }}
     >
       <FormCard>
-        <Field label="Date">
+        <Field label={t('fieldNameDate')}>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={pillInputClass} />
         </Field>
-        <Field label="Ingredient Name">
-          <PillSelect ariaLabel="Ingredient" value={ingredientName} onChange={setIngredientName} options={ingredients.map((i) => i.name)} />
+        <Field label={t('fieldNameIngredient')}>
+          <PillSelect
+            ariaLabel={t('fieldNameIngredient')}
+            value={ingredientName}
+            onChange={setIngredientName}
+            options={ingredients.map((i) => i.name)}
+            getLabel={(v) => {
+              const ing = ingredients.find((i) => i.name === v);
+              return ing ? locStr(ing.name, ing.nameAr, locale) : v;
+            }}
+          />
         </Field>
         <div className="grid grid-cols-2 gap-[17px]">
-          <Field label="Quantity">
+          <Field label={t('fieldNameQty')}>
             <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal" placeholder="120" className={pillInputClass} />
           </Field>
-          <Field label="Total Cost ($)">
-            <input value={totalCost} onChange={(e) => setTotalCost(e.target.value)} inputMode="decimal" placeholder="$120.00" className={pillInputClass} />
+          <Field label={t('fieldNameTotalCost')}>
+            <input value={totalCost} onChange={(e) => setTotalCost(e.target.value)} inputMode="decimal" dir="ltr" placeholder="$120.00" className={pillInputClass} />
           </Field>
         </div>
-        <Field label="Supplier (Optional)">
-          <input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="e.g. Metro Meats Co." className={pillInputClass} />
+        <Field label={t('fieldNameSupplier')}>
+          <input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder={t('phSupplier')} className={pillInputClass} />
         </Field>
         <p className="text-[8.7px] font-normal leading-[1.4] text-[#52D269]">
-          Logging this purchase will automatically update your current stock and recalculate the Average Cost per unit for profit margin tracking.
+          {t('purchaseHint')}
         </p>
       </FormCard>
     </Drawer>
@@ -164,6 +186,9 @@ export function RecipeMappingDrawer({
   onBack: () => void;
   onSave: (maps: RecipeMap[]) => void;
 }) {
+  const t = useTranslations('inventory');
+  const tActions = useTranslations('common.actions');
+  const locale = useLocale();
   const nameOf = (id: string) => ingredients.find((i) => i.id === id)?.name ?? '';
   const stockUnitOf = (name: string) => ingredients.find((i) => i.name === name)?.unit ?? 'pcs';
   const [rows, setRows] = useState<MapRow[]>(() => {
@@ -205,10 +230,10 @@ export function RecipeMappingDrawer({
 
   return (
     <Drawer
-      title="Recipe Mapping"
+      title={t('drawerRecipeMapping')}
       onBack={onBack}
       onCancel={onBack}
-      saveLabel="Save"
+      saveLabel={tActions('save')}
       onSave={() => {
         const maps: RecipeMap[] = rows
           .filter((r) => r.ingredientName)
@@ -228,7 +253,7 @@ export function RecipeMappingDrawer({
 
       <div className="rounded-[8.7px] bg-white p-[12px]">
         <div className="mb-[10px] flex items-center justify-between">
-          <p className="text-[12.7px] font-medium leading-[1.4] text-[#2D2F33]">Ingredients</p>
+          <p className="text-[12.7px] font-medium leading-[1.4] text-[#2D2F33]">{t('mappingIngredients')}</p>
           <button
             onClick={() => {
               const first = ingredients[0];
@@ -236,7 +261,7 @@ export function RecipeMappingDrawer({
             }}
             className="flex items-center gap-1 text-[10.7px] font-medium leading-[1.4] text-[#026F4F]"
           >
-            <span className="text-[12.7px]">+</span> Add Row
+            <span className="text-[12.7px]">+</span> {t('addRow')}
           </button>
         </div>
         <div className="flex flex-col gap-[10px]">
@@ -248,7 +273,7 @@ export function RecipeMappingDrawer({
               <div key={row.key} className="flex items-center gap-[8px]">
                 <div className="min-w-0 flex-1">
                   <PillSelect
-                    ariaLabel="Ingredient"
+                    ariaLabel={t('fieldNameIngredient')}
                     value={row.ingredientName}
                     onChange={(v) =>
                       setRows((prev) =>
@@ -256,6 +281,10 @@ export function RecipeMappingDrawer({
                       )
                     }
                     options={ingredients.map((i) => i.name)}
+                    getLabel={(v) => {
+                      const sel = ingredients.find((i) => i.name === v);
+                      return sel ? locStr(sel.name, sel.nameAr, locale) : v;
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-[6px]">
@@ -263,14 +292,15 @@ export function RecipeMappingDrawer({
                     value={row.qty}
                     onChange={(e) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, qty: e.target.value } : r)))}
                     inputMode="decimal"
-                    aria-label="Quantity"
+                    dir="ltr"
+                    aria-label={t('qtyAria')}
                     className={cn('h-[35px] w-[36px] rounded-[58px] px-1 text-center font-satoshi text-[10.7px] font-medium text-[#989898] outline-none focus:ring-2 focus:ring-[#026F4F]', bad ? 'bg-[#FFE6E6]' : 'bg-[#F2F2F2]')}
                   />
                   {units.length > 1 ? (
                     <select
                       value={row.unit}
                       onChange={(e) => setRowUnit(row, e.target.value)}
-                      aria-label="Unit"
+                      aria-label={t('unitAria')}
                       className="h-[35px] shrink-0 cursor-pointer rounded-[58px] bg-[#F2F2F2] px-1 text-center font-satoshi text-[10.7px] font-medium text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
                     >
                       {units.map((u) => (
@@ -285,7 +315,7 @@ export function RecipeMappingDrawer({
                 </div>
                 <button
                   onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
-                  aria-label="Remove row"
+                  aria-label={t('removeRowAria')}
                   className="shrink-0 text-[#E85E5E] transition-colors hover:text-[#d94a4a]"
                 >
                   <Trash2 size={20} />
@@ -294,7 +324,7 @@ export function RecipeMappingDrawer({
             );
           })}
           {rows.length === 0 && (
-            <p className="py-2 text-center text-xs text-[#989898]">No ingredients. Add a row to map.</p>
+            <p className="py-2 text-center text-xs text-[#989898]">{t('emptyMapping')}</p>
           )}
         </div>
       </div>
@@ -321,6 +351,10 @@ export function TransferStockDrawer({
   onBack: () => void;
   onSave: (f: TransferForm) => void;
 }) {
+  const t = useTranslations('inventory');
+  const tActions = useTranslations('common.actions');
+  const tLoc = useTranslations('inventory.locations');
+  const locale = useLocale();
   const [ingredientName, setIngredientName] = useState(ingredients[0]?.name ?? '');
   const [qty, setQty] = useState('');
   const [from, setFrom] = useState(LOCATIONS[1]);
@@ -330,35 +364,44 @@ export function TransferStockDrawer({
 
   return (
     <Drawer
-      title="Transfer Stock"
+      title={t('drawerTransferStock')}
       onBack={onBack}
       onCancel={onBack}
-      saveLabel="Save"
+      saveLabel={tActions('save')}
       onSave={() => {
         if (!ingredientName || !qty || from === to) return;
-        onSave({ ingredientName, qty: parseFloat(qty) || 0, from, to, date: formatDisplayDate(date), responsible: responsible || 'Unassigned' });
+        onSave({ ingredientName, qty: parseFloat(qty) || 0, from, to, date: formatDisplayDate(date, locale), responsible: responsible || t('unassigned') });
       }}
     >
       <FormCard>
-        <Field label="Date">
+        <Field label={t('fieldNameDate')}>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={pillInputClass} />
         </Field>
-        <Field label="Ingredient Name">
-          <PillSelect ariaLabel="Ingredient" value={ingredientName} onChange={setIngredientName} options={ingredients.map((i) => i.name)} />
+        <Field label={t('fieldNameIngredient')}>
+          <PillSelect
+            ariaLabel={t('fieldNameIngredient')}
+            value={ingredientName}
+            onChange={setIngredientName}
+            options={ingredients.map((i) => i.name)}
+            getLabel={(v) => {
+              const ing = ingredients.find((i) => i.name === v);
+              return ing ? locStr(ing.name, ing.nameAr, locale) : v;
+            }}
+          />
         </Field>
-        <Field label="Quantity">
+        <Field label={t('fieldNameQty')}>
           <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal" placeholder="120" className={pillInputClass} />
         </Field>
         <div className="grid grid-cols-2 gap-[17px]">
-          <Field label="From Location">
-            <PillSelect ariaLabel="From" value={from} onChange={setFrom} options={LOCATIONS} />
+          <Field label={t('fieldNameFrom')}>
+            <PillSelect ariaLabel={t('ariaFrom')} value={from} onChange={setFrom} options={LOCATIONS} getLabel={(v) => locationLabel(v, tLoc)} />
           </Field>
-          <Field label="To Location">
-            <PillSelect ariaLabel="To" value={to} onChange={setTo} options={LOCATIONS} />
+          <Field label={t('fieldNameTo')}>
+            <PillSelect ariaLabel={t('ariaTo')} value={to} onChange={setTo} options={LOCATIONS} getLabel={(v) => locationLabel(v, tLoc)} />
           </Field>
         </div>
-        <Field label="Responsible person">
-          <input value={responsible} onChange={(e) => setResponsible(e.target.value)} placeholder="Who is responsible for" className={pillInputClass} />
+        <Field label={t('fieldNameResponsible')}>
+          <input value={responsible} onChange={(e) => setResponsible(e.target.value)} placeholder={t('phResponsible')} className={pillInputClass} />
         </Field>
       </FormCard>
     </Drawer>
