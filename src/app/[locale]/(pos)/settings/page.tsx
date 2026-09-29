@@ -5,17 +5,14 @@ import { useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// NOTE: Inventory + Session settings are owner/manager-controlled and live in
+// the Restaurant Owner Dashboard (Settings → Inventory / Session), not here.
 type SettingKey =
   | 'cashPayments'
   | 'cardPayments'
   | 'walletPayments'
   | 'autoPrintReceipt'
   | 'autoPrintKOT'
-  | 'enableInventoryTracking'
-  | 'autoHideUnavailable'
-  | 'lowStockAlerts'
-  | 'requireOpeningFloat'
-  | 'requireCountedCash'
   | 'orderAlerts'
   | 'lowStockNotif';
 
@@ -25,11 +22,6 @@ const DEFAULTS: Record<SettingKey, boolean> = {
   walletPayments: true,
   autoPrintReceipt: true,
   autoPrintKOT: true,
-  enableInventoryTracking: true,
-  autoHideUnavailable: true,
-  lowStockAlerts: true,
-  requireOpeningFloat: true,
-  requireCountedCash: true,
   orderAlerts: true,
   lowStockNotif: true,
 };
@@ -111,17 +103,6 @@ export default function SettingsPage() {
           >
             {t('testPrint')}
           </button>
-        </Card>
-
-        <Card title={t('inventorySettings')}>
-          <SettingRow label={t('enableTracking')} settingKey="enableInventoryTracking" values={values} onToggle={toggle} />
-          <SettingRow label={t('autoHide')} settingKey="autoHideUnavailable" values={values} onToggle={toggle} />
-          <SettingRow label={t('lowStockAlerts')} settingKey="lowStockAlerts" values={values} onToggle={toggle} />
-        </Card>
-
-        <Card title={t('sessionSettings')}>
-          <SettingRow label={t('requireFloat')} settingKey="requireOpeningFloat" values={values} onToggle={toggle} />
-          <SettingRow label={t('requireCounted')} settingKey="requireCountedCash" values={values} onToggle={toggle} />
         </Card>
 
         <Card title={t('notifications')}>
