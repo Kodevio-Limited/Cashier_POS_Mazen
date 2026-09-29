@@ -19,6 +19,8 @@ interface MenuItem {
   price: number;
   emoji: string;
   options?: string[];
+  /** Base (required) ingredients for the item — shown in the customize modal. */
+  ingredients: string[];
 }
 
 interface OrderItem {
@@ -31,6 +33,11 @@ interface OrderItem {
   price: number;
   qty: number;
   texture?: string;
+  /** Snapshot of the item's required options, saved with the line so the edit
+      modal never depends on looking the menu definition back up. */
+  options?: string[];
+  /** Snapshot of the item's required (base) ingredients — editable in the modal. */
+  ingredients?: string[];
   modifiers?: string[];
   instructions?: string;
   emoji?: string;
@@ -40,18 +47,18 @@ interface OrderItem {
 const CATEGORIES = ['All', 'Burgers', 'Ramen', 'Sides', 'Drinks', 'Desserts'] as const;
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'm1', name: 'Classic Burger', nameAr: 'برجر كلاسيك', category: 'Burgers', price: 15.99, emoji: '🍔' },
-  { id: 'm2', name: 'Shoyu Ramen', nameAr: 'رامن شويو', category: 'Ramen', price: 15.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', category: 'Ramen', price: 18.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm4', name: 'Miso Ramen', nameAr: 'رامن ميسو', category: 'Ramen', price: 16.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm5', name: 'Cheese Burger', nameAr: 'برجر بالجبن', category: 'Burgers', price: 17.99, emoji: '🍔' },
-  { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', category: 'Burgers', price: 19.99, emoji: '🍔' },
-  { id: 'm7', name: 'Veggie Burger', nameAr: 'برجر نباتي', category: 'Burgers', price: 14.99, emoji: '🥙' },
-  { id: 'm8', name: 'Chicken Burger', nameAr: 'برجر دجاج', category: 'Burgers', price: 16.49, emoji: '🍔' },
-  { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', category: 'Sides', price: 4.99, emoji: '🍟' },
-  { id: 'm10', name: 'Onion Rings', nameAr: 'حلقات البصل', category: 'Sides', price: 5.49, emoji: '🧅' },
-  { id: 'm11', name: 'Coca-Cola', nameAr: 'كوكا كولا', category: 'Drinks', price: 2.99, emoji: '🥤' },
-  { id: 'm12', name: 'Lemonade', nameAr: 'ليموناضة', category: 'Drinks', price: 3.49, emoji: '🍋' },
+  { id: 'm1', name: 'Classic Burger', nameAr: 'برجر كلاسيك', category: 'Burgers', price: 15.99, emoji: '🍔', ingredients: ['Beef Patty', 'Burger Bun', 'Lettuce', 'Tomato'] },
+  { id: 'm2', name: 'Shoyu Ramen', nameAr: 'رامن شويو', category: 'Ramen', price: 15.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'], ingredients: ['Ramen Noodles', 'Shoyu Broth', 'Green Onion'] },
+  { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', category: 'Ramen', price: 18.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'], ingredients: ['Ramen Noodles', 'Tonkotsu Broth', 'Garlic Oil'] },
+  { id: 'm4', name: 'Miso Ramen', nameAr: 'رامن ميسو', category: 'Ramen', price: 16.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'], ingredients: ['Ramen Noodles', 'Miso Broth', 'Corn'] },
+  { id: 'm5', name: 'Cheese Burger', nameAr: 'برجر بالجبن', category: 'Burgers', price: 17.99, emoji: '🍔', ingredients: ['Beef Patty', 'Burger Bun', 'Cheddar Cheese', 'Lettuce'] },
+  { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', category: 'Burgers', price: 19.99, emoji: '🍔', ingredients: ['Beef Patty', 'Burger Bun', 'Beef Bacon', 'BBQ Sauce'] },
+  { id: 'm7', name: 'Veggie Burger', nameAr: 'برجر نباتي', category: 'Burgers', price: 14.99, emoji: '🥙', ingredients: ['Veggie Patty', 'Burger Bun', 'Lettuce', 'Tomato'] },
+  { id: 'm8', name: 'Chicken Burger', nameAr: 'برجر دجاج', category: 'Burgers', price: 16.49, emoji: '🍔', ingredients: ['Chicken Fillet', 'Burger Bun', 'Lettuce', 'Tomato'] },
+  { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', category: 'Sides', price: 4.99, emoji: '🍟', ingredients: ['Potatoes', 'Salt', 'Cooking Oil'] },
+  { id: 'm10', name: 'Onion Rings', nameAr: 'حلقات البصل', category: 'Sides', price: 5.49, emoji: '🧅', ingredients: ['Onion', 'Flour Batter', 'Salt'] },
+  { id: 'm11', name: 'Coca-Cola', nameAr: 'كوكا كولا', category: 'Drinks', price: 2.99, emoji: '🥤', ingredients: ['Coca-Cola', 'Ice'] },
+  { id: 'm12', name: 'Lemonade', nameAr: 'ليموناضة', category: 'Drinks', price: 3.49, emoji: '🍋', ingredients: ['Lemon Juice', 'Sugar Syrup', 'Ice'] },
 ];
 
 // Arabic twins for the required noodle-texture options.
@@ -59,6 +66,35 @@ const OPTION_AR: Record<string, string> = {
   'Firm (Kata)': 'قوام صلب (كاتا)',
   'Medium': 'متوسط',
   'Soft (Yawa)': 'قوام طري (ياوا)',
+};
+
+// Arabic twins for the base (required) ingredients.
+const INGREDIENT_AR: Record<string, string> = {
+  'Beef Patty': 'قرص لحم بقري',
+  'Burger Bun': 'خبز البرجر',
+  'Lettuce': 'خس',
+  'Tomato': 'طماطم',
+  'Ramen Noodles': 'نودلز الرامن',
+  'Shoyu Broth': 'مرقة الصويا',
+  'Tonkotsu Broth': 'مرقة تونكوتسو',
+  'Miso Broth': 'مرقة الميسو',
+  'Green Onion': 'بصل أخضر',
+  'Garlic Oil': 'زيت الثوم',
+  'Corn': 'ذرة',
+  'Cheddar Cheese': 'جبن شيدر',
+  'Beef Bacon': 'بيكون بقري',
+  'BBQ Sauce': 'صلصة باربيكيو',
+  'Veggie Patty': 'قرص نباتي',
+  'Chicken Fillet': 'فيليه دجاج',
+  'Potatoes': 'بطاطس',
+  'Salt': 'ملح',
+  'Cooking Oil': 'زيت الطهي',
+  'Onion': 'بصل',
+  'Flour Batter': 'خليط الدقيق',
+  'Coca-Cola': 'كوكاكولا',
+  'Ice': 'ثلج',
+  'Lemon Juice': 'عصير ليمون',
+  'Sugar Syrup': 'شراب السكر',
 };
 
 // Arabic twins for the optional add-on modifiers.
@@ -104,10 +140,11 @@ function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void 
 // match. Add-ons and instructions are order-insensitive; texture/required
 // option is a single choice. Used both when quick-adding and when saving the
 // customize modal, so differently-customized copies of one item stay separate.
-function orderLineKey(o: Pick<OrderItem, 'id' | 'texture' | 'modifiers' | 'instructions'>): string {
+function orderLineKey(o: Pick<OrderItem, 'id' | 'texture' | 'ingredients' | 'modifiers' | 'instructions'>): string {
   return [
     o.id,
     o.texture ?? '',
+    [...(o.ingredients ?? [])].sort().join('|'),
     [...(o.modifiers ?? [])].sort().join('|'),
     o.instructions ?? '',
   ].join('~');
@@ -337,6 +374,13 @@ export default function OrderPage() {
                     </p>
                   )}
 
+                  {/* Required (base) ingredients */}
+                  {item.ingredients && item.ingredients.length > 0 && (
+                    <p className="break-words text-neutral-500 text-xs font-normal font-['Inter'] leading-5">
+                      {item.ingredients.map((ing) => (locale === 'ar' ? INGREDIENT_AR[ing] ?? ing : ing)).join(', ')}
+                    </p>
+                  )}
+
                   {/* Modifiers (+ Mayo, + Extra Chili) */}
                   {item.modifiers && item.modifiers.length > 0 && (
                     <div className="flex flex-wrap items-start gap-x-1.5 gap-y-0.5">
@@ -512,16 +556,25 @@ function CustomizeItemModal({
   const t = useTranslations('order');
   const tc = useTranslations('order.customize');
   const locale = useLocale();
-  // Cart lines (OrderItem) carry no `options` field, so when editing look the
-  // required selection up from the menu definition — otherwise the Required
-  // section disappears and only the optional stuff (add-ons) would show.
+  // Required options come from the cart line's own snapshot first (saved at
+  // add time), falling back to the menu definition. Either way the Required
+  // section shows both when adding AND when editing — never just the
+  // optional add-ons alone.
+  const menuOptions: string[] = MENU_ITEMS.find((m) => m.id === data.id)?.options ?? [];
   const optionList: string[] =
-    'options' in data && Array.isArray(data.options)
+    'options' in data && Array.isArray(data.options) && data.options.length > 0
       ? data.options
-      : (MENU_ITEMS.find((m) => m.id === data.id)?.options ?? []);
+      : menuOptions;
   const [texture, setTexture] = useState<string>(
     ('texture' in data && data.texture) ? data.texture : (optionList[0] ?? ''),
   );
+  // Required (base) ingredients: the line's own snapshot first, menu fallback.
+  // An explicitly-emptied list stays empty (Array.isArray, no length guard).
+  const menuIngredients: string[] = MENU_ITEMS.find((m) => m.id === data.id)?.ingredients ?? [];
+  const [ingredients, setIngredients] = useState<string[]>(
+    ('ingredients' in data && Array.isArray(data.ingredients)) ? data.ingredients : menuIngredients,
+  );
+  const [newIngredient, setNewIngredient] = useState('');
   const [modifiers, setModifiers] = useState<string[]>(
     ('modifiers' in data && data.modifiers) ? data.modifiers : [],
   );
@@ -537,6 +590,21 @@ function CustomizeItemModal({
       prev.includes(mod) ? prev.filter((m) => m !== mod) : [...prev, mod],
     );
   }
+
+  function addIngredient() {
+    const value = newIngredient.trim();
+    if (!value) return;
+    setIngredients((prev) =>
+      prev.some((i) => i.toLowerCase() === value.toLowerCase()) ? prev : [...prev, value],
+    );
+    setNewIngredient('');
+  }
+
+  function removeIngredient(ing: string) {
+    setIngredients((prev) => prev.filter((i) => i !== ing));
+  }
+
+  const locIngredient = (ing: string) => (locale === 'ar' ? INGREDIENT_AR[ing] ?? ing : ing);
 
   return (
     <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
@@ -595,6 +663,52 @@ function CustomizeItemModal({
               </div>
             </div>
           )}
+
+          {/* Required ingredients */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[19px] font-semibold leading-[1.4] text-[#2D2F33]">{tc('requiredIngredients')}</p>
+              <span className="flex w-[86px] shrink-0 items-center justify-center whitespace-nowrap rounded-[16px] bg-[#2D2F33] px-[10px] py-[3px] text-[13px] font-normal leading-[1.63] text-white">
+                {tc('required')}
+              </span>
+            </div>
+            {ingredients.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {ingredients.map((ing) => (
+                  <span
+                    key={ing}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#F2F2F2] py-1.5 pe-2 ps-3.5 text-xs font-medium text-[#2D2F33]"
+                  >
+                    {locIngredient(ing)}
+                    <button
+                      type="button"
+                      onClick={() => removeIngredient(ing)}
+                      aria-label={tc('removeIngredient', { name: ing })}
+                      className="flex size-5 items-center justify-center rounded-full text-[#989898] transition-colors hover:bg-[#E0E0E0] hover:text-[#2D2F33]"
+                    >
+                      <X size={12} strokeWidth={2.4} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={newIngredient}
+                onChange={(e) => setNewIngredient(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') addIngredient(); }}
+                placeholder={tc('addIngredientPlaceholder')}
+                className="h-[41px] min-w-0 flex-1 rounded-full bg-[#F2F2F2] px-4 text-[13px] font-medium text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-2 focus:ring-[#026F4F]"
+              />
+              <button
+                type="button"
+                onClick={addIngredient}
+                className="h-[41px] shrink-0 rounded-full bg-[#026F4F] px-5 text-[13px] font-medium text-white transition-colors hover:bg-[#015c42]"
+              >
+                {tc('add')}
+              </button>
+            </div>
+          </div>
 
           {/* Extra add-ons */}
           <div className="flex flex-col gap-2.5">
@@ -666,6 +780,8 @@ function CustomizeItemModal({
                   price: data.price,
                   qty,
                   texture: texture || undefined,
+                  options: optionList.length > 0 ? optionList : undefined,
+                  ingredients,
                   modifiers,
                   instructions: instructions || undefined,
                   emoji: data.emoji,

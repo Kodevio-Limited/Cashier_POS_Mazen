@@ -18,6 +18,8 @@ export interface DraftItem {
   qty: number;
   emoji?: string;
   texture?: string;
+  options?: string[];
+  ingredients?: string[];
   modifiers?: string[];
   instructions?: string;
 }
