@@ -17,7 +17,7 @@ import {
   type CountEntry,
   type WasteEntry,
 } from './types';
-import { PrimaryAction, StockPill, TableHead, Field, PillSelect, pillInputClass } from './InventoryShell';
+import { PrimaryAction, StockPill, Field, PillSelect, pillInputClass } from './InventoryShell';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export function StockTab({
@@ -41,55 +41,65 @@ export function StockTab({
       </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
-          <div className="min-w-[680px]">
-            <TableHead>
-              <div className="grid w-full grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 px-2">
-                <span>{t('col.name')}</span>
-                <span>{t('col.currentStock')}</span>
-                <span>{t('col.avgPrice')}</span>
-                <span>{t('col.status')}</span>
-                <span>{t('col.lastUpdated')}</span>
-                <span>{t('col.actions')}</span>
-              </div>
-            </TableHead>
-            <div className="flex flex-col">
+          <table className="w-full min-w-[680px] table-fixed border-collapse">
+            <thead>
+              <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
+                <th className="w-[130px] ps-6 pe-2 text-start font-medium">{t('col.name')}</th>
+                <th className="w-[110px] px-2 text-start font-medium">{t('col.currentStock')}</th>
+                <th className="w-[110px] px-2 text-start font-medium">{t('col.avgPrice')}</th>
+                <th className="w-[110px] px-2 text-start font-medium">{t('col.status')}</th>
+                <th className="w-[110px] px-2 text-start font-medium">{t('col.lastUpdated')}</th>
+                <th className="w-[110px] py-2 ps-2 pe-6 text-start font-medium">{t('col.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
               {ingredients.map((ing) => {
                 const state = stockStateOf(ing);
                 return (
-                  <div key={ing.id} className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px] items-center gap-2 border-b border-[#F2F2F2] px-6 py-[14px] last:border-0">
-                    <span className="truncate text-[15.3px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(ing.name, ing.nameAr, locale)}</span>
-                    <span className="whitespace-nowrap text-[12.7px] font-medium leading-[1.4] text-black">
-                      {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{locUnit(ing.unit, t)}</span>
-                    </span>
-                    <span className="whitespace-nowrap text-[12.7px] font-medium leading-[1.4] text-[#026F4F]">
-                      ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{locUnit(ing.unit, t)}</span>
-                    </span>
-                    <span><StockPill state={state} /></span>
-                    <span className="whitespace-nowrap text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{locTimeAgo(ing.updatedAgo, locale, tTime)}</span>
-                    <span className="flex items-center gap-[7px]">
-                      <button
-                        onClick={() => onEdit(ing)}
-                        aria-label={t('editIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
-                        className="flex h-[35px] w-[35px] items-center justify-center rounded-[5px] bg-[#E9E9E9] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                      </button>
-                      <button
-                        onClick={() => onDelete(ing.id)}
-                        aria-label={t('deleteIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
-                        className="flex h-[35px] w-[35px] items-center justify-center rounded-[5px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                      </button>
-                    </span>
-                  </div>
+                  <tr key={ing.id} className="border-b border-[#F2F2F2] last:border-0">
+                    <td className="py-[14px] ps-6 pe-2 text-start align-middle">
+                      <span className="block truncate text-[15.3px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(ing.name, ing.nameAr, locale)}</span>
+                    </td>
+                    <td className="px-2 py-[14px] text-start align-middle">
+                      <span className="block truncate text-[12.7px] font-medium leading-[1.4] text-black">
+                        {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{locUnit(ing.unit, t)}</span>
+                      </span>
+                    </td>
+                    <td className="px-2 py-[14px] text-start align-middle">
+                      <span className="block truncate text-[12.7px] font-medium leading-[1.4] text-[#026F4F]">
+                        ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{locUnit(ing.unit, t)}</span>
+                      </span>
+                    </td>
+                    <td className="px-2 py-[14px] text-start align-middle"><StockPill state={state} /></td>
+                    <td className="px-2 py-[14px] text-start align-middle">
+                      <span className="block truncate text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{locTimeAgo(ing.updatedAgo, locale, tTime)}</span>
+                    </td>
+                    <td className="py-[14px] ps-2 pe-6 text-start align-middle">
+                      <span className="flex items-center gap-[7px]">
+                        <button
+                          onClick={() => onEdit(ing)}
+                          aria-label={t('editIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
+                          className="flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-[5px] bg-[#E9E9E9] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                        </button>
+                        <button
+                          onClick={() => onDelete(ing.id)}
+                          aria-label={t('deleteIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
+                          className="flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-[5px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
                 );
               })}
-              {ingredients.length === 0 && (
-                <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyIngredients')}</p>
-              )}
-            </div>
-          </div>
+            </tbody>
+          </table>
+          {ingredients.length === 0 && (
+            <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyIngredients')}</p>
+          )}
         </div>
       </div>
     </div>
