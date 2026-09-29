@@ -47,7 +47,7 @@ export function StockTab({
                 <th className="w-[130px] ps-6 pe-2 text-start font-medium">{t('col.name')}</th>
                 <th className="w-[110px] px-2 text-start font-medium">{t('col.currentStock')}</th>
                 <th className="w-[110px] px-2 text-start font-medium">{t('col.avgPrice')}</th>
-                <th className="w-[110px] px-2 text-start font-medium">{t('col.status')}</th>
+                <th className="w-[110px] px-2 text-center font-medium">{t('col.status')}</th>
                 <th className="w-[110px] px-2 text-start font-medium">{t('col.lastUpdated')}</th>
                 <th className="w-[110px] py-2 ps-2 pe-6 text-start font-medium">{t('col.actions')}</th>
               </tr>
@@ -70,7 +70,7 @@ export function StockTab({
                         ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{locUnit(ing.unit, t)}</span>
                       </span>
                     </td>
-                    <td className="px-2 py-[14px] text-start align-middle"><StockPill state={state} /></td>
+                    <td className="px-2 py-[14px] text-center align-middle"><StockPill state={state} /></td>
                     <td className="px-2 py-[14px] text-start align-middle">
                       <span className="block truncate text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{locTimeAgo(ing.updatedAgo, locale, tTime)}</span>
                     </td>
