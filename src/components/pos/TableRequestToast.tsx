@@ -51,7 +51,7 @@ export function TableRequestToast() {
         window.dispatchEvent(new Event('pos-open-table-requests'));
         setToast(null);
       }}
-      className="fixed bottom-6 end-6 z-[80] flex w-[320px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-xl bg-white p-4 text-start shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5 animate-in slide-in-from-bottom-4 fade-in duration-300"
+      className="fixed top-6 end-6 z-[80] flex w-[320px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-xl bg-white p-4 text-start shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5 animate-in slide-in-from-top-4 fade-in duration-300"
     >
       <span
         className={
