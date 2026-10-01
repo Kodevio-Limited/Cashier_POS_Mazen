@@ -4,6 +4,25 @@
 
 const KEY = 'pos-current-order';
 
+/** Per-add-on prices (Bug-58) — shown in the customize modal and charged. */
+export const MODIFIER_PRICES: Record<string, number> = {
+  Mayo: 0.5,
+  'Extra Chili': 0.75,
+  'Boiled Egg': 1.5,
+  'Bamboo Shoots': 1.25,
+};
+
+/** Total add-on value for a modifier list. */
+export function modifierTotal(mods?: string[]): number {
+  return (mods ?? []).reduce((sum, m) => sum + (MODIFIER_PRICES[m] ?? 0), 0);
+}
+
+/** Line total: (base price + add-ons snapshot) × qty. */
+export function lineTotal(i: { price: number; qty: number; modifiers?: string[]; modTotal?: number }): number {
+  const mt = typeof i.modTotal === 'number' ? i.modTotal : modifierTotal(i.modifiers);
+  return (i.price + mt) * i.qty;
+}
+
 export interface DraftItem {
   /** Menu item id (e.g. 'm1' for Classic Burger). Two lines can share this. */
   id: string;
@@ -20,6 +39,8 @@ export interface DraftItem {
   texture?: string;
   options?: string[];
   modifiers?: string[];
+  /** Snapshot of the add-on total at save time (Bug-58). */
+  modTotal?: number;
   instructions?: string;
 }
 

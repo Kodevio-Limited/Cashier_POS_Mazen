@@ -1,13 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
-import { Search, Minus, Plus, X, Trash2, Pencil, Scissors } from 'lucide-react';
+import { Search, Minus, Plus, X, Trash2, Pencil, Scissors, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadDraft, saveDraft, newLineId, clearDraft } from '@/lib/order-draft';
+import { loadDraft, saveDraft, newLineId, clearDraft, modifierTotal, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
 import { locStr } from '@/lib/locale-fields';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
+import { DeliveryDetailsModal } from '@/components/pos/DeliveryDetailsModal';
+import {
+  loadDeliveryDetails,
+  saveDeliveryDetails,
+  clearDeliveryDetails,
+  isDeliveryDetailsComplete,
+  type DeliveryDetails,
+} from '@/lib/delivery-details';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -35,6 +43,8 @@ interface OrderItem {
       modal never depends on looking the menu definition back up. */
   options?: string[];
   modifiers?: string[];
+  /** Snapshot of the add-on total at save time (Bug-58). */
+  modTotal?: number;
   instructions?: string;
   emoji?: string;
 }
@@ -121,11 +131,15 @@ export default function OrderPage() {
   const router = useRouter();
   const t = useTranslations('order');
   const tCat = useTranslations('order.categories');
+  const td = useTranslations('order.delivery');
   const locale = useLocale();
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [orderItems, setOrderItems] = useState<OrderItem[]>(() => loadDraft() ?? []);
   const [session, setSession] = useState<OrderSession | null>(null);
+  const [delivery, setDelivery] = useState<DeliveryDetails | null>(null);
+  const [showDelivery, setShowDelivery] = useState(false);
+  const deliveryPrompted = useRef(false);
   const tSess = useTranslations('orderSession');
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
 
@@ -137,7 +151,19 @@ export default function OrderPage() {
   // Load the table / Take Out / Delivery selection made on the Floor Plan.
   useEffect(() => {
     setSession(loadSession());
+    setDelivery(loadDeliveryDetails());
   }, []);
+
+  // Delivery orders need an address: prompt once when arriving with a delivery
+  // session and no saved details yet.
+  useEffect(() => {
+    if (!session || session.type !== 'delivery' || deliveryPrompted.current) return;
+    const saved = loadDeliveryDetails();
+    if (!saved || !isDeliveryDetailsComplete(saved)) {
+      deliveryPrompted.current = true;
+      setShowDelivery(true);
+    }
+  }, [session]);
 
   // Filter menu items
   const filtered = MENU_ITEMS.filter((item) => {
@@ -190,12 +216,15 @@ export default function OrderPage() {
   function cancelOrder() {
     clearDraft();
     clearSession();
+    clearDeliveryDetails();
     setOrderItems([]);
+    setDelivery(null);
+    setShowDelivery(false);
     router.push('/floor-plan');
   }
 
-  // Calculations
-  const subtotal = orderItems.reduce((sum, o) => sum + o.price * o.qty, 0);
+  // Calculations (add-on prices fold into each line total via lineTotal).
+  const subtotal = orderItems.reduce((sum, o) => sum + lineTotal(o), 0);
   const serviceCharge = subtotal * 0.10; // 10% Service Charge
   const total = subtotal + serviceCharge;
   const itemCount = orderItems.reduce((s, o) => s + o.qty, 0);
@@ -293,6 +322,19 @@ export default function OrderPage() {
                     dineIn: tSess('dineIn'),
                   })}
                 </span>
+                {session.type === 'delivery' && (
+                  <button
+                    onClick={() => setShowDelivery(true)}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#E6F1ED] px-2.5 py-0.5 text-[11px] font-medium text-[#026F4F] transition-colors hover:bg-[#D6E9E1]"
+                  >
+                    <MapPin size={12} />
+                    <span className="max-w-[140px] truncate">
+                      {delivery && isDeliveryDetailsComplete(delivery)
+                        ? `${delivery.name} · ${delivery.phone}`
+                        : td('addDetails')}
+                    </span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -329,7 +371,7 @@ export default function OrderPage() {
                       {locStr(item.name, item.nameAr, locale)}
                     </p>
                     <p className="shrink-0 text-emerald-700 text-lg font-semibold font-['Inter'] leading-6">
-                      ${(item.price * item.qty).toFixed(2)}
+                      ${lineTotal(item).toFixed(2)}
                     </p>
                   </div>
 
@@ -340,13 +382,16 @@ export default function OrderPage() {
                     </p>
                   )}
 
-                  {/* Modifiers (+ Mayo, + Extra Chili) */}
+                  {/* Modifiers (+ Mayo · $0.50, + Extra Chili · $0.75) */}
                   {item.modifiers && item.modifiers.length > 0 && (
                     <div className="flex flex-wrap items-start gap-x-1.5 gap-y-0.5">
                       {item.modifiers.map((mod, mi) => (
                         <span key={mi} className="break-words">
                           <span className="text-green-500 text-sm font-normal font-['Inter'] leading-5">+</span>
                           <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5 ms-0.5">{mod}</span>
+                          {(MODIFIER_PRICES[mod] ?? 0) > 0 && (
+                            <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5"> · <bdi dir="ltr">${MODIFIER_PRICES[mod].toFixed(2)}</bdi></span>
+                          )}
                         </span>
                       ))}
                     </div>
@@ -470,6 +515,19 @@ export default function OrderPage() {
             </button>
           </div>
         </div>
+
+      {/* ── Delivery Details Modal (delivery sessions) ─────────────── */}
+      {showDelivery && (
+        <DeliveryDetailsModal
+          initial={delivery}
+          onClose={() => setShowDelivery(false)}
+          onSave={(d) => {
+            setDelivery(d);
+            saveDeliveryDetails(d);
+            setShowDelivery(false);
+          }}
+        />
+      )}
 
       {/* ── Edit / Customize Item Modal ─────────────────────────────── */}
       {customizingItem && (
@@ -601,7 +659,7 @@ function CustomizeItemModal({
             </div>
           )}
 
-          {/* Extra add-ons */}
+          {/* Extra add-ons (priced — Bug-58) */}
           <div className="flex flex-col gap-2.5">
             <p className="text-sm font-semibold text-[#2D2F33]">{tc('extraAddons')}</p>
             <div className="flex flex-wrap gap-2">
@@ -619,7 +677,7 @@ function CustomizeItemModal({
                         : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
                     )}
                   >
-                    + {locale === 'ar' ? MODIFIER_AR[mod] ?? mod : mod}
+                    + {locale === 'ar' ? MODIFIER_AR[mod] ?? mod : mod} <bdi dir="ltr" className={cn(isSelected ? 'text-white/80' : 'text-[#989898]')}>${MODIFIER_PRICES[mod].toFixed(2)}</bdi>
                   </button>
                 );
               })}
@@ -673,6 +731,7 @@ function CustomizeItemModal({
                   texture: texture || undefined,
                   options: optionList.length > 0 ? optionList : undefined,
                   modifiers,
+                  modTotal: modifierTotal(modifiers),
                   instructions: instructions || undefined,
                   emoji: data.emoji,
                 });

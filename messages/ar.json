@@ -189,7 +189,29 @@
     "editItemAria": "تعديل الصنف",
     "deleteItemAria": "حذف الصنف",
     "optionsFree": "مجانًا",
-    "optionsRequired": "مطلوب"
+    "optionsRequired": "مطلوب",
+    "delivery": {
+      "title": "تفاصيل التوصيل",
+      "name": "الاسم",
+      "namePlaceholder": "مثال: أحمد حسن",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "+20 1XXX XXX XXX",
+      "address": "العنوان",
+      "addressPlaceholder": "مثال: 12 شارع التحرير، وسط البلد",
+      "street": "الشارع",
+      "streetPlaceholder": "مثال: شارع التحرير",
+      "landmark": "علامة مميزة",
+      "landmarkPlaceholder": "مثال: بجوار البنك",
+      "floor": "الدور",
+      "floorPlaceholder": "مثال: 3",
+      "apartment": "الشقة",
+      "apartmentPlaceholder": "مثال: 12",
+      "instructions": "تعليمات محددة",
+      "optional": "(اختياري)",
+      "instructionsPlaceholder": "مثال: اتصل عند الوصول",
+      "addDetails": "إضافة تفاصيل التوصيل",
+      "deliveryRequired": "تفاصيل التوصيل مطلوبة لتأكيد الطلب"
+    }
   },
   "placeOrder": {
     "title": "تقديم الطلب",
@@ -236,6 +258,8 @@
     "newOrder": "طلب جديد",
     "demoPhone": "+1 (555) 234-5678",
     "demoName": "سارة جيسي",
+    "floorLabel": "الدور",
+    "apartmentLabel": "شقة",
     "demoEmail": "sarah.jessie@example.com",
     "payMethod": {
       "cash": "نقدًا",

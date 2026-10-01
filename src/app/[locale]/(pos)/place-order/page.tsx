@@ -6,8 +6,15 @@ import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { loadDraft, saveDraft, clearDraft } from '@/lib/order-draft';
+import { loadDraft, saveDraft, clearDraft, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
+import {
+  loadDeliveryDetails,
+  saveDeliveryDetails,
+  emptyDeliveryDetails,
+  isDeliveryDetailsComplete,
+  type DeliveryDetails,
+} from '@/lib/delivery-details';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import {
   CollectPaymentModal,
@@ -27,6 +34,7 @@ interface OrderLineItem {
   qty: number;
   emoji?: string;
   modifiers?: string[];
+  modTotal?: number;
   texture?: string;
   instructions?: string;
 }
@@ -40,6 +48,7 @@ const INITIAL_ITEMS: OrderLineItem[] = [
 export default function PlaceOrderPage() {
   const router = useRouter();
   const t = useTranslations('placeOrder');
+  const td = useTranslations('order.delivery');
   const tSess = useTranslations('orderSession');
   const locale = useLocale();
   // Prefer the live cart drafted on the Menu (/order) page; fall back to demo
@@ -61,8 +70,19 @@ export default function PlaceOrderPage() {
   // Customer details
   // Demo customer defaults are localized at first render via messages
   // (placeOrder.demo*) so the seeded form matches the active locale.
-  const [phone, setPhone] = useState(() => t('demoPhone'));
-  const [name, setName] = useState(() => t('demoName'));
+  // Delivery sessions prefill from the address captured on the Order tab.
+  const [phone, setPhone] = useState(() => loadDeliveryDetails()?.phone || t('demoPhone'));
+  const [name, setName] = useState(() => loadDeliveryDetails()?.name || t('demoName'));
+  // Delivery address (delivery sessions only) — edited here in Customer
+  // Details, shared with the Order tab through the same store.
+  const [deliveryForm, setDeliveryForm] = useState<DeliveryDetails>(() => loadDeliveryDetails() ?? emptyDeliveryDetails());
+  const setDeliveryField = (key: keyof DeliveryDetails) => (value: string) =>
+    setDeliveryForm((prev) => {
+      const next = { ...prev, [key]: value };
+      saveDeliveryDetails(next);
+      return next;
+    });
+  const deliveryOk = session?.type !== 'delivery' || isDeliveryDetailsComplete(deliveryForm);
   const [email, setEmail] = useState(() => t('demoEmail'));
   const [notes, setNotes] = useState('');
 
@@ -94,7 +114,7 @@ export default function PlaceOrderPage() {
     setItems((prev) => prev.filter((item) => item.lineId !== lineId));
   }
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + lineTotal(i), 0);
   const promoApplied = promo.trim().length > 0;
   const discount = promoApplied ? subtotal * 0.1 : 0;
   const serviceCharge = (subtotal - discount) * 0.1; // 10%
@@ -171,7 +191,7 @@ export default function PlaceOrderPage() {
                       <p className="font-medium text-[14px] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</p>
                       {item.modifiers && item.modifiers.length > 0 && (
                         <p className="text-xs text-[#989898] mt-0.5">
-                          + {item.modifiers.join(', ')}
+                          + {item.modifiers.map((m) => `${m}${(MODIFIER_PRICES[m] ?? 0) > 0 ? ` · $${MODIFIER_PRICES[m].toFixed(2)}` : ''}`).join(', ')}
                         </p>
                       )}
                     </div>
@@ -179,7 +199,7 @@ export default function PlaceOrderPage() {
 
                   {/* Amount */}
                   <div className="col-span-2 text-right font-semibold text-[14px] text-[#026F4F]">
-                    ${(item.price * item.qty).toFixed(2)}
+                    ${lineTotal(item).toFixed(2)}
                   </div>
 
                   {/* Quantity */}
@@ -245,6 +265,7 @@ export default function PlaceOrderPage() {
               setName('');
               setEmail('');
               setNotes('');
+              setDeliveryForm(emptyDeliveryDetails());
             }}
             className="w-9 h-9 rounded-lg bg-red-400 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
             title={t('clearFields')}
@@ -255,47 +276,148 @@ export default function PlaceOrderPage() {
 
         {/* Form Body */}
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3.5">
-          {/* Phone */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#686868] flex items-center gap-1">
-              <Phone size={12} />
-              <span>{t('phoneLabel')}</span>
-            </label>
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={t('phonePlaceholder')}
-              className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-            />
-          </div>
+          {session?.type === 'delivery' ? (
+            <>
+              {/* Name */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868] flex items-center gap-1">
+                  <User size={12} />
+                  <span>{td('name')} <span className="text-[#E85E5E]">*</span></span>
+                </label>
+                <input
+                  type="text"
+                  value={deliveryForm.name}
+                  onChange={(e) => setDeliveryField('name')(e.target.value)}
+                  placeholder={td('namePlaceholder')}
+                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
 
-          {/* Full Name */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#686868] flex items-center gap-1">
-              <User size={12} />
-              <span>{t('nameLabel')}</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('namePlaceholder')}
-              className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-            />
-          </div>
+              {/* Phone Number */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868] flex items-center gap-1">
+                  <Phone size={12} />
+                  <span>{td('phone')} <span className="text-[#E85E5E]">*</span></span>
+                </label>
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={deliveryForm.phone}
+                  onChange={(e) => setDeliveryField('phone')(e.target.value)}
+                  placeholder={td('phonePlaceholder')}
+                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
 
-          {/* Email */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#686868]">{t('emailLabel')}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('emailPlaceholder')}
-              className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-            />
-          </div>
+              {/* Address / Street / Landmark */}
+              {(
+                [
+                  { key: 'address', label: td('address'), placeholder: td('addressPlaceholder') },
+                  { key: 'street', label: td('street'), placeholder: td('streetPlaceholder') },
+                  { key: 'landmark', label: td('landmark'), placeholder: td('landmarkPlaceholder') },
+                ] as const
+              ).map((f) => (
+                <div key={f.key} className="flex flex-col gap-1">
+                  <label className="text-xs text-[#686868]">
+                    {f.label} <span className="text-[#E85E5E]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryForm[f.key]}
+                    onChange={(e) => setDeliveryField(f.key)(e.target.value)}
+                    placeholder={f.placeholder}
+                    className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
+              ))}
+
+              {/* Floor / Apartment */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-[#686868]">
+                    {td('floor')} <span className="text-[#E85E5E]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryForm.floor}
+                    onChange={(e) => setDeliveryField('floor')(e.target.value)}
+                    placeholder={td('floorPlaceholder')}
+                    className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-[#686868]">
+                    {td('apartment')} <span className="text-[#E85E5E]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryForm.apartment}
+                    onChange={(e) => setDeliveryField('apartment')(e.target.value)}
+                    placeholder={td('apartmentPlaceholder')}
+                    className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
+              </div>
+
+              {/* Specific Instructions (optional) */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868]">
+                  {td('instructions')} <span className="font-normal text-[#989898]">{td('optional')}</span>
+                </label>
+                <textarea
+                  value={deliveryForm.instructions ?? ''}
+                  onChange={(e) => setDeliveryField('instructions')(e.target.value)}
+                  placeholder={td('instructionsPlaceholder')}
+                  rows={2}
+                  className="w-full resize-none rounded-xl bg-[#E9E9E9] px-4 py-2.5 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Phone */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868] flex items-center gap-1">
+                  <Phone size={12} />
+                  <span>{t('phoneLabel')}</span>
+                </label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={t('phonePlaceholder')}
+                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
+
+              {/* Full Name */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868] flex items-center gap-1">
+                  <User size={12} />
+                  <span>{t('nameLabel')}</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('namePlaceholder')}
+                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
+
+              {/* Email */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868]">{t('emailLabel')}</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('emailPlaceholder')}
+                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
+            </>
+          )}
 
           {/* Promo code input (no apply button) */}
           <div className="border border-[#B9B9B9] rounded-xl p-1 flex items-center gap-2 bg-white mt-1">
@@ -406,10 +528,13 @@ export default function PlaceOrderPage() {
             <span>{t('keepRunning')}</span>
           </button>
 
-          {/* Confirm & Pay */}
+          {/* Confirm & Pay (delivery orders require the address first) */}
+          {session?.type === 'delivery' && !deliveryOk && (
+            <p className="text-center text-xs font-medium text-[#E85E5E]">{td('deliveryRequired')}</p>
+          )}
           <button
             onClick={() => {
-              if (items.length === 0) return;
+              if (items.length === 0 || !deliveryOk) return;
               // Card is charged automatically — place the order right away;
               // only Cash needs the Collect Payment modal to enter tendered amount.
               if (paymentMethod === 'Card') {
@@ -418,10 +543,10 @@ export default function PlaceOrderPage() {
                 setShowPaymentModal(true);
               }
             }}
-            disabled={items.length === 0}
+            disabled={items.length === 0 || !deliveryOk}
             className={cn(
               'w-full h-[50px] rounded-full font-medium text-[16px] text-white transition-all shadow-[0_4px_16px_11px_rgba(0,0,0,0.12)] flex items-center justify-center gap-2',
-              items.length > 0
+              items.length > 0 && deliveryOk
                 ? 'bg-[#026F4F] hover:bg-[#015c42] active:scale-95'
                 : 'bg-[#B9B9B9] cursor-not-allowed shadow-none',
             )}

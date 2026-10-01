@@ -189,7 +189,29 @@
     "editItemAria": "Edit Item",
     "deleteItemAria": "Delete Item",
     "optionsFree": "Free",
-    "optionsRequired": "Required"
+    "optionsRequired": "Required",
+    "delivery": {
+      "title": "Delivery Details",
+      "name": "Name",
+      "namePlaceholder": "e.g. Ahmed Hassan",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+20 1XXX XXX XXX",
+      "address": "Address",
+      "addressPlaceholder": "e.g. 12 Tahrir St, Downtown",
+      "street": "Street",
+      "streetPlaceholder": "e.g. Tahrir St",
+      "landmark": "Landmark",
+      "landmarkPlaceholder": "e.g. Next to the bank",
+      "floor": "Floor",
+      "floorPlaceholder": "e.g. 3",
+      "apartment": "Apartment",
+      "apartmentPlaceholder": "e.g. 12",
+      "instructions": "Specific Instructions",
+      "optional": "(optional)",
+      "instructionsPlaceholder": "e.g. Call on arrival",
+      "addDetails": "Add delivery details",
+      "deliveryRequired": "Delivery details are required to place this order"
+    }
   },
   "placeOrder": {
     "title": "Place Order",
@@ -236,6 +258,8 @@
     "newOrder": "New Order",
     "demoPhone": "+1 (555) 234-5678",
     "demoName": "Sarah Jessie",
+    "floorLabel": "Floor",
+    "apartmentLabel": "Apt",
     "demoEmail": "sarah.jessie@example.com",
     "payMethod": {
       "cash": "Cash",

@@ -107,7 +107,7 @@ export default function RunningOrderPage() {
               <p>{t('noOrders')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-[9px] sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-[9px] sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1800px]:grid-cols-5">
               {filteredOrders.map((order) => {
                 const isSelected = order.id === selectedOrderId;
                 return (
@@ -115,54 +115,49 @@ export default function RunningOrderPage() {
                     key={order.id}
                     onClick={() => setSelectedOrderId(order.id)}
                     className={cn(
-                      'relative flex h-[326px] min-w-0 cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white p-[14px] transition-all hover:shadow-md',
+                      'relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white p-3 transition-all hover:shadow-md',
                       isSelected ? 'ring-2 ring-[#026F4F]/30' : '',
                     )}
                   >
                     {/* Header: name + paid + order no */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex min-w-0 items-center gap-[9px]">
-                        <span className="truncate text-[16.8px] font-medium leading-[1.4] text-black">{order.customerName}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-[14px] font-medium leading-[1.4] text-black">{order.customerName}</span>
                         <span
                           className={cn(
-                            'flex shrink-0 items-center gap-[5px] rounded-[19.7px] px-[5px] py-[3px] text-[8px] font-normal leading-[1.4] text-white',
+                            'flex shrink-0 items-center gap-[4px] rounded-full px-[5px] py-[2px] text-[8px] font-normal leading-[1.4] text-white',
                             order.isPaid ? 'bg-[#16C722]' : 'bg-[#E85E5E]',
                           )}
                         >
-                          <Check size={13} strokeWidth={3} className={order.isPaid ? '' : 'hidden'} />
+                          <Check size={11} strokeWidth={3} className={order.isPaid ? '' : 'hidden'} />
                           <span>{order.isPaid ? tPay('paid') : tPay('unpaid')}</span>
                         </span>
                       </div>
-                      <span className="shrink-0 text-[11.4px] font-normal leading-[1.4] text-[#989898]">{order.orderNumber}</span>
+                      <span className="shrink-0 text-[11px] font-normal leading-[1.4] text-[#989898]">{order.orderNumber}</span>
                     </div>
 
                     {/* Meta */}
-                    <div className="mt-[9px] flex flex-col gap-[8px]">
-                      <div className="flex items-center gap-[6px]">
-                        <Clock size={15.6} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="text-[11.4px] font-normal leading-[1.4] text-[#989898]">{locTimeAgo(locStr(order.date, order.dateAr, locale), locale, tTime)}</span>
+                    <div className="mt-2 flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locTimeAgo(locStr(order.date, order.dateAr, locale), locale, tTime)}</span>
                       </div>
-                      <div className="flex items-center gap-[6px]">
-                        <UtensilsCrossed size={15.6} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="text-[11.4px] font-normal leading-[1.4] text-[#989898]">{locTable(order.table, locale, tTable)}</span>
+                      <div className="flex items-center gap-1.5">
+                        <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locTable(order.table, locale, tTable)}</span>
                       </div>
                     </div>
 
-                    {/* Items */}
-                    <div className="mt-[15px] flex flex-col">
+                    {/* Items (no photos — compact mode) */}
+                    <div className="mt-2.5 flex flex-col">
                       {order.items.slice(0, 2).map((item, idx) => (
-                        <div key={idx} className="flex items-end justify-between gap-3 py-[14px] first:pt-0">
-                          <div className="flex items-center gap-[12px]">
-                            <div className="flex h-[56px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-[#F2F2F2] text-2xl">
-                              {item.emoji}
-                            </div>
-                            <div className="flex min-w-0 flex-col gap-[7px]">
-                              <span className="truncate text-[11.4px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
-                              <span className="truncate text-[8px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('standardModifier'), locale)}&rdquo;</span>
-                              <span className="text-[10.8px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
-                            </div>
+                        <div key={idx} className="flex items-end justify-between gap-2 py-2 first:pt-0">
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate text-[11px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
+                            <span className="truncate text-[8px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('standardModifier'), locale)}&rdquo;</span>
+                            <span className="text-[10px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
                           </div>
-                          <span className="shrink-0 text-[16px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
+                          <span className="shrink-0 text-[14px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
                         </div>
                       ))}
                     </div>

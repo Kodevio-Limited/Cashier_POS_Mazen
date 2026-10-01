@@ -28,8 +28,8 @@ export function TableRequestModal({
   const locale = useLocale();
   useBodyScrollLock(true);
   return (
-    <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-      <div className="pos-overlay__panel flex max-h-full w-[384px] max-w-full flex-col rounded-lg bg-zinc-100 p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+    <div className="pos-overlay z-50 flex items-stretch justify-start bg-black/40 backdrop-blur-xs">
+      <div className="flex h-full w-[384px] max-w-[calc(100vw-1rem)] flex-col rounded-l-none rounded-r-2xl bg-zinc-100 p-5 shadow-2xl animate-in slide-in-from-left duration-300">
         <div className="flex items-start justify-between border-b border-zinc-400/40 pb-3">
           <span className="text-lg font-medium text-black">{t('title')}</span>
           <button
