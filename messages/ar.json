@@ -226,12 +226,7 @@
     "customizations": "التخصيصات",
     "customizationsHint": "خيارات إلزامية، مثل قوام النودلز.",
     "free": "مجاني",
-    "toggleAria": "تبديل التوفر",
-    "filters": {
-      "all": "الكل",
-      "available": "متاح",
-      "unavailable": "غير متاح"
-    }
+    "toggleAria": "تبديل التوفر"
   },
   "placeOrder": {
     "title": "تقديم الطلب",

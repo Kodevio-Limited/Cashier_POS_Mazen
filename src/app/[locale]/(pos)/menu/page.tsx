@@ -21,8 +21,6 @@ import {
   type MenuAvailability,
 } from '@/lib/menu-availability';
 
-type StatusFilter = 'all' | 'available' | 'unavailable';
-
 function AvailabilityToggle({
   checked,
   onChange,
@@ -61,7 +59,6 @@ export default function CashierMenuPage() {
 
   const [availability, setAvailability] = useState<MenuAvailability>(() => getMenuAvailability());
   const [activeCategory, setActiveCategory] = useState<string>('All');
-  const [status, setStatus] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -70,9 +67,6 @@ export default function CashierMenuPage() {
   }, []);
 
   const filtered = MENU_CATALOG.filter((item) => {
-    const available = isItemAvailable(item.id, availability);
-    if (status === 'available' && !available) return false;
-    if (status === 'unavailable' && available) return false;
     if (activeCategory !== 'All' && item.category !== activeCategory) return false;
     const q = search.trim().toLowerCase();
     if (q) {
@@ -82,12 +76,6 @@ export default function CashierMenuPage() {
     return true;
   });
 
-  const statusTabs: { id: StatusFilter; label: string }[] = [
-    { id: 'all', label: t('filters.all') },
-    { id: 'available', label: t('filters.available') },
-    { id: 'unavailable', label: t('filters.unavailable') },
-  ];
-
   return (
     <div className="flex min-h-[calc(100vh-38px)] flex-col gap-3">
       {/* ── Header card ─────────────────────────────────────────── */}
@@ -96,7 +84,7 @@ export default function CashierMenuPage() {
           <h1 className="text-[19px] font-medium leading-7 text-[#2D2F33]">{t('title')}</h1>
         </div>
 
-        {/* Filters — single scrollable line: search + status + categories */}
+        {/* Filters — single scrollable line: search + categories */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <div className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
             <Search size={14} className="shrink-0 text-[#989898]" />
@@ -107,21 +95,6 @@ export default function CashierMenuPage() {
               className="w-36 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
             />
           </div>
-          {statusTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setStatus(tab.id)}
-              className={cn(
-                'shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200',
-                status === tab.id
-                  ? 'bg-[#026F4F] text-white shadow-xs'
-                  : 'border border-[#E9E9E9] bg-white text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-          <span aria-hidden className="h-6 w-px shrink-0 bg-[#E9E9E9]" />
           {MENU_CATEGORIES.map((cat) => (
             <button
               key={cat}

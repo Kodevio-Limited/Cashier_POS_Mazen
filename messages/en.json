@@ -226,12 +226,7 @@
     "customizations": "Customizations",
     "customizationsHint": "Required choices, e.g. noodle texture.",
     "free": "Free",
-    "toggleAria": "toggle availability",
-    "filters": {
-      "all": "All",
-      "available": "Available",
-      "unavailable": "Unavailable"
-    }
+    "toggleAria": "toggle availability"
   },
   "placeOrder": {
     "title": "Place Order",
