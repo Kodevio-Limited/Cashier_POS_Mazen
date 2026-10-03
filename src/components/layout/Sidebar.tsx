@@ -15,6 +15,7 @@ import {
   LogOut,
   Bell,
   Wallet,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { TableRequestModal } from '@/components/pos/TableRequestModal';
 import {
@@ -31,6 +32,7 @@ import { LanguageToggle } from './LanguageToggle';
 const NAV_KEYS = [
   { id: 'floor-plan',    key: 'floorPlan',    icon: LayoutGrid,   href: '/floor-plan' },
   { id: 'order',         key: 'order',         icon: ShoppingCart, href: '/order' },
+  { id: 'menu',          key: 'menu',          icon: UtensilsCrossed, href: '/menu' },
   { id: 'running-order', key: 'runningOrder',  icon: Clock,        href: '/running-order' },
   { id: 'shift',         key: 'shift',         icon: Wallet,       href: '/shift-close' },
   { id: 'history',       key: 'history',       icon: History,      href: '/history' },

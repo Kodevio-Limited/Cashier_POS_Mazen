@@ -16,6 +16,16 @@ import {
   isDeliveryDetailsComplete,
   type DeliveryDetails,
 } from '@/lib/delivery-details';
+import {
+  MENU_CATALOG,
+  MENU_CATEGORIES,
+  getMenuAvailability,
+  getOrderableAddonNames,
+  getOrderableOptionNames,
+  isItemAvailable,
+  subscribeMenuAvailability,
+  type MenuAvailability,
+} from '@/lib/menu-availability';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -50,22 +60,11 @@ interface OrderItem {
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────
-const CATEGORIES = ['All', 'Burgers', 'Ramen', 'Sides', 'Drinks', 'Desserts'] as const;
-
-const MENU_ITEMS: MenuItem[] = [
-  { id: 'm1', name: 'Classic Burger', nameAr: 'برجر كلاسيك', category: 'Burgers', price: 15.99, emoji: '🍔' },
-  { id: 'm2', name: 'Shoyu Ramen', nameAr: 'رامن شويو', category: 'Ramen', price: 15.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', category: 'Ramen', price: 18.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm4', name: 'Miso Ramen', nameAr: 'رامن ميسو', category: 'Ramen', price: 16.99, emoji: '🍜', options: ['Firm (Kata)', 'Medium', 'Soft (Yawa)'] },
-  { id: 'm5', name: 'Cheese Burger', nameAr: 'برجر بالجبن', category: 'Burgers', price: 17.99, emoji: '🍔' },
-  { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', category: 'Burgers', price: 19.99, emoji: '🍔' },
-  { id: 'm7', name: 'Veggie Burger', nameAr: 'برجر نباتي', category: 'Burgers', price: 14.99, emoji: '🥙' },
-  { id: 'm8', name: 'Chicken Burger', nameAr: 'برجر دجاج', category: 'Burgers', price: 16.49, emoji: '🍔' },
-  { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', category: 'Sides', price: 4.99, emoji: '🍟' },
-  { id: 'm10', name: 'Onion Rings', nameAr: 'حلقات البصل', category: 'Sides', price: 5.49, emoji: '🧅' },
-  { id: 'm11', name: 'Coca-Cola', nameAr: 'كوكا كولا', category: 'Drinks', price: 2.99, emoji: '🥤' },
-  { id: 'm12', name: 'Lemonade', nameAr: 'ليموناضة', category: 'Drinks', price: 3.49, emoji: '🍋' },
-];
+// Single source of truth lives in @/lib/menu-availability (shared with the
+// cashier Menu Management page, Bug-63). Unavailable items are hidden here
+// so they also disappear from the customer-facing menu.
+const CATEGORIES = MENU_CATEGORIES;
+const MENU_ITEMS: MenuItem[] = MENU_CATALOG;
 
 // Arabic twins for the required noodle-texture options.
 const OPTION_AR: Record<string, string> = {
@@ -142,6 +141,14 @@ export default function OrderPage() {
   const deliveryPrompted = useRef(false);
   const tSess = useTranslations('orderSession');
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
+  // Menu availability toggled by the cashier (Menu page, Bug-63) — shared via
+  // localStorage so unavailable items vanish from this order grid too.
+  const [availability, setAvailability] = useState<MenuAvailability>(() => getMenuAvailability());
+
+  useEffect(() => {
+    setAvailability(getMenuAvailability());
+    return subscribeMenuAvailability(() => setAvailability(getMenuAvailability()));
+  }, []);
 
   // Keep the draft in sync so /place-order (and the back-arrow there) sees the same cart.
   useEffect(() => {
@@ -165,10 +172,15 @@ export default function OrderPage() {
     }
   }, [session]);
 
-  // Filter menu items
-  const filtered = MENU_ITEMS.filter((item) => {
+  // Filter menu items — unavailable items (toggled off in Menu Management)
+  // are hidden from ordering and from the customer menu. Search matches both
+  // English and Arabic names so filtering works in either language.
+  const orderableItems = MENU_ITEMS.filter((item) => isItemAvailable(item.id, availability));
+  const filtered = orderableItems.filter((item) => {
     const matchCat = activeCategory === 'All' || item.category === activeCategory;
-    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    const q = search.trim().toLowerCase();
+    const matchSearch =
+      q === '' || `${item.name} ${item.nameAr ?? ''}`.toLowerCase().includes(q);
     return matchCat && matchSearch;
   });
 
@@ -237,7 +249,7 @@ export default function OrderPage() {
         <div className="flex flex-wrap items-center justify-between px-5 pt-4 pb-3 border-b border-[#F2F2F2] gap-3">
           <div className="flex items-center gap-2">
             <span className="font-medium text-[19px] text-[#2D2F33]">{t('title')}</span>
-            <span className="text-[13px] text-[#989898]">{t('itemCount', { count: MENU_ITEMS.length })}</span>
+            <span className="text-[13px] text-[#989898]">{t('itemCount', { count: orderableItems.length })}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -576,14 +588,25 @@ function CustomizeItemModal({
   // Required options come from the cart line's own snapshot first (saved at
   // add time), falling back to the menu definition. Either way the Required
   // section shows both when adding AND when editing — never just the
-  // optional add-ons alone.
+  // optional add-ons alone. Unavailable customizations (toggled off in Menu
+  // Management) are hidden here and from the customer menu.
+  const [availability, setModalAvailability] = useState<MenuAvailability>(() => getMenuAvailability());
+  useEffect(() => {
+    setModalAvailability(getMenuAvailability());
+    return subscribeMenuAvailability(() => setModalAvailability(getMenuAvailability()));
+  }, []);
   const menuOptions: string[] = MENU_ITEMS.find((m) => m.id === data.id)?.options ?? [];
-  const optionList: string[] =
+  const baseOptions: string[] =
     'options' in data && Array.isArray(data.options) && data.options.length > 0
       ? data.options
       : menuOptions;
+  const optionList: string[] = getOrderableOptionNames(baseOptions, availability);
+  const orderableAddons: string[] = getOrderableAddonNames(availability);
+  const savedTexture = 'texture' in data && data.texture ? data.texture : '';
   const [texture, setTexture] = useState<string>(
-    ('texture' in data && data.texture) ? data.texture : (optionList[0] ?? ''),
+    savedTexture && optionList.includes(savedTexture)
+      ? savedTexture
+      : (optionList[0] ?? ''),
   );
   const [modifiers, setModifiers] = useState<string[]>(
     ('modifiers' in data && data.modifiers) ? data.modifiers : [],
@@ -659,11 +682,11 @@ function CustomizeItemModal({
             </div>
           )}
 
-          {/* Extra add-ons (priced — Bug-58) */}
+          {/* Extra add-ons (priced — Bug-58; unavailable ones hidden) */}
           <div className="flex flex-col gap-2.5">
             <p className="text-sm font-semibold text-[#2D2F33]">{tc('extraAddons')}</p>
             <div className="flex flex-wrap gap-2">
-              {['Mayo', 'Extra Chili', 'Boiled Egg', 'Bamboo Shoots'].map((mod) => {
+              {orderableAddons.map((mod) => {
                 const isSelected = modifiers.includes(mod);
                 return (
                   <button
