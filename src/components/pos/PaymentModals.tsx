@@ -280,6 +280,15 @@ export function MergeOrdersModal({
     return matchFilter && matchSearch;
   });
 
+  // Bug-68: the pinned current order counts as a selection — merging it with
+  // one more order is a merge of 2, so it joins the count and the total.
+  const mergedCount = selectedOrders.length + (currentOrder ? 1 : 0);
+  const combinedTotal =
+    selectedOrders.reduce((s, id) => {
+      const o = SAMPLE_RUNNING_ORDERS.find((r) => r.id === id);
+      return s + (o ? o.total : 0);
+    }, 0) + (currentOrder?.total ?? 0);
+
   return (
     <div className="pos-overlay z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
       <div className="pos-overlay__panel w-[343px] max-w-full rounded-xl bg-white shadow-2xl flex flex-col justify-between overflow-hidden animate-in zoom-in-95 duration-200">
@@ -392,29 +401,26 @@ export function MergeOrdersModal({
         {/* Bottom Bar */}
         <div className="flex flex-col gap-2 border-t border-zinc-200 p-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#2D2F33]">{t('selectedOrders', { count: selectedOrders.length })}</span>
+            <span className="font-medium text-[#2D2F33]">{t('selectedOrders', { count: mergedCount })}</span>
             <div className="text-right">
               <p className="text-[10px] text-[#989898]">{t('combinedTotal')}</p>
               <p className="text-sm font-semibold text-[#026F4F]">
-                ${selectedOrders.reduce((s, id) => {
-                  const o = SAMPLE_RUNNING_ORDERS.find((r) => r.id === id);
-                  return s + (o ? o.total : 0);
-                }, 0).toFixed(2)}
+                ${combinedTotal.toFixed(2)}
               </p>
             </div>
           </div>
 
           <button
             onClick={onProceedToConfirm}
-            disabled={selectedOrders.length < 2}
+            disabled={mergedCount < 2}
             className={cn(
               'h-12 w-full rounded-[30px] text-base font-medium text-white transition-all shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)]',
-              selectedOrders.length >= 2
+              mergedCount >= 2
                 ? 'bg-[#026F4F] hover:bg-[#015c42]'
                 : 'cursor-not-allowed bg-zinc-300 shadow-none',
             )}
           >
-            {t('mergeN', { count: selectedOrders.length })}
+            {t('mergeN', { count: mergedCount })}
           </button>
         </div>
       </div>

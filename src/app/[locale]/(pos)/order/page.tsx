@@ -479,6 +479,21 @@ export default function OrderPage() {
             )}
           </div>
 
+          {/* Session required (Bug-64): no table / take-out / delivery, no order */}
+          {!session && (
+            <div className="mx-3 flex flex-col gap-2 rounded-lg bg-[#FFF7ED] px-3 py-2.5 outline outline-1 outline-offset-[-1px] outline-[#FDBA74]">
+              <p className="text-[12px] font-medium leading-5 text-[#9A3412]">
+                {t('sessionRequired')}
+              </p>
+              <button
+                onClick={() => router.push('/floor-plan')}
+                className="h-9 rounded-full bg-[#026F4F] text-[13px] font-medium text-white transition-colors hover:bg-[#015c42]"
+              >
+                {t('goToFloorPlan')}
+              </button>
+            </div>
+          )}
+
           {/* Payments Details Box & Place Order Button */}
           <div className="px-3 pb-3 pt-2 flex flex-col gap-3.5 bg-white">
             <div className="self-stretch relative bg-zinc-100 rounded-md p-2.5 flex flex-col gap-3">
@@ -512,9 +527,15 @@ export default function OrderPage() {
               </div>
             </div>
 
-            {/* Place Order Button */}
+            {/* Place Order Button (Bug-64: blocked until a table / take-out / delivery is picked) */}
             <button
-              onClick={() => orderItems.length > 0 && router.push('/place-order')}
+              onClick={() => {
+                if (!session) {
+                  router.push('/floor-plan');
+                  return;
+                }
+                if (orderItems.length > 0) router.push('/place-order');
+              }}
               disabled={orderItems.length === 0}
               className={cn(
                 'w-full h-12 rounded-[30px] inline-flex justify-center items-center gap-5 text-white text-lg font-medium font-[\'Inter\'] leading-7 transition-all',

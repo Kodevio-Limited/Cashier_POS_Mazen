@@ -166,6 +166,8 @@
     "serviceCharge": "رسوم الخدمة (10%)",
     "total": "الإجمالي",
     "placeOrder": "تقديم الطلب",
+    "sessionRequired": "اختر طاولة أو طلبًا خارجيًا أو توصيلًا قبل تقديم الطلب.",
+    "goToFloorPlan": "الانتقال إلى مخطط الطابق",
     "categories": {
       "all": "الكل",
       "burgers": "برجر",

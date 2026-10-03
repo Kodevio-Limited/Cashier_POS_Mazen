@@ -56,6 +56,10 @@ export default function PlaceOrderPage() {
   // the "<-" back-arrow returns to the Menu with the same items.
   const [items, setItems] = useState<OrderLineItem[]>(() => loadDraft() ?? INITIAL_ITEMS);
   const [session, setSession] = useState<OrderSession | null>(null);
+  // Distinguishes "still loading" from "no table / take-out / delivery picked"
+  // so the missing-session block (Bug-64) never flashes on a valid visit.
+  const [sessionReady, setSessionReady] = useState(false);
+  const to = useTranslations('order');
 
   useEffect(() => {
     saveDraft(items);
@@ -63,7 +67,11 @@ export default function PlaceOrderPage() {
 
   useEffect(() => {
     setSession(loadSession());
+    setSessionReady(true);
   }, []);
+
+  // Bug-64: an order cannot be created without a table / take-out / delivery.
+  const missingSession = sessionReady && !session;
 
   const orderNumber = session?.orderNumber ?? 'ORD-1025';
 
@@ -156,6 +164,21 @@ export default function PlaceOrderPage() {
           <h2 className="font-medium text-[15px] text-[#2D2F33]">{t('currentDetails')}</h2>
           <span className="text-xs text-[#989898]">{t('itemsCount', { count: items.length })}</span>
         </div>
+
+        {/* Missing session block (Bug-64): pick a table / take-out / delivery first */}
+        {missingSession && (
+          <div className="mb-3 flex flex-col gap-2 rounded-xl bg-[#FFF7ED] px-4 py-3 outline outline-1 outline-offset-[-1px] outline-[#FDBA74]">
+            <p className="text-[13px] font-medium leading-5 text-[#9A3412]">
+              {to('sessionRequired')}
+            </p>
+            <button
+              onClick={() => router.push('/floor-plan')}
+              className="h-10 rounded-full bg-[#026F4F] text-[13px] font-medium text-white transition-colors hover:bg-[#015c42]"
+            >
+              {to('goToFloorPlan')}
+            </button>
+          </div>
+        )}
 
         {/* Items Table */}
         <div className="flex-1 overflow-y-auto pe-1">
@@ -528,13 +551,13 @@ export default function PlaceOrderPage() {
             <span>{t('keepRunning')}</span>
           </button>
 
-          {/* Confirm & Pay (delivery orders require the address first) */}
+          {/* Confirm & Pay (delivery orders require the address first; Bug-64: session required) */}
           {session?.type === 'delivery' && !deliveryOk && (
             <p className="text-center text-xs font-medium text-[#E85E5E]">{td('deliveryRequired')}</p>
           )}
           <button
             onClick={() => {
-              if (items.length === 0 || !deliveryOk) return;
+              if (items.length === 0 || !deliveryOk || missingSession) return;
               // Card is charged automatically — place the order right away;
               // only Cash needs the Collect Payment modal to enter tendered amount.
               if (paymentMethod === 'Card') {
@@ -543,10 +566,10 @@ export default function PlaceOrderPage() {
                 setShowPaymentModal(true);
               }
             }}
-            disabled={items.length === 0 || !deliveryOk}
+            disabled={items.length === 0 || !deliveryOk || missingSession}
             className={cn(
               'w-full h-[50px] rounded-full font-medium text-[16px] text-white transition-all shadow-[0_4px_16px_11px_rgba(0,0,0,0.12)] flex items-center justify-center gap-2',
-              items.length > 0 && deliveryOk
+              items.length > 0 && deliveryOk && !missingSession
                 ? 'bg-[#026F4F] hover:bg-[#015c42] active:scale-95'
                 : 'bg-[#B9B9B9] cursor-not-allowed shadow-none',
             )}
@@ -594,14 +617,14 @@ export default function PlaceOrderPage() {
         />
       )}
 
-      {/* ── Confirm Merge Modal ────────────────────────────────────── */}
+      {/* ── Confirm Merge Modal (Bug-68: current order counts as a selection) ── */}
       {showConfirmMergeModal && (
         <ConfirmMergeModal
-          ordersCount={selectedMergeOrders.length}
+          ordersCount={selectedMergeOrders.length + 1}
           combinedTotal={selectedMergeOrders.reduce((sum, id) => {
             const totals: Record<string, number> = { ro1: 45.99, ro2: 32.5, ro3: 54, ro4: 18.99 };
             return sum + (totals[id] ?? 0);
-          }, 0)}
+          }, total)}
           onClose={() => setShowConfirmMergeModal(false)}
           onConfirm={() => {
             setShowConfirmMergeModal(false);

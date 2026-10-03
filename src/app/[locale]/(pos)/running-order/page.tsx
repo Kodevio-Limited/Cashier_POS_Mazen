@@ -269,16 +269,16 @@ export default function RunningOrderPage() {
 
           <div className="mt-4 flex-1 overflow-y-auto px-[11px] pb-2">
             {/* Customer info */}
-            <div className="flex h-[116px] flex-col gap-[14px] rounded-[10px] bg-[#F2F2F2] px-[18px] py-[16px]">
-              <p className="text-[16px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(selectedOrder.customerName, selectedOrder.customerNameAr, locale)}</p>
-              <div className="flex flex-col gap-[10px]">
-                <div className="flex items-center gap-[8px]">
-                  <Phone size={19} className="shrink-0 text-[#989898]" />
-                  <span className="text-[13px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.phone}</span>
+            <div className="flex flex-col gap-2 rounded-[10px] bg-[#F2F2F2] px-3.5 py-3">
+              <p className="text-[14px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(selectedOrder.customerName, selectedOrder.customerNameAr, locale)}</p>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Phone size={15} className="shrink-0 text-[#989898]" />
+                  <span className="text-[12px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.phone}</span>
                 </div>
-                <div className="flex items-center gap-[8px]">
-                  <Mail size={19} className="shrink-0 text-[#989898]" />
-                  <span className="text-[13px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.email}</span>
+                <div className="flex items-center gap-1.5">
+                  <Mail size={15} className="shrink-0 text-[#989898]" />
+                  <span className="text-[12px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.email}</span>
                 </div>
               </div>
             </div>
@@ -323,28 +323,19 @@ export default function RunningOrderPage() {
               </div>
             </div>
 
-            {/* Order summary */}
-            <div className="mt-[10px] flex flex-col gap-[10px]">
+            {/* Order summary — compact rows, no photos (Bug-66) */}
+            <div className="mt-[10px] flex flex-col gap-[6px]">
               <p className="text-[12px] font-semibold leading-[1.4] text-[#2D2F33]">{t('orderSummary')}</p>
-              <div className="flex flex-col gap-[11px]">
+              <div className="flex flex-col rounded-[10px] bg-[#F2F2F2] px-3 py-1">
                 {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-[10px]">
-                    <div className="flex h-[77px] w-[82px] shrink-0 items-center justify-center rounded-[7px] bg-[#F2F2F2] text-3xl">
-                      {item.emoji}
+                  <div key={idx} className="flex items-center justify-between gap-2 border-b border-[#E4E4E4] py-2 last:border-0">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
+                      <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">+ {locStr(item.modifier || 'Mayo', item.modifierAr || t('mayoModifier'), locale)}</span>
                     </div>
-                    <div className="flex min-w-0 flex-1 gap-[21px]">
-                      <div className="flex min-w-0 flex-col gap-[8px]">
-                        <span className="truncate text-[14.5px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
-                        <span className="text-[12.6px] font-normal leading-[1.4] text-[#989898]">+ {locStr(item.modifier || 'Mayo', item.modifierAr || t('mayoModifier'), locale)}</span>
-                        <span className="flex items-center gap-[3px] text-[12.6px] italic leading-[1.4] text-[#026F4F]">
-                          <UtensilsCrossed size={19} strokeWidth={1.4} />
-                          {t('cutInHalf')}
-                        </span>
-                      </div>
-                      <div className="ms-auto flex shrink-0 flex-col items-end gap-[36px]">
-                        <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
-                        <span className="text-[14px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
-                      </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-[13px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
                     </div>
                   </div>
                 ))}

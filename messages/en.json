@@ -166,6 +166,8 @@
     "serviceCharge": "Service Charge (10%)",
     "total": "Total",
     "placeOrder": "Place Order",
+    "sessionRequired": "Choose a table, takeaway or delivery before placing the order.",
+    "goToFloorPlan": "Go to Floor Plan",
     "categories": {
       "all": "All",
       "burgers": "Burgers",
