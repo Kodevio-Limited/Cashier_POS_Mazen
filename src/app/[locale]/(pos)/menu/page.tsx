@@ -96,37 +96,32 @@ export default function CashierMenuPage() {
           <h1 className="text-[19px] font-medium leading-7 text-[#2D2F33]">{t('title')}</h1>
         </div>
 
-        {/* Search + status filter */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex h-10 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
+        {/* Filters — single scrollable line: search + status + categories */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
             <Search size={14} className="shrink-0 text-[#989898]" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-44 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+              className="w-36 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
             />
           </div>
-          <div className="flex items-center gap-2">
-            {statusTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setStatus(tab.id)}
-                className={cn(
-                  'rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200',
-                  status === tab.id
-                    ? 'bg-[#026F4F] text-white shadow-xs'
-                    : 'border border-[#E9E9E9] bg-white text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Category pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setStatus(tab.id)}
+              className={cn(
+                'shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200',
+                status === tab.id
+                  ? 'bg-[#026F4F] text-white shadow-xs'
+                  : 'border border-[#E9E9E9] bg-white text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <span aria-hidden className="h-6 w-px shrink-0 bg-[#E9E9E9]" />
           {MENU_CATEGORIES.map((cat) => (
             <button
               key={cat}
