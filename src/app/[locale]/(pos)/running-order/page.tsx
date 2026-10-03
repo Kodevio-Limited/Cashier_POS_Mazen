@@ -341,7 +341,7 @@ export default function RunningOrderPage() {
                           {t('cutInHalf')}
                         </span>
                       </div>
-                      <div className="ml-auto flex shrink-0 flex-col items-end gap-[36px]">
+                      <div className="ms-auto flex shrink-0 flex-col items-end gap-[36px]">
                         <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
                         <span className="text-[14px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
                       </div>

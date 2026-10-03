@@ -304,7 +304,7 @@ export default function OrderHistoryPage() {
               {tTypes(mapEnum(tab, ORDER_TYPE_KEY_MAP))}
             </button>
           ))}
-          <div className="ml-auto flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-full bg-white px-4 sm:max-w-[280px] sm:flex-none">
+          <div className="ms-auto flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-full bg-white px-4 sm:max-w-[280px] sm:flex-none">
             <Search size={14} className="shrink-0 text-[#989898]" />
             <input
               value={search}
@@ -429,7 +429,7 @@ export default function OrderHistoryPage() {
                           {t('cutInHalf')}
                         </span>
                       </div>
-                      <div className="ml-auto flex shrink-0 flex-col items-end gap-[36px]">
+                      <div className="ms-auto flex shrink-0 flex-col items-end gap-[36px]">
                         <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
                         <span className="text-[11.6px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
                       </div>

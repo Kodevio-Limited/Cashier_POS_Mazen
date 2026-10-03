@@ -119,7 +119,7 @@ export default function SettingsPage() {
                 aria-label={t('systemLanguageAria')}
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="h-[43px] w-full appearance-none rounded-[7px] border border-[#989898] bg-white py-[11px] pl-[17px] pr-[40px] text-[14px] font-normal leading-[1.4] text-[#989898] outline-none focus:border-[#026F4F]"
+                className="h-[43px] w-full appearance-none rounded-[7px] border border-[#989898] bg-white py-[11px] ps-[17px] pe-[40px] text-[14px] font-normal leading-[1.4] text-[#989898] outline-none focus:border-[#026F4F]"
               >
                 {LANGUAGES.map((l) => (
                   <option key={l} value={l}>
@@ -127,7 +127,7 @@ export default function SettingsPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown size={20} className="pointer-events-none absolute right-[17px] top-1/2 -translate-y-1/2 text-[#989898]" />
+              <ChevronDown size={20} className="pointer-events-none absolute end-[17px] top-1/2 -translate-y-1/2 text-[#989898]" />
             </div>
           </div>
         </section>

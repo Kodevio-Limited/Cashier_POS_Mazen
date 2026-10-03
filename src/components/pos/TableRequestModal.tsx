@@ -29,7 +29,7 @@ export function TableRequestModal({
   useBodyScrollLock(true);
   return (
     <div className="pos-overlay z-50 flex items-stretch justify-start bg-black/40 backdrop-blur-xs">
-      <div className="flex h-full w-[384px] max-w-[calc(100vw-1rem)] flex-col rounded-l-none rounded-r-2xl bg-zinc-100 p-5 shadow-2xl animate-in slide-in-from-left duration-300">
+      <div className="flex h-full w-[384px] max-w-[calc(100vw-1rem)] flex-col rounded-s-none rounded-e-2xl bg-zinc-100 p-5 shadow-2xl animate-in ltr:slide-in-from-left rtl:slide-in-from-right duration-300">
         <div className="flex items-start justify-between border-b border-zinc-400/40 pb-3">
           <span className="text-lg font-medium text-black">{t('title')}</span>
           <button

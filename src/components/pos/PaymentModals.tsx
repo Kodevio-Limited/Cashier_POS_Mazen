@@ -109,9 +109,11 @@ export function CollectPaymentModal({
             <span className="pointer-events-none absolute left-[17px] top-1/2 -translate-y-1/2 text-[21px] font-medium leading-[1.4] text-[#989898]">
               $
             </span>
+            {/* Currency amount: intentionally LTR in both locales (physical $ prefix) */}
             <input
               ref={amountRef}
               type="number"
+              dir="ltr"
               value={received}
               onChange={(e) => setReceived(e.target.value)}
               inputMode="decimal"
