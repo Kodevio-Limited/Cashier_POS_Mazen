@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Search, Info } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr } from '@/lib/locale-fields';
 import {
@@ -82,9 +82,6 @@ export default function CashierMenuPage() {
     return true;
   });
 
-  const availableCount = MENU_CATALOG.filter((i) => isItemAvailable(i.id, availability)).length;
-  const unavailableCount = MENU_CATALOG.length - availableCount;
-
   const statusTabs: { id: StatusFilter; label: string }[] = [
     { id: 'all', label: t('filters.all') },
     { id: 'available', label: t('filters.available') },
@@ -96,30 +93,7 @@ export default function CashierMenuPage() {
       {/* ── Header card ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-[19px] font-medium leading-7 text-[#2D2F33]">{t('title')}</h1>
-            <p className="text-[13px] font-normal leading-5 text-[#989898]">{t('subtitle')}</p>
-            <p className="text-[12px] font-medium leading-5 text-[#686868]">
-              {t('itemsCount', { available: availableCount, unavailable: unavailableCount })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-[#F2F2F2] px-4 py-2">
-            <span className="size-2 rounded-full bg-[#026F4F]" />
-            <span className="text-[12px] font-medium text-[#2D2F33]">
-              {t('availableCount', { count: availableCount })}
-            </span>
-            <span className="text-[#D9D9D9]">|</span>
-            <span className="size-2 rounded-full bg-[#E85E5E]" />
-            <span className="text-[12px] font-medium text-[#2D2F33]">
-              {t('unavailableCount', { count: unavailableCount })}
-            </span>
-          </div>
-        </div>
-
-        {/* Cashier scope note */}
-        <div className="flex items-start gap-2 rounded-lg bg-[#E6F1ED] px-3.5 py-2.5">
-          <Info size={16} className="mt-0.5 shrink-0 text-[#026F4F]" />
-          <p className="text-[12.5px] font-normal leading-5 text-[#026F4F]">{t('note')}</p>
+          <h1 className="text-[19px] font-medium leading-7 text-[#2D2F33]">{t('title')}</h1>
         </div>
 
         {/* Search + status filter */}
