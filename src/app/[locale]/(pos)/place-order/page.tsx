@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
@@ -13,9 +13,12 @@ import {
   saveDeliveryDetails,
   emptyDeliveryDetails,
   isDeliveryDetailsComplete,
+  loadCustomerByPhone,
+  saveCustomer,
   type DeliveryDetails,
 } from '@/lib/delivery-details';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
+import { useQueryModal } from '@/lib/use-query-modal';
 import {
   CollectPaymentModal,
   SplitBillModal,
@@ -90,6 +93,44 @@ export default function PlaceOrderPage() {
       saveDeliveryDetails(next);
       return next;
     });
+  const applySavedAddress = (idx: number) => {
+    const found = loadCustomerByPhone(deliveryForm.phone);
+    const addr = found?.addresses[idx];
+    if (!addr) return;
+    setDeliveryForm((prev) => {
+      const next = {
+        ...prev,
+        name: prev.name.trim() ? prev.name : found.name,
+        addressLabel: addr.label,
+        address: addr.address,
+        street: addr.street,
+        landmark: addr.landmark,
+        floor: addr.floor,
+        apartment: addr.apartment,
+        instructions: addr.instructions ?? prev.instructions,
+      };
+      saveDeliveryDetails(next);
+      return next;
+    });
+  };
+  const handleDeliveryPhoneBlur = () => {
+    const found = loadCustomerByPhone(deliveryForm.phone);
+    if (!found) return;
+    setDeliveryForm((prev) => {
+      if (prev.name.trim() && prev.address.trim()) return prev;
+      const first = found.addresses[0];
+      const next = {
+        ...prev,
+        name: prev.name.trim() ? prev.name : found.name,
+        secondaryPhone: prev.secondaryPhone?.trim() ? prev.secondaryPhone : (found.secondaryPhone ?? ''),
+        addressLabel: first?.label ?? prev.addressLabel,
+        address: prev.address.trim() ? prev.address : (first?.address ?? ''),
+        street: prev.street.trim() ? prev.street : (first?.street ?? ''),
+      };
+      saveDeliveryDetails(next);
+      return next;
+    });
+  };
   const deliveryOk = session?.type !== 'delivery' || isDeliveryDetailsComplete(deliveryForm);
   const [email, setEmail] = useState(() => t('demoEmail'));
   const [notes, setNotes] = useState('');
@@ -97,12 +138,33 @@ export default function PlaceOrderPage() {
   // Checkout options
   const [promo, setPromo] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card'>('Card');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showSplitModal, setShowSplitModal] = useState(false);
-  const [showMergeModal, setShowMergeModal] = useState(false);
-  const [showConfirmMergeModal, setShowConfirmMergeModal] = useState(false);
+  // Query-driven checkout overlays: ?modal=payment|split-bill|merge-orders|
+  // confirm-merge|order-success. Back walks back through them.
+  const [successOpen, setSuccessOpen] = useQueryModal('order-success');
+  const successArmed = useRef(false);
+  const [paymentOpen, setPaymentOpen] = useQueryModal('payment');
+  const [splitOpen, setSplitOpen] = useQueryModal('split-bill');
+  const [mergeOpen, setMergeOpen] = useQueryModal('merge-orders');
+  const [confirmMergeOpen, setConfirmMergeOpen] = useQueryModal('confirm-merge');
+  const confirmMergeArmed = useRef(false);
   const [selectedMergeOrders, setSelectedMergeOrders] = useState<string[]>(['ro1', 'ro2']);
+
+  const openSuccess = () => {
+    successArmed.current = true;
+    setSuccessOpen(true);
+  };
+  const closeSuccess = () => {
+    setSuccessOpen(false);
+    successArmed.current = false;
+  };
+  const openConfirmMerge = () => {
+    confirmMergeArmed.current = true;
+    setConfirmMergeOpen(true);
+  };
+  const closeConfirmMerge = () => {
+    setConfirmMergeOpen(false);
+    confirmMergeArmed.current = false;
+  };
 
   // Operate on the unique cart-line id, NOT the menu item id: two lines can be
   // the same dish with different customizations (e.g. Classic Burger plain and
@@ -327,22 +389,63 @@ export default function PlaceOrderPage() {
                   dir="ltr"
                   value={deliveryForm.phone}
                   onChange={(e) => setDeliveryField('phone')(e.target.value)}
+                  onBlur={handleDeliveryPhoneBlur}
                   placeholder={td('phonePlaceholder')}
                   className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
                 />
               </div>
 
-              {/* Address / Street / Landmark */}
+              {/* Secondary number (optional, Bug-12) */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[#686868] flex items-center gap-1">
+                  <Phone size={12} />
+                  <span>Secondary Number <span className="font-normal text-[#989898]">(optional)</span></span>
+                </label>
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={deliveryForm.secondaryPhone ?? ''}
+                  onChange={(e) => setDeliveryField('secondaryPhone')(e.target.value)}
+                  placeholder="+20 1XXX XXX XXX"
+                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                />
+              </div>
+
+              {/* Saved addresses (Bug-12) */}
+              {(() => {
+                const found = loadCustomerByPhone(deliveryForm.phone);
+                return found && found.addresses.length > 1 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {found.addresses.map((a, i) => (
+                      <button
+                        key={`${a.label}-${i}`}
+                        type="button"
+                        onClick={() => applySavedAddress(i)}
+                        className="rounded-full bg-[#026F4F]/10 px-3 py-1 text-[11px] font-medium text-[#026F4F] transition-colors hover:bg-[#026F4F] hover:text-white"
+                      >
+                        {a.label || `Address ${i + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Address / Street (required) + Landmark (optional, Bug-12) */}
               {(
                 [
-                  { key: 'address', label: td('address'), placeholder: td('addressPlaceholder') },
-                  { key: 'street', label: td('street'), placeholder: td('streetPlaceholder') },
-                  { key: 'landmark', label: td('landmark'), placeholder: td('landmarkPlaceholder') },
+                  { key: 'address', label: td('address'), placeholder: td('addressPlaceholder'), required: true },
+                  { key: 'street', label: td('street'), placeholder: td('streetPlaceholder'), required: true },
+                  { key: 'landmark', label: td('landmark'), placeholder: td('landmarkPlaceholder'), required: false },
                 ] as const
               ).map((f) => (
                 <div key={f.key} className="flex flex-col gap-1">
                   <label className="text-xs text-[#686868]">
-                    {f.label} <span className="text-[#E85E5E]">*</span>
+                    {f.label}{' '}
+                    {f.required ? (
+                      <span className="text-[#E85E5E]">*</span>
+                    ) : (
+                      <span className="font-normal text-[#989898]">(optional)</span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -354,11 +457,11 @@ export default function PlaceOrderPage() {
                 </div>
               ))}
 
-              {/* Floor / Apartment */}
+              {/* Floor / Apartment (optional, Bug-12) */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-[#686868]">
-                    {td('floor')} <span className="text-[#E85E5E]">*</span>
+                    {td('floor')} <span className="font-normal text-[#989898]">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -370,7 +473,7 @@ export default function PlaceOrderPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-[#686868]">
-                    {td('apartment')} <span className="text-[#E85E5E]">*</span>
+                    {td('apartment')} <span className="font-normal text-[#989898]">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -518,7 +621,7 @@ export default function PlaceOrderPage() {
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
-              onClick={() => items.length > 0 && setShowSplitModal(true)}
+              onClick={() => items.length > 0 && setSplitOpen(true)}
               disabled={items.length === 0}
               className={cn(
                 'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-100 text-xs font-medium text-[#2D2F33] transition-colors hover:bg-zinc-200',
@@ -530,7 +633,7 @@ export default function PlaceOrderPage() {
             </button>
             <button
               type="button"
-              onClick={() => items.length > 0 && setShowMergeModal(true)}
+              onClick={() => items.length > 0 && setMergeOpen(true)}
               disabled={items.length === 0}
               className={cn(
                 'flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-zinc-100 text-xs font-medium text-[#2D2F33] transition-colors hover:bg-zinc-200',
@@ -558,12 +661,13 @@ export default function PlaceOrderPage() {
           <button
             onClick={() => {
               if (items.length === 0 || !deliveryOk || missingSession) return;
+              if (session?.type === 'delivery') saveCustomer(deliveryForm);
               // Card is charged automatically — place the order right away;
               // only Cash needs the Collect Payment modal to enter tendered amount.
               if (paymentMethod === 'Card') {
-                setShowSuccessModal(true);
+                openSuccess();
               } else {
-                setShowPaymentModal(true);
+                setPaymentOpen(true);
               }
             }}
             disabled={items.length === 0 || !deliveryOk || missingSession}
@@ -581,31 +685,31 @@ export default function PlaceOrderPage() {
       </div>
 
       {/* ── Collect Payment Modal ─────────────────────────────────── */}
-      {showPaymentModal && (
+      {paymentOpen && (
         <CollectPaymentModal
           total={total}
-          onClose={() => setShowPaymentModal(false)}
+          onClose={() => setPaymentOpen(false)}
           onConfirm={() => {
-            setShowPaymentModal(false);
-            setShowSuccessModal(true);
+            setPaymentOpen(false);
+            openSuccess();
           }}
-          onSplit={() => setShowSplitModal(true)}
-          onMerge={() => setShowMergeModal(true)}
+          onSplit={() => setSplitOpen(true)}
+          onMerge={() => setMergeOpen(true)}
         />
       )}
 
       {/* ── Split Bill Modal ───────────────────────────────────────── */}
-      {showSplitModal && (
-        <SplitBillModal items={items} total={total} onClose={() => setShowSplitModal(false)} />
+      {splitOpen && (
+        <SplitBillModal items={items} total={total} onClose={() => setSplitOpen(false)} />
       )}
 
       {/* ── Merge Orders Modal ─────────────────────────────────────── */}
-      {showMergeModal && (
+      {mergeOpen && (
         <MergeOrdersModal
-          onClose={() => setShowMergeModal(false)}
+          onClose={() => setMergeOpen(false)}
           onProceedToConfirm={() => {
-            setShowMergeModal(false);
-            setShowConfirmMergeModal(true);
+            setMergeOpen(false);
+            openConfirmMerge();
           }}
           selectedOrders={selectedMergeOrders}
           currentOrder={{ id: 'current', label: orderNumber, total, itemsCount: items.length }}
@@ -618,23 +722,23 @@ export default function PlaceOrderPage() {
       )}
 
       {/* ── Confirm Merge Modal (Bug-68: current order counts as a selection) ── */}
-      {showConfirmMergeModal && (
+      {confirmMergeOpen && confirmMergeArmed.current && (
         <ConfirmMergeModal
           ordersCount={selectedMergeOrders.length + 1}
           combinedTotal={selectedMergeOrders.reduce((sum, id) => {
             const totals: Record<string, number> = { ro1: 45.99, ro2: 32.5, ro3: 54, ro4: 18.99 };
             return sum + (totals[id] ?? 0);
           }, total)}
-          onClose={() => setShowConfirmMergeModal(false)}
+          onClose={closeConfirmMerge}
           onConfirm={() => {
-            setShowConfirmMergeModal(false);
-            setShowMergeModal(false);
+            closeConfirmMerge();
+            setMergeOpen(false);
           }}
         />
       )}
 
       {/* ── Success Modal ────────────────────────────────────────── */}
-      {showSuccessModal && (
+      {successOpen && successArmed.current && (
         <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
           <div className="pos-overlay__panel w-[450px] bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center gap-4 animate-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-[#026F4F]">
@@ -655,7 +759,7 @@ export default function PlaceOrderPage() {
               <button
                 onClick={() => {
                   window.print();
-                  setShowSuccessModal(false);
+                  closeSuccess();
                   clearDraft();
                   clearSession();
                   setItems([]);
@@ -668,7 +772,7 @@ export default function PlaceOrderPage() {
               </button>
               <button
                 onClick={() => {
-                  setShowSuccessModal(false);
+                  closeSuccess();
                   clearDraft();
                   clearSession();
                   setItems([]);

@@ -10,6 +10,7 @@ import { clearDraft } from '@/lib/order-draft';
 import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
 import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
+import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
@@ -60,9 +61,31 @@ export default function FloorPlanPage() {
   const [tables, setTables] = useState<FloorTable[]>(INITIAL_TABLES);
   const [zoneFilter, setZoneFilter] = useState<ZoneFilter>('All');
   const [activeModalTable, setActiveModalTable] = useState<FloorTable | null>(null);
-  const [showTransferModal, setShowTransferModal] = useState(false);
+  // Query-driven overlays: ?modal=table&id=t2, ?modal=transfer-table&id=t2
+  const [tableOpen, setTableOpen] = useQueryModal('table');
+  const [transferOpen, setTransferOpen] = useQueryModal('transfer-table');
   const [targetTransferTable, setTargetTransferTable] = useState('');
   const [requests, setRequests] = useState<TableRequest[]>([]);
+
+  const openTableModal = (t: FloorTable) => {
+    setActiveModalTable(t);
+    writeQueryParam('id', t.id, false);
+    setTableOpen(true);
+  };
+  const closeTableModal = () => {
+    setActiveModalTable(null);
+    setTableOpen(false);
+    writeQueryParam('id', null, false);
+  };
+
+  // Cold load: restore the table / transfer modals from ?modal=&id=
+  useEffect(() => {
+    const modal = readQueryParam('modal');
+    if (modal !== 'table' && modal !== 'transfer-table') return;
+    const id = readQueryParam('id');
+    const found = id ? INITIAL_TABLES.find((t) => t.id === id) : undefined;
+    if (found) setActiveModalTable(found);
+  }, []);
 
   // Live table requests (waiter / check) surfaced on each table card.
   useEffect(() => {
@@ -85,7 +108,7 @@ export default function FloorPlanPage() {
           : t,
       ),
     );
-    setActiveModalTable(null);
+    closeTableModal();
     startOrder('dine-in', table.name, true);
   }
 
@@ -112,7 +135,7 @@ export default function FloorPlanPage() {
           : t,
       ),
     );
-    setActiveModalTable(null);
+    closeTableModal();
   }
 
   // Print Bill / Request Check: raise a check request for this table so it
@@ -122,7 +145,7 @@ export default function FloorPlanPage() {
     if (!alreadyRequested) {
       addRequest({ table: table.name, type: 'Check Requested' });
     }
-    setActiveModalTable(null);
+    closeTableModal();
   }
 
   function handleTransferTable() {
@@ -149,8 +172,8 @@ export default function FloorPlanPage() {
         return t;
       }),
     );
-    setShowTransferModal(false);
-    setActiveModalTable(null);
+    setTransferOpen(false);
+    closeTableModal();
     setTargetTransferTable('');
   }
 
@@ -216,7 +239,7 @@ export default function FloorPlanPage() {
               if (table.status === 'available') {
                 seatTable(table);
               } else {
-                setActiveModalTable(table);
+                openTableModal(table);
               }
             }}
           />
@@ -226,8 +249,8 @@ export default function FloorPlanPage() {
         )}
       </div>
 
-      {/* ── Table action modal ───────────────────────────────────────── */}
-      {activeModalTable && (
+      {/* ── Table action modal (?modal=table&id=) ──────────────────────── */}
+      {tableOpen && activeModalTable && (
         <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
           <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
@@ -239,7 +262,7 @@ export default function FloorPlanPage() {
                 </p>
               </div>
               <button
-                onClick={() => setActiveModalTable(null)}
+                onClick={closeTableModal}
                 aria-label={tc('close')}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition-colors hover:text-black"
               >
@@ -311,7 +334,7 @@ export default function FloorPlanPage() {
                     <span>{t('modal.addItems')}</span>
                   </button>
                   <button
-                    onClick={() => setShowTransferModal(true)}
+                    onClick={() => setTransferOpen(true)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-100 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
                   >
                     <ArrowRightLeft size={16} />
@@ -338,8 +361,8 @@ export default function FloorPlanPage() {
         </div>
       )}
 
-      {/* ── Transfer sub-modal ───────────────────────────────────────── */}
-      {showTransferModal && activeModalTable && (
+      {/* ── Transfer sub-modal (?modal=transfer-table&id=) ─────────────── */}
+      {transferOpen && activeModalTable && (
         <div className="pos-overlay z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="pos-overlay__panel flex w-[380px] max-w-full flex-col gap-4 rounded-2xl bg-white p-5 shadow-2xl">
             <div>
@@ -364,7 +387,7 @@ export default function FloorPlanPage() {
             </select>
             <div className="flex gap-2 pt-1">
               <button
-                onClick={() => setShowTransferModal(false)}
+                onClick={() => setTransferOpen(false)}
                 className="h-10 flex-1 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
               >
                 {tc('cancel')}

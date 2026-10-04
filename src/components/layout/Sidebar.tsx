@@ -18,6 +18,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import { TableRequestModal } from '@/components/pos/TableRequestModal';
+import { useQueryModal } from '@/lib/use-query-modal';
 import {
   getRequests,
   handleRequest,
@@ -46,7 +47,8 @@ export function Sidebar() {
   const router = useRouter();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [pendingOrders, setPendingOrders] = useState(0);
-  const [showRequests, setShowRequests] = useState(false);
+  // Query-driven requests drawer: ?modal=requests (all POS pages)
+  const [requestsOpen, setRequestsOpen] = useQueryModal('requests');
 
   useEffect(() => {
     setRequests(getRequests());
@@ -59,7 +61,7 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    const open = () => setShowRequests(true);
+    const open = () => setRequestsOpen(true);
     window.addEventListener('pos-open-table-requests', open);
     return () => window.removeEventListener('pos-open-table-requests', open);
   }, []);
@@ -87,7 +89,7 @@ export function Sidebar() {
         <div className="w-full px-2 pt-3">
           <button
             type="button"
-            onClick={() => setShowRequests(true)}
+            onClick={() => setRequestsOpen(true)}
             title={t('tableRequests')}
             className={cn(
               'group relative mx-auto flex h-[50px] w-[50px] items-center justify-center rounded-full transition-all duration-200',
@@ -165,13 +167,13 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {showRequests && (
+      {requestsOpen && (
         <TableRequestModal
           requests={requests}
-          onClose={() => setShowRequests(false)}
+          onClose={() => setRequestsOpen(false)}
           onDismissAll={() => {
             dismissAllRequests();
-            setShowRequests(false);
+            setRequestsOpen(false);
           }}
           onHandled={handleRequest}
         />

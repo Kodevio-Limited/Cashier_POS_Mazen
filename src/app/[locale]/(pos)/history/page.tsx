@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
+import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
@@ -209,11 +210,14 @@ export default function OrderHistoryPage() {
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  // Query-driven refund flow: ?modal=refund&mode=refund|cancel&id=h1 (step 1),
+  // ?modal=refund-waste (step 2). Back walks back through the steps.
+  const [refundOpen, setRefundOpen] = useQueryModal('refund');
+  const [showWasteModal, setShowWasteModal] = useQueryModal('refund-waste');
   // Step 1: pick items (+ reason). Step 2: log waste.
   const [refundMode, setRefundMode] = useState<RefundMode | null>(null);
   const [refundQty, setRefundQty] = useState<Record<number, number>>({});
   const [refundReason, setRefundReason] = useState('');
-  const [showWasteModal, setShowWasteModal] = useState(false);
   const [wasteLog, setWasteLog] = useState<Record<number, boolean>>({});
   const [wasteIngredients, setWasteIngredients] = useState<Record<number, string[]>>({});
   const [customOpen, setCustomOpen] = useState<number | null>(null);
@@ -236,14 +240,40 @@ export default function OrderHistoryPage() {
   const refundTotal = refundLines.reduce((s, l) => s + l.item.price * l.qty, 0);
 
   function openRefundFlow(mode: RefundMode) {
+    if (!selectedOrder) return;
     setRefundMode(mode);
     setRefundQty({});
     setRefundReason('');
-    setShowWasteModal(false);
     setWasteLog({});
     setWasteIngredients({});
     setCustomOpen(null);
+    writeQueryParam('mode', mode, false);
+    writeQueryParam('id', selectedOrder.id, false);
+    setRefundOpen(true);
   }
+
+  // Cold load: restore the refund flow from ?modal=refund|refund-waste&mode=&id=
+  useEffect(() => {
+    const modal = readQueryParam('modal');
+    if (modal !== 'refund' && modal !== 'refund-waste') return;
+    const mode = readQueryParam('mode');
+    const id = readQueryParam('id');
+    if ((mode !== 'refund' && mode !== 'cancel') || !id) return;
+    const found = INITIAL_HISTORY.find((o) => o.id === id);
+    if (!found) return;
+    setSelectedOrderId(id);
+    setRefundMode(mode);
+    if (modal === 'refund-waste') {
+      const full: Record<number, boolean> = {};
+      const qty: Record<number, number> = {};
+      found.items.forEach((item, idx) => {
+        full[idx] = true;
+        qty[idx] = item.qty;
+      });
+      setRefundQty(qty);
+      setWasteLog(full);
+    }
+  }, []);
 
   // Step 1 confirm → carry the chosen lines into the Log Waste step.
   function confirmItems() {
@@ -272,12 +302,28 @@ export default function OrderHistoryPage() {
       ),
     );
     setRefundMode(null);
+    setRefundQty({});
     setShowWasteModal(false);
+    setRefundOpen(false);
+    closeRefundQuery();
+  }
+
+  // Strip flow params from the URL (history.back pops are handled by the hooks).
+  function closeRefundQuery() {
+    writeQueryParam('mode', null, false);
+    writeQueryParam('id', null, false);
   }
 
   function closeFlow() {
     setRefundMode(null);
+    setRefundQty({});
+    setRefundReason('');
+    setWasteLog({});
+    setWasteIngredients({});
+    setCustomOpen(null);
     setShowWasteModal(false);
+    setRefundOpen(false);
+    closeRefundQuery();
   }
 
   return (
@@ -325,7 +371,7 @@ export default function OrderHistoryPage() {
         </div>
 
         {/* Cards grid */}
-        <div className="mt-[24px] flex-1 overflow-y-auto pb-20">
+        <div className="mt-[24px] flex-1 overflow-y-auto px-0.5 pb-20 pt-0.5">
           {filteredOrders.length === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center rounded-xl bg-white text-sm text-[#989898]">
               <Clock size={32} className="mb-2" />
@@ -340,8 +386,10 @@ export default function OrderHistoryPage() {
                     key={order.id}
                     onClick={() => setSelectedOrderId(order.id)}
                     className={cn(
-                      'flex min-w-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl bg-white px-3 py-2.5 transition-all hover:shadow-md',
-                      isSelected ? 'ring-2 ring-[#026F4F]/40' : '',
+                      // Bug-13: border instead of ring so the selected outline
+                      // is never clipped at the scroll edges.
+                      'flex min-w-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border-2 bg-white px-3 py-2.5 transition-all hover:shadow-md',
+                      isSelected ? 'border-[#026F4F] shadow-md' : 'border-transparent',
                     )}
                   >
                     {/* Order no + table/time */}
@@ -497,7 +545,7 @@ export default function OrderHistoryPage() {
       )}
 
       {/* ── Step 1: pick items to refund / cancel ─────────────────────── */}
-      {refundMode && selectedOrder && !showWasteModal && (
+      {refundOpen && refundMode && selectedOrder && !showWasteModal && (
         <RefundItemsModal
           mode={refundMode}
           orderNumber={selectedOrder.orderNumber}
@@ -513,7 +561,7 @@ export default function OrderHistoryPage() {
       )}
 
       {/* ── Step 2: log waste ─────────────────────────────────────────── */}
-      {refundMode && selectedOrder && showWasteModal && (
+      {showWasteModal && refundMode && selectedOrder && (
         <LogWasteModal
           mode={refundMode}
           lines={refundLines}

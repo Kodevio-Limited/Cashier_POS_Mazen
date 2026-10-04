@@ -9,11 +9,13 @@ import { loadDraft, saveDraft, newLineId, clearDraft, modifierTotal, lineTotal, 
 import { locStr } from '@/lib/locale-fields';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 import { DeliveryDetailsModal } from '@/components/pos/DeliveryDetailsModal';
+import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 import {
   loadDeliveryDetails,
   saveDeliveryDetails,
   clearDeliveryDetails,
   isDeliveryDetailsComplete,
+  saveCustomer,
   type DeliveryDetails,
 } from '@/lib/delivery-details';
 import {
@@ -137,9 +139,11 @@ export default function OrderPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>(() => loadDraft() ?? []);
   const [session, setSession] = useState<OrderSession | null>(null);
   const [delivery, setDelivery] = useState<DeliveryDetails | null>(null);
-  const [showDelivery, setShowDelivery] = useState(false);
+  // Query-driven overlays: ?modal=delivery-details, ?modal=customize-item[&menuId=]
+  const [deliveryOpen, setDeliveryOpen] = useQueryModal('delivery-details');
   const deliveryPrompted = useRef(false);
   const tSess = useTranslations('orderSession');
+  const [customizeOpen, setCustomizeOpen] = useQueryModal('customize-item');
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
   // Menu availability toggled by the cashier (Menu page, Bug-63) — shared via
   // localStorage so unavailable items vanish from this order grid too.
@@ -161,6 +165,28 @@ export default function OrderPage() {
     setDelivery(loadDeliveryDetails());
   }, []);
 
+  const openDelivery = () => setDeliveryOpen(true);
+  const closeDelivery = () => setDeliveryOpen(false);
+  const openCustomize = (item: MenuItem | OrderItem, isEditingIndex?: number) => {
+    setCustomizingItem({ item, isEditingIndex });
+    writeQueryParam('menuId', 'id' in item ? item.id : null, false);
+    setCustomizeOpen(true);
+  };
+  const closeCustomize = () => {
+    setCustomizingItem(null);
+    setCustomizeOpen(false);
+    writeQueryParam('menuId', null, false);
+  };
+
+  // Cold load: ?modal=customize-item&menuId= opens the customizer for that dish.
+  useEffect(() => {
+    if (readQueryParam('modal') === 'customize-item') {
+      const menuId = readQueryParam('menuId');
+      const found = menuId ? MENU_ITEMS.find((m) => m.id === menuId) : undefined;
+      if (found) setCustomizingItem({ item: found });
+    }
+  }, []);
+
   // Delivery orders need an address: prompt once when arriving with a delivery
   // session and no saved details yet.
   useEffect(() => {
@@ -168,7 +194,7 @@ export default function OrderPage() {
     const saved = loadDeliveryDetails();
     if (!saved || !isDeliveryDetailsComplete(saved)) {
       deliveryPrompted.current = true;
-      setShowDelivery(true);
+      openDelivery();
     }
   }, [session]);
 
@@ -191,7 +217,7 @@ export default function OrderPage() {
   // the customize modal's explicit save.
   function handleProductClick(item: MenuItem) {
     if (item.options && item.options.length > 0) {
-      setCustomizingItem({ item });
+      openCustomize(item);
       return;
     }
     setOrderItems((prev) => [
@@ -231,7 +257,7 @@ export default function OrderPage() {
     clearDeliveryDetails();
     setOrderItems([]);
     setDelivery(null);
-    setShowDelivery(false);
+    closeDelivery();
     router.push('/floor-plan');
   }
 
@@ -336,7 +362,7 @@ export default function OrderPage() {
                 </span>
                 {session.type === 'delivery' && (
                   <button
-                    onClick={() => setShowDelivery(true)}
+                    onClick={() => openDelivery()}
                     className="inline-flex items-center gap-1 rounded-full bg-[#E6F1ED] px-2.5 py-0.5 text-[11px] font-medium text-[#026F4F] transition-colors hover:bg-[#D6E9E1]"
                   >
                     <MapPin size={12} />
@@ -364,7 +390,7 @@ export default function OrderPage() {
               orderItems.map((item, idx) => (
               <div
                 key={item.lineId}
-                onClick={() => setCustomizingItem({ item, isEditingIndex: idx })}
+                onClick={() => openCustomize(item, idx)}
                 title={t('editItem')}
                 className="w-full flex items-start gap-2.5 pt-3.5 first:pt-0 cursor-pointer"
               >
@@ -429,7 +455,7 @@ export default function OrderPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setCustomizingItem({ item, isEditingIndex: idx });
+                          openCustomize(item, idx);
                         }}
                         title={t('editItemAria')}
                         className="size-6 relative flex items-center justify-center text-neutral-400 hover:text-zinc-800 transition-colors"
@@ -550,23 +576,24 @@ export default function OrderPage() {
         </div>
 
       {/* ── Delivery Details Modal (delivery sessions) ─────────────── */}
-      {showDelivery && (
+      {deliveryOpen && (
         <DeliveryDetailsModal
           initial={delivery}
-          onClose={() => setShowDelivery(false)}
+          onClose={closeDelivery}
           onSave={(d) => {
             setDelivery(d);
             saveDeliveryDetails(d);
-            setShowDelivery(false);
+            saveCustomer(d);
+            closeDelivery();
           }}
         />
       )}
 
       {/* ── Edit / Customize Item Modal ─────────────────────────────── */}
-      {customizingItem && (
+      {customizeOpen && customizingItem && (
         <CustomizeItemModal
           data={customizingItem.item}
-          onClose={() => setCustomizingItem(null)}
+          onClose={closeCustomize}
           onSave={(customized) => {
             if (customizingItem.isEditingIndex !== undefined) {
               // Replace the line's config, keeping its unique lineId.
@@ -585,7 +612,7 @@ export default function OrderPage() {
                 return [...prev, { ...customized, lineId: newLineId() }];
               });
             }
-            setCustomizingItem(null);
+            closeCustomize();
           }}
         />
       )}
