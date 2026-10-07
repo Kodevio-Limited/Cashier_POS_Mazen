@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
+import { foodImage } from '@/lib/menu-images';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -425,8 +426,8 @@ export default function OrderHistoryPage() {
                     <div className="mt-2.5 flex flex-col">
                       {order.items.slice(0, 2).map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2.5 border-b border-[#F2F2F2] py-2 last:border-0">
-                          <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#F2F2F2] text-[26px]">
-                            {item.emoji}
+                          <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-[#F2F2F2]">
+                            <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
                           </div>
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
@@ -497,8 +498,8 @@ export default function OrderHistoryPage() {
               <div className="flex flex-col gap-[11px]">
                 {selectedOrder.items.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-[10px]">
-                    <div className="flex h-[77px] w-[82px] shrink-0 items-center justify-center rounded-[7px] bg-[#F2F2F2] text-3xl">
-                      {item.emoji}
+                    <div className="h-[77px] w-[82px] shrink-0 overflow-hidden rounded-[7px] bg-[#F2F2F2]">
+                      <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[8px]" />
                     </div>
                     <div className="flex min-w-0 flex-1 gap-[21px]">
                       <div className="flex min-w-0 flex-col gap-[8px]">
@@ -687,8 +688,8 @@ function RefundItemsModal({
                 >
                   {isSelected && <Check size={14} strokeWidth={3} className="text-white" />}
                 </span>
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F2F2F2] text-2xl">
-                  {item.emoji}
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F2F2F2]">
+                  <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-medium text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
@@ -827,8 +828,8 @@ function LogWasteModal({
             return (
               <div key={idx} className="rounded-xl border border-[#E9E9E9] bg-white p-3">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F2F2F2] text-2xl">
-                    {item.emoji}
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F2F2F2]">
+                    <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-medium text-[#2D2F33]">

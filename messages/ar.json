@@ -464,6 +464,11 @@
   "inventory": {
     "title": "المخزون والوصفات",
     "subtitle": "إدارة المخزون وربط المكونات وأتمتة التوفر.",
+    "searchIngredients": "ابحث عن المكونات...",
+    "searchRecipes": "ابحث في الوصفات...",
+    "searchPurchases": "ابحث في المشتريات...",
+    "searchTransfers": "ابحث في التحويلات...",
+    "allTime": "كل الأوقات",
     "tabs": {
       "stock": "المخزون",
       "recipe": "الوصفات",

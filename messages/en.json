@@ -464,6 +464,11 @@
   "inventory": {
     "title": "Inventory & Recipes",
     "subtitle": "Manage stock, map ingredients, and automate availability.",
+    "searchIngredients": "Search ingredients...",
+    "searchRecipes": "Search recipes...",
+    "searchPurchases": "Search purchases...",
+    "searchTransfers": "Search transfers...",
+    "allTime": "All Time",
     "tabs": {
       "stock": "Stock",
       "recipe": "Recipe",

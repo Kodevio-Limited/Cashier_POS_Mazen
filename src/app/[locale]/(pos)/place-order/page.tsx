@@ -18,6 +18,7 @@ import {
   type DeliveryDetails,
 } from '@/lib/delivery-details';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
+import { foodImage } from '@/lib/menu-images';
 import { useQueryModal } from '@/lib/use-query-modal';
 import {
   CollectPaymentModal,
@@ -265,8 +266,8 @@ export default function PlaceOrderPage() {
                 >
                   {/* Dish */}
                   <div className="col-span-6 flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-[#F2F2F2] rounded-lg text-2xl">
-                      {item.emoji ?? '🍜'}
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#F2F2F2]">
+                      <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
                     </div>
                     <div>
                       <p className="font-medium text-[14px] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</p>

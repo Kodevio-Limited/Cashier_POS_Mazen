@@ -1,41 +1,63 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, ChevronDown, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronDown,
+  X,
+  Trash2,
+  Warehouse,
+  ScrollText,
+  PackageOpen,
+  TrendingUp,
+  ClipboardList,
+  FileWarning,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { INV_TABS, type InvTab, type StockState } from './types';
 
-// ─── Page header + horizontal tab bar (Figma 1996:2494) ───────────────────────
-export function InventoryHeader({ activeTab, onTabChange, action }: { activeTab: InvTab; onTabChange: (t: InvTab) => void; action?: ReactNode }) {
+// ─── Page header + tab bar (Owner Dashboard design) ──────────────────────────
+const TAB_ICONS: Record<InvTab, typeof Warehouse> = {
+  Stock: Warehouse,
+  Recipe: ScrollText,
+  Purchases: PackageOpen,
+  Transfers: TrendingUp,
+  'Physical Count': ClipboardList,
+  'Waste log': FileWarning,
+};
+
+export function InventoryHeader({ activeTab, onTabChange }: { activeTab: InvTab; onTabChange: (t: InvTab) => void }) {
   const t = useTranslations('inventory');
   return (
-    <div className="flex flex-col gap-[19px]">
-      <div className="flex flex-col gap-[3px]">
-        <h1 className="text-[26.7px] font-medium leading-[1.4] text-[#2D2F33]">{t('title')}</h1>
-        <p className="text-[15.4px] font-normal leading-[1.4] text-[#989898]">
-          {t('subtitle')}
-        </p>
+    <div className="flex flex-col gap-[20px]">
+      <div className="flex flex-col gap-[2px]">
+        <h1 className="text-[22px] font-medium leading-[30px] text-[#2D2F33] sm:text-[26px] sm:leading-[36px] xl:text-[30px] xl:leading-[40px]">
+          {t('title')}
+        </h1>
+        <p className="text-[13px] text-[#989898] sm:text-[15px] xl:text-base">{t('subtitle')}</p>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-[15px]">
-        <div className="max-w-full overflow-x-auto rounded-[33.4px] bg-[#E3E3E3] p-[2.3px]">
-          <div className="flex items-center gap-[3.3px]">
-            {INV_TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => onTabChange(tab)}
-                className={cn(
-                  'h-[31.4px] w-[121.5px] shrink-0 rounded-[18px] px-[10px] text-center text-[12.7px] leading-[1.4] transition-all',
-                  activeTab === tab ? 'bg-white font-medium text-[#026F4F] shadow-xs' : 'font-normal text-[#989898] hover:text-[#2D2F33]',
-                )}
-              >
-                {t(`tabs.${tabKey(tab)}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-        {action}
+
+      {/* Filter tabs */}
+      <div className="inline-flex flex-wrap items-center gap-1.5">
+        {INV_TABS.map((tab) => {
+          const Icon = TAB_ICONS[tab];
+          return (
+            <button
+              key={tab}
+              onClick={() => onTabChange(tab)}
+              className={cn(
+                'inline-flex h-10 items-center justify-center gap-2 rounded-3xl px-4 transition-colors',
+                activeTab === tab ? 'bg-white text-emerald-700' : 'text-neutral-400 hover:bg-gray-100',
+              )}
+            >
+              <Icon size={15} />
+              <span className="text-center text-sm font-normal leading-5">{t(`tabs.${tabKey(tab)}`)}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -53,31 +75,33 @@ function tabKey(tab: InvTab): string {
   }
 }
 
-// ─── Primary pill action button (top-right of content) ───────────────────────
+// ─── Primary pill action button (Owner Dashboard style) ──────────────────────
 export function PrimaryAction({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex h-[39px] shrink-0 items-center gap-[8px] rounded-[85px] bg-[#026F4F] px-[23px] text-[15.4px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
+      className="flex h-12 shrink-0 items-center gap-2 rounded-[30px] bg-emerald-700 px-6 text-white transition-colors hover:bg-emerald-800"
     >
       {icon}
-      <span className="whitespace-nowrap">{label}</span>
+      <span className="whitespace-nowrap text-lg font-medium leading-7">{label}</span>
     </button>
   );
 }
 
-// ─── Stock status pill ───────────────────────────────────────────────────────
-const STOCK_PILL: Record<StockState, string> = {
-  'IN STOCK': 'bg-[#E6FFEB] text-[#139615]',
-  'LOW STOCK': 'bg-[#FFF0E6] text-[#E85D00]',
-  'OUT OF STOCK': 'bg-[#FFE6E6] text-[#961313]',
+// ─── Stock status badge (Owner Dashboard style: tinted pill + dot) ───────────
+const STOCK_BADGE: Record<StockState, { bg: string; dot: string; text: string }> = {
+  'IN STOCK': { bg: 'bg-green-100', dot: 'bg-green-500', text: 'text-green-700' },
+  'LOW STOCK': { bg: 'bg-yellow-100', dot: 'bg-yellow-500', text: 'text-yellow-700' },
+  'OUT OF STOCK': { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700' },
 };
 
 export function StockPill({ state }: { state: StockState }) {
   const t = useTranslations('inventory.stockState');
   const label = state === 'IN STOCK' ? t('in') : state === 'LOW STOCK' ? t('low') : t('out');
+  const s = STOCK_BADGE[state];
   return (
-    <span className={cn('inline-flex h-[26.6px] w-[96px] items-center justify-center whitespace-nowrap rounded-[14.7px] px-[6px] text-[10px] font-normal uppercase leading-[1.4]', STOCK_PILL[state])}>
+    <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium', s.bg, s.text)}>
+      <span className={cn('h-2 w-2 rounded-full', s.dot)} />
       {label}
     </span>
   );
@@ -213,18 +237,16 @@ export function PillSelect({
   );
 }
 
-// ─── Small square icon buttons (edit gray / delete red) ──────────────────────
+// ─── Small row action buttons (Owner Dashboard style) ────────────────────────
 export function EditBtn({ onClick, label }: { onClick: (e: React.MouseEvent) => void; label: string }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-[35px] w-[35px] items-center justify-center rounded-[5px] bg-[#E9E9E9] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-zinc-100 hover:text-emerald-600"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-      </svg>
+      <Image src="/images/figma/pencil.svg" alt="" width={18} height={18} className="size-[18px]" />
     </button>
   );
 }
@@ -235,13 +257,9 @@ export function DeleteBtn({ onClick, label }: { onClick: (e: React.MouseEvent) =
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-[35px] w-[35px] items-center justify-center rounded-[5px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 6h18" />
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      </svg>
+      <Trash2 size={18} />
     </button>
   );
 }

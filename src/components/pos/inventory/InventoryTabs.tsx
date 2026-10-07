@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { ChevronDown, ReceiptText } from 'lucide-react';
+import { ChevronDown, Search, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr, locTimeAgo, locUnit, LOCATIONS_KEY } from '@/lib/locale-fields';
 import {
@@ -17,79 +17,90 @@ import {
   type CountEntry,
   type WasteEntry,
 } from './types';
-import { StockPill, Field, PillSelect, pillInputClass } from './InventoryShell';
+import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction, EditBtn, DeleteBtn } from './InventoryShell';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export function StockTab({
   ingredients,
+  onAdd,
   onEdit,
   onDelete,
 }: {
   ingredients: Ingredient[];
+  onAdd: () => void;
   onEdit: (ing: Ingredient) => void;
   onDelete: (id: string) => void;
 }) {
   const t = useTranslations('inventory');
   const tTime = useTranslations('common.time');
   const locale = useLocale();
+  const [search, setSearch] = useState('');
+  const filtered = ingredients.filter((i) =>
+    locStr(i.name, i.nameAr, locale).toLowerCase().includes(search.trim().toLowerCase()),
+  );
   return (
-    <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-[8px] bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] table-fixed border-collapse">
-            <thead>
-              <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium uppercase leading-[1.4] tracking-wide text-[#686868]">
-                <th className="w-[170px] ps-6 pe-2 text-start font-medium">{t('col.name')}</th>
-                <th className="w-[150px] px-2 text-start font-medium">{t('col.currentStock')}</th>
-                <th className="w-[150px] px-2 text-center font-medium">{t('col.status')}</th>
-                <th className="w-[150px] px-2 text-start font-medium">{t('col.lastUpdated')}</th>
-                <th className="w-[130px] py-2 ps-2 pe-6 text-start font-medium">{t('col.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ingredients.map((ing) => {
-                const state = stockStateOf(ing);
-                return (
-                  <tr key={ing.id} className="border-b border-[#F2F2F2] last:border-0">
-                    <td className="py-[14px] ps-6 pe-2 text-start align-middle">
-                      <span className="block truncate text-[15.3px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(ing.name, ing.nameAr, locale)}</span>
-                    </td>
-                    <td className="px-2 py-[14px] text-start align-middle">
-                      <span className="block truncate text-[12.7px] font-medium leading-[1.4] text-black">
-                        {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{locUnit(ing.unit, t)}</span>
-                      </span>
-                    </td>
-                    <td className="px-2 py-[14px] text-center align-middle"><StockPill state={state} /></td>
-                    <td className="px-2 py-[14px] text-start align-middle">
-                      <span className="block truncate text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">{locTimeAgo(ing.updatedAgo, locale, tTime)}</span>
-                    </td>
-                    <td className="py-[14px] ps-2 pe-6 text-start align-middle">
-                      <span className="flex items-center gap-[7px]">
-                        <button
-                          onClick={() => onEdit(ing)}
-                          aria-label={t('editIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
-                          className="flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-[5px] bg-[#E9E9E9] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                        </button>
-                        <button
-                          onClick={() => onDelete(ing.id)}
-                          aria-label={t('deleteIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })}
-                          className="flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-[5px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                        </button>
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {ingredients.length === 0 && (
-            <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyIngredients')}</p>
-          )}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-full max-w-md">
+          <Search size={20} className="absolute start-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('searchIngredients')}
+            className="h-12 w-full rounded-xl border border-neutral-200 bg-white ps-12 pe-4 text-base outline-none transition-colors focus:border-emerald-500"
+          />
         </div>
+        <PrimaryAction icon={<Plus size={20} />} label={t('addIngredient')} onClick={onAdd} />
+      </div>
+
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-[26%]" />
+            <col className="w-[15%]" />
+            <col className="w-[16%]" />
+            <col className="w-[19%]" />
+            <col className="w-[24%]" />
+          </colgroup>
+          <thead>
+            <tr className="divide-x divide-[#E0E0E0] border-b border-neutral-100 bg-gray-200">
+              <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.name')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.currentStock')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.status')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.lastUpdated')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((ing) => {
+              const state = stockStateOf(ing);
+              return (
+                <tr key={ing.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
+                  <td className="px-3 py-3 align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <div className="truncate text-center text-sm font-medium text-zinc-800 sm:text-base">{locStr(ing.name, ing.nameAr, locale)}</div>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium text-zinc-800 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">
+                    {ing.qty} / {ing.capacity} <span className="font-normal text-neutral-400">{locUnit(ing.unit, t)}</span>
+                  </td>
+                  <td className="px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5"><StockPill state={state} /></td>
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-xs text-neutral-500 sm:px-4 sm:py-4 sm:text-sm lg:px-6 lg:py-5">{locTimeAgo(ing.updatedAgo, locale, tTime)}</td>
+                  <td className="px-3 py-3 align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                      <EditBtn onClick={() => onEdit(ing)} label={t('editIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })} />
+                      <DeleteBtn onClick={() => onDelete(ing.id)} label={t('deleteIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-12 text-center text-neutral-400">{t('emptyIngredients')}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -106,21 +117,53 @@ export function RecipeTab({
   onEditRecipe: (r: Recipe) => void;
 }) {
   const [subTab, setSubTab] = useState<'Main Menu Item' | 'Add on & Extras'>('Main Menu Item');
+  const [search, setSearch] = useState('');
   const t = useTranslations('inventory');
   const locale = useLocale();
-  const visible = recipes.filter((r) => (subTab === 'Main Menu Item' ? r.kind === 'main' : r.kind === 'addon'));
+  const visible = recipes.filter(
+    (r) =>
+      (subTab === 'Main Menu Item' ? r.kind === 'main' : r.kind === 'addon') &&
+      locStr(r.name, r.nameAr, locale).toLowerCase().includes(search.trim().toLowerCase()),
+  );
   const compact = subTab === 'Add on & Extras';
+
+  const ingredientRows = (recipe: Recipe, max: number) =>
+    recipe.maps.slice(0, max).map((m, i) => {
+      const ing = ingredients.find((x) => x.id === m.ingredientId);
+      const bad = m.missing || !ing;
+      const cls = bad ? 'text-[#D91010]' : 'text-[#989898]';
+      return (
+        <div key={i} className="flex items-center justify-between">
+          <span className={cls}>{ing ? locStr(ing.name, ing.nameAr, locale) : t('missingIngredient')}</span>
+          <span className={cls}>{m.qty} {locUnit(m.unit, t)}</span>
+        </div>
+      );
+    });
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* Sub tabs */}
-      <div className="flex items-center gap-6 border-b border-[#B9B9B9] px-1">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-full max-w-md">
+          <Search size={20} className="absolute start-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('searchRecipes')}
+            className="h-12 w-full rounded-xl border border-neutral-200 bg-white ps-12 pe-4 text-base outline-none transition-colors focus:border-emerald-500"
+          />
+        </div>
+      </div>
+
+      {/* Sub-tabs: Main Menu Item | Add on & Extras */}
+      <div className="flex items-center gap-6 border-b border-[#B9B9B9]">
         {(['Main Menu Item', 'Add on & Extras'] as const).map((st) => (
           <button
             key={st}
             onClick={() => setSubTab(st)}
             className={cn(
-              'border-b-4 px-4 py-[10px] text-[14px] font-normal leading-[1.4] transition-colors',
-              subTab === st ? 'border-[#026F4F] text-[#026F4F]' : 'border-transparent text-[#989898] hover:text-[#2D2F33]',
+              'border-b-2 px-1 pb-3 text-[16px] leading-[1.4] transition-colors',
+              subTab === st ? 'border-[#026F4F] font-medium text-[#026F4F]' : 'border-transparent text-[#989898] hover:text-[#2D2F33]',
             )}
           >
             {st === 'Main Menu Item' ? t('subTab.main') : t('subTab.addon')}
@@ -128,176 +171,236 @@ export function RecipeTab({
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {visible.map((recipe) => {
-          const available = recipeAvailable(recipe, ingredients);
-          return (
-            <div key={recipe.id} className="flex min-w-0 flex-col rounded-[15px] bg-white p-[10px]">
-              {!compact && (
-                <div className="relative flex h-[176px] items-center justify-center overflow-hidden rounded-[7.5px] bg-[#F2F2F2] text-[64px]">
-                  {recipe.emoji}
-                  <span className={cn('absolute start-[6px] top-[7px] rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
-                    {available ? t('stockState.in') : t('stockState.out')}
-                  </span>
+      {!compact ? (
+        <div className="grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {visible.map((recipe) => {
+            const available = recipeAvailable(recipe, ingredients);
+            return (
+              <div key={recipe.id} className="flex w-full max-w-[324px] flex-col items-start gap-[21px] overflow-clip rounded-[22.517px] bg-white p-[14.64px]">
+                <div className="flex w-full flex-col gap-[11px]">
+                  <div className="relative aspect-[295/263] w-full overflow-clip rounded-[11.258px] bg-[#F2F2F2]">
+                    <img
+                      src="/images/figma/recipe-food.png"
+                      alt={locStr(recipe.name, recipe.nameAr, locale)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className={cn('absolute start-[9px] top-[10px] inline-flex items-center justify-center rounded-[7.881px] px-[11.258px] py-[9.007px]', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
+                      <span className="text-[13.51px] font-medium leading-[1.4] text-white">{available ? t('stockState.in') : t('stockState.out')}</span>
+                    </div>
+                  </div>
+                  <div className="flex w-full flex-col gap-[12px]">
+                    <h3 className="w-full truncate font-satoshi text-[21.391px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(recipe.name, recipe.nameAr, locale)}</h3>
+                    <div className="relative h-[80px] w-full overflow-clip rounded-[5px] bg-[#F2F2F2]">
+                      {recipe.maps.length > 0 ? (
+                        <div className="absolute start-1/2 top-[11px] flex w-[93.2%] -translate-x-1/2 flex-col gap-[13px] text-[16px] font-normal leading-[1.4]">
+                          {ingredientRows(recipe, 2)}
+                        </div>
+                      ) : (
+                        <div className="absolute start-[13.84px] top-[10.92px] text-[16px] font-normal leading-[1.4] text-[#989898]">{t('noIngredientsMapped')}</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
-              {compact && (
-                <span className={cn('self-start rounded-[5px] px-[7.5px] py-[6px] text-[9px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
+                <button
+                  onClick={() => onEditRecipe(recipe)}
+                  className="flex h-[53px] w-full shrink-0 items-center justify-center whitespace-nowrap rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_8.15px_rgba(0,0,0,0.12)] transition-colors hover:bg-emerald-800"
+                >
+                  {t('editRecipe')}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+          {visible.map((recipe) => {
+            const available = recipeAvailable(recipe, ingredients);
+            return (
+              <div key={recipe.id} className="flex w-full flex-col gap-[12px] rounded-[22.5px] bg-white p-[13.94px]">
+                <span className={cn('inline-flex w-fit items-center justify-center rounded-[7.9px] px-[11.29px] py-[9.03px] text-[13.5px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
                   {available ? t('stockState.in') : t('stockState.out')}
                 </span>
-              )}
-              <p className={cn('truncate font-satoshi text-[14.3px] font-medium leading-[1.4] text-[#2D2F33]', compact ? 'mt-[22px]' : 'mt-[8px]')}>{locStr(recipe.name, recipe.nameAr, locale)}</p>
-              <div className="mt-[8px] flex min-h-[53px] flex-col justify-center gap-[9px] rounded-[3.3px] bg-[#F2F2F2] px-[9px] py-[7px]">
-                {recipe.maps.length === 0 ? (
-                  <span className="text-[10.7px] font-normal leading-[1.4] text-[#989898]">{t('noIngredientsMapped')}</span>
-                ) : (
-                  (compact ? recipe.maps.slice(0, 1) : recipe.maps).map((m, i) => {
-                    const ing = ingredients.find((x) => x.id === m.ingredientId);
-                    const bad = m.missing || !ing;
-                    return (
-                      <div key={i} className="flex items-center justify-between text-[10.7px] leading-[1.4]">
-                        <span className={cn('font-normal', bad ? 'text-[#EE2929]' : 'text-[#989898]')}>
-                          {ing ? locStr(ing.name, ing.nameAr, locale) : t('missingIngredient')}
-                        </span>
-                        <span className={cn('font-normal', bad ? 'text-[#EE2929]' : 'text-[#989898]')}>
-                          {m.qty} {locUnit(m.unit, t)}
-                        </span>
-                      </div>
-                    );
-                  })
-                )}
+                <h3 className="truncate font-satoshi text-[21.4px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(recipe.name, recipe.nameAr, locale)}</h3>
+                <div className="flex min-h-[45px] items-center rounded-[5px] bg-zinc-100 px-[9px]">
+                  {recipe.maps.length > 0 ? (
+                    <div className="flex w-full items-center justify-between text-[16px] font-normal leading-[1.4]">
+                      {ingredientRows(recipe, 1)}
+                    </div>
+                  ) : (
+                    <span className="text-[16px] font-normal leading-[1.4] text-neutral-400">{t('noIngredientsMapped')}</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => onEditRecipe(recipe)}
+                  className="flex h-[53px] w-full items-center justify-center rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_8.15px_rgba(0,0,0,0.12)] transition-colors hover:bg-emerald-800"
+                >
+                  {t('editRecipe')}
+                </button>
               </div>
-              <button
-                onClick={() => onEditRecipe(recipe)}
-                className="mt-[14px] flex h-[35px] w-full items-center justify-center rounded-[30px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
-              >
-                {t('editRecipe')}
-              </button>
-            </div>
-          );
-        })}
-        {visible.length === 0 && (
-          <p className="py-10 text-center text-sm text-[#989898]">{t('emptyRecipes')}</p>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {visible.length === 0 && (
+        <p className="py-10 text-center text-sm text-[#989898]">{t('emptyRecipes')}</p>
+      )}
     </div>
   );
 }
 
 // ─── PURCHASES ────────────────────────────────────────────────────────────────
-export function PurchasesTab({ purchases }: { purchases: Purchase[] }) {
+export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase[]; onLogPurchase: () => void }) {
   const t = useTranslations('inventory');
   const locale = useLocale();
   return (
-    <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-[8px] bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[840px] table-fixed border-collapse">
-            <thead>
-              <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[150px] ps-6 pe-2 text-start font-medium">{t('col.orderDate')}</th>
-                <th className="w-[200px] px-2 text-center font-medium">{t('col.ingredient')}</th>
-                <th className="w-[150px] px-2 text-center font-medium">{t('col.qtyBought')}</th>
-                <th className="w-[110px] px-2 text-center font-medium">{t('col.total')}</th>
-                <th className="w-[230px] py-2 ps-2 pe-6 text-center font-medium">{t('col.supplier')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {purchases.map((p) => (
-                <tr key={p.id} className="border-b border-[#F2F2F2] last:border-0">
-                  <td className="py-[16px] ps-6 pe-2 text-start align-middle">
-                    <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{p.id}</div>
-                    <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{locStr(p.date, p.dateAr, locale)}</div>
-                  </td>
-                  <td className="px-2 py-[16px] text-center align-middle">
-                    <div className="truncate text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(p.ingredient, p.ingredientAr, locale)}</div>
-                    <div className="mx-auto mt-[9px] w-fit whitespace-nowrap rounded-[14px] bg-[#B7FABB] px-[7px] py-[4px] text-[9.3px] font-normal leading-[1.4] text-[#218944]">
-                      {t('avgCost', { price: p.avgCost.toFixed(2), unit: locUnit(p.unit, t) })}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-[16px] text-center align-middle text-[12.7px] font-medium leading-[1.4] text-black">
-                    {p.qty} <span className="font-normal text-[#989898]">{locUnit(p.unit, t)}</span>
-                  </td>
-                  <td className="px-2 py-[16px] text-center align-middle text-[12px] font-semibold leading-[1.4] text-[#026F4F]">
-                    ${p.total.toFixed(2)}
-                  </td>
-                  <td className="py-[16px] ps-2 pe-6 text-center align-middle">
-                    <span className="inline-flex items-center justify-center gap-[5px] text-[12.7px] font-normal leading-[1.4] text-[#2D2F33]">
-                      <ReceiptText size={16} className="shrink-0 text-[#989898]" />
-                      <span className="truncate">{locStr(p.supplier, p.supplierAr, locale)}</span>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {purchases.length === 0 && (
-            <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyPurchases')}</p>
-          )}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative w-72">
+            <Search size={20} className="absolute start-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              placeholder={t('searchPurchases')}
+              className="h-12 w-full rounded-xl border border-neutral-200 bg-white ps-12 pe-4 text-base outline-none transition-colors focus:border-emerald-500"
+            />
+          </div>
+          <div className="flex h-12 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-neutral-400">
+            <span className="text-base">{t('allTime')}</span>
+            <ChevronDown size={16} />
+          </div>
         </div>
+        <PrimaryAction icon={<Plus size={20} />} label={t('logPurchase')} onClick={onLogPurchase} />
+      </div>
+
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-[20%]" />
+            <col className="w-[26%]" />
+            <col className="w-[16%]" />
+            <col className="w-[16%]" />
+            <col className="w-[22%]" />
+          </colgroup>
+          <thead>
+            <tr className="divide-x divide-[#E0E0E0] bg-gray-200">
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.orderDate')}</th>
+              <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.ingredient')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.qtyBought')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.total')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.supplier')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchases.map((p) => (
+              <tr key={p.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-sm font-medium leading-6 text-zinc-800 sm:text-base">{p.id}</span>
+                    <span className="text-xs leading-5 text-neutral-400 sm:text-sm">{locStr(p.date, p.dateAr, locale)}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-3 align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="max-w-[150px] truncate text-sm font-medium leading-6 text-zinc-800 sm:max-w-[200px] sm:text-base lg:max-w-none">{locStr(p.ingredient, p.ingredientAr, locale)}</span>
+                    <span className="inline-flex whitespace-nowrap rounded-3xl bg-green-200 px-2.5 py-1 text-xs font-normal leading-5 text-green-700 sm:text-sm">
+                      {t('avgCost', { price: p.avgCost.toFixed(2), unit: locUnit(p.unit, t) })}
+                    </span>
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm text-neutral-400 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{p.qty} {locUnit(p.unit, t)}</td>
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <span className="text-sm font-semibold leading-6 text-emerald-700 sm:text-base"><bdi dir="ltr">${p.total.toFixed(2)}</bdi></span>
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <span className="block max-w-[110px] truncate text-sm font-normal leading-7 text-zinc-800 sm:max-w-[160px] sm:text-base lg:max-w-none">{locStr(p.supplier, p.supplierAr, locale)}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
 // ─── TRANSFERS ────────────────────────────────────────────────────────────────
-export function TransfersTab({ transfers }: { transfers: Transfer[] }) {
+export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer[]; onNewTransfer: () => void }) {
   const t = useTranslations('inventory');
   const tStatus = useTranslations('inventory.transferStatus');
   const tLoc = useTranslations('inventory.locations');
   const locale = useLocale();
+  const completed = (s: Transfer['status']) => s === 'COMPLETED';
   return (
-    <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-[8px] bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[990px] table-fixed border-collapse">
-            <thead>
-              <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[150px] ps-6 pe-2 text-start font-medium">{t('col.transferDate')}</th>
-                <th className="w-[170px] px-2 text-center font-medium">{t('col.ingredient')}</th>
-                <th className="w-[130px] px-2 text-center font-medium">{t('col.qty')}</th>
-                <th className="w-[230px] px-2 text-center font-medium">{t('col.fromTo')}</th>
-                <th className="w-[130px] px-2 text-center font-medium">{t('col.status')}</th>
-                <th className="w-[180px] py-2 ps-2 pe-6 text-center font-medium">{t('col.responsible')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transfers.map((tr) => (
-                <tr key={tr.id} className="border-b border-[#F2F2F2] last:border-0">
-                  <td className="py-[16px] ps-6 pe-2 text-start align-middle">
-                    <div className="text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">{tr.id}</div>
-                    <div className="mt-[8px] text-[12.7px] font-normal leading-[1.4] text-[#989898]">{locStr(tr.date, tr.dateAr, locale)}</div>
-                  </td>
-                  <td className="truncate px-2 py-[16px] text-center align-middle text-[15.4px] font-medium leading-[1.4] text-[#2D2F33]">
-                    {locStr(tr.ingredient, tr.ingredientAr, locale)}
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-[16px] text-center align-middle text-[12.7px] font-medium leading-[1.4] text-black">
-                    {tr.qty} <span className="font-normal text-[#989898]">{locUnit(tr.unit, t)}</span>
-                  </td>
-                  <td className="px-2 py-[16px] text-center align-middle text-[10.7px] font-medium leading-[1.4] text-black">
-                    <span dir="auto">
-                      {LOCATIONS_KEY[tr.from] ? tLoc(LOCATIONS_KEY[tr.from]) : tr.from} → {LOCATIONS_KEY[tr.to] ? tLoc(LOCATIONS_KEY[tr.to]) : tr.to}
-                    </span>
-                  </td>
-                  <td className="px-2 py-[16px] text-center align-middle">
-                    <span className={cn(
-                      'inline-flex h-[26.7px] w-[96px] items-center justify-center rounded-[14.7px] px-[10px] text-[10px] font-normal leading-[1.4]',
-                      tr.status === 'COMPLETED' ? 'bg-[#CEFFD7] text-[#139615]' : 'bg-[#FFF0E6] text-[#E85D00]',
-                    )}>
-                      {tStatus(tr.status === 'COMPLETED' ? 'completed' : 'pending')}
-                    </span>
-                  </td>
-                  <td className="truncate py-[16px] ps-2 pe-6 text-center align-middle text-[12.7px] font-medium text-[#2D2F33]">
-                    {tr.responsible}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {transfers.length === 0 && (
-            <p className="px-6 py-10 text-center text-sm text-[#989898]">{t('emptyTransfers')}</p>
-          )}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-72">
+          <Search size={20} className="absolute start-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            placeholder={t('searchTransfers')}
+            className="h-12 w-full rounded-xl border border-neutral-200 bg-white ps-12 pe-4 text-base outline-none transition-colors focus:border-emerald-500"
+          />
         </div>
+        <PrimaryAction icon={<Plus size={20} />} label={t('newTransfer')} onClick={onNewTransfer} />
+      </div>
+
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-[18%]" />
+            <col className="w-[18%]" />
+            <col className="w-[14%]" />
+            <col className="w-[18%]" />
+            <col className="w-[14%]" />
+            <col className="w-[18%]" />
+          </colgroup>
+          <thead>
+            <tr className="divide-x divide-[#E0E0E0] bg-gray-200">
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.transferDate')}</th>
+              <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.ingredient')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.qty')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.fromTo')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.status')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.responsible')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transfers.map((tr) => (
+              <tr key={tr.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-sm font-medium leading-6 text-zinc-800 sm:text-base">{tr.id}</span>
+                    <span className="text-xs leading-5 text-neutral-400 sm:text-sm">{locStr(tr.date, tr.dateAr, locale)}</span>
+                  </div>
+                </td>
+                <td className="max-w-[110px] truncate px-3 py-3 text-center align-middle text-sm font-medium text-zinc-800 sm:max-w-[160px] sm:px-4 sm:py-4 sm:text-base lg:max-w-none lg:px-6 lg:py-5">
+                  {locStr(tr.ingredient, tr.ingredientAr, locale)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm text-neutral-500 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">
+                  {tr.qty} {locUnit(tr.unit, t)}
+                </td>
+                <td className="max-w-[140px] truncate px-3 py-3 text-center align-middle text-sm text-neutral-500 sm:px-4 sm:py-4 sm:text-base lg:max-w-none lg:px-6 lg:py-5">
+                  <span dir="auto">
+                    {LOCATIONS_KEY[tr.from] ? tLoc(LOCATIONS_KEY[tr.from]) : tr.from} → {LOCATIONS_KEY[tr.to] ? tLoc(LOCATIONS_KEY[tr.to]) : tr.to}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <span className={cn(
+                    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium',
+                    completed(tr.status) ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700',
+                  )}>
+                    <span className={cn('h-2 w-2 shrink-0 rounded-full', completed(tr.status) ? 'bg-green-500' : 'bg-yellow-500')} />
+                    {tStatus(completed(tr.status) ? 'completed' : 'pending')}
+                  </span>
+                </td>
+                <td className="px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                  <span className="block max-w-[140px] truncate text-sm font-medium text-zinc-800 sm:max-w-[180px] sm:text-base lg:max-w-none">{tr.responsible}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -325,7 +428,7 @@ export function PhysicalCountTab({
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[324px_1fr]">
         {/* Log form */}
-        <div className="rounded-[12px] bg-white p-[15px]">
+        <div className="rounded-xl bg-white p-[15px] shadow-sm">
           <p className="text-center text-[16px] font-medium leading-[1.4] text-black">{t('logPhysicalCount')}</p>
           <div className="mt-[20px] flex flex-col gap-[23px]">
             <Field label={t('col.ingredient')}>
@@ -365,7 +468,7 @@ export function PhysicalCountTab({
         </div>
 
         {/* Variance chart */}
-        <div className="min-w-0 rounded-[12px] bg-white p-[15px]">
+        <div className="min-w-0 rounded-xl bg-white p-[15px] shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[16px] font-medium leading-[1.4] text-black">{t('weeklyVariance')}</p>
             <span className="flex items-center gap-2 rounded-[6px] bg-[rgba(233,233,233,0.42)] px-[18px] py-[6px] font-satoshi text-[16px] text-[#686868]">
@@ -430,7 +533,7 @@ export function PhysicalCountTab({
       </div>
 
       {/* Recent counts */}
-      <div className="overflow-hidden rounded-[12px] bg-white">
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm">
         <p className="px-[22px] pt-[14px] text-[16px] font-medium leading-[1.4] text-black">{t('recentCounts')}</p>
         <div className="mt-[14px] overflow-x-auto pb-[18px]">
           <table className="w-full min-w-[620px] table-fixed border-collapse">
@@ -499,7 +602,7 @@ export function WasteLogTab({
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[324px_1fr]">
       {/* Log form */}
-      <div className="rounded-[12px] bg-white p-[15px]">
+      <div className="rounded-xl bg-white p-[15px] shadow-sm">
         <p className="text-center text-[16px] font-medium leading-[1.4] text-black">{t('logWastedItem')}</p>
         <div className="mt-[20px] flex flex-col gap-[13px]">
           <Field label={t('col.ingredient')}>
@@ -568,7 +671,7 @@ export function WasteLogTab({
       </div>
 
       {/* History */}
-      <div className="min-w-0 overflow-hidden rounded-[12px] bg-white">
+      <div className="min-w-0 overflow-hidden rounded-xl bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 px-[17px] pt-[14px]">
           <p className="text-[16px] font-medium leading-[1.4] text-black">{t('wasteLogHistory')}</p>
           <span className="flex items-center gap-2 rounded-[37px] border border-[#B9B9B9] bg-white px-[12.5px] py-[8px] text-[11.9px] text-[#686868]">

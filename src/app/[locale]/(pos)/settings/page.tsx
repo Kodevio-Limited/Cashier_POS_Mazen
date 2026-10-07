@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -92,14 +91,9 @@ export default function SettingsPage() {
   return (
     <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[19px] bg-[#F2F2F2]">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-[7px]">
-          <h1 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h1>
-          <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
-        </div>
-        <div className="relative h-[64px] w-[64px] shrink-0 overflow-hidden rounded-xl sm:h-[76px] sm:w-[76px]">
-          <Image src="/images/menu-items.jpg" alt={t('title')} fill sizes="76px" className="object-cover" />
-        </div>
+      <div className="flex flex-col gap-[7px]">
+        <h1 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h1>
+        <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
       </div>
 
       {/* Cards */}

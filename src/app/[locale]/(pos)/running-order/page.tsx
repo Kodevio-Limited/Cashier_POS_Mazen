@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail } from 'lucide-react';
+import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getOrders,
@@ -14,6 +14,7 @@ import {
   type RunningOrder,
 } from '@/lib/running-orders';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
+import { foodImage } from '@/lib/menu-images';
 
 const ORDER_TYPE_KEY_MAP: Record<string, string> = {
   All: 'all',
@@ -162,8 +163,8 @@ export default function RunningOrderPage() {
                     <div className="mt-2.5 flex flex-col">
                       {order.items.slice(0, 2).map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2.5 border-b border-[#F2F2F2] py-2 last:border-0">
-                          <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#F2F2F2] text-[26px]">
-                            {item.emoji}
+                          <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-[#F2F2F2]">
+                            <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
                           </div>
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
@@ -275,7 +276,17 @@ export default function RunningOrderPage() {
             </button>
             <div className="flex flex-col items-center gap-[7px]">
               <p className="text-[19px] font-medium leading-[1.4] text-black">{selectedOrder.orderNumber}</p>
-              <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">{t('tableLabel', { table: '03' })}</p>
+              <div className="flex items-center gap-[6px]">
+                <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">{t('tableLabel', { table: '03' })}</p>
+                <span
+                  className={cn(
+                    'rounded-full px-[7px] py-[2px] text-[9px] font-medium leading-[1.4] text-white',
+                    selectedOrder.isPaid ? 'bg-[#16C722]' : 'bg-[#E85E5E]',
+                  )}
+                >
+                  {selectedOrder.isPaid ? tPay('paid') : tPay('unpaid')}
+                </span>
+              </div>
             </div>
             <div className="h-[28px] w-[28px]" />
           </div>
@@ -325,10 +336,10 @@ export default function RunningOrderPage() {
                   <div
                     key={i}
                     className={cn(
-                      'absolute top-[16px] h-[2px] w-[45px]',
+                      'absolute top-[15px] w-[45px] border-t-2 border-dashed',
                       i + 1 <= STATUS_STEPS.findIndex((s) => s.key === selectedOrder.status)
-                        ? 'bg-[#026F4F]'
-                        : 'bg-[#B9B9B9]',
+                        ? 'border-[#026F4F]'
+                        : 'border-[#B9B9B9]',
                     )}
                     style={{ left: 16 + i * 81.5 }}
                   />
@@ -339,16 +350,26 @@ export default function RunningOrderPage() {
             {/* Order summary — compact rows, no photos (Bug-66) */}
             <div className="mt-[10px] flex flex-col gap-[6px]">
               <p className="text-[12px] font-semibold leading-[1.4] text-[#2D2F33]">{t('orderSummary')}</p>
-              <div className="flex flex-col rounded-[10px] bg-[#F2F2F2] px-3 py-1">
+              <div className="flex flex-col gap-[8px]">
                 {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-2 border-b border-[#E4E4E4] py-2 last:border-0">
-                    <div className="flex min-w-0 flex-col">
-                      <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
-                      <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">+ {locStr(item.modifier || 'Mayo', item.modifierAr || t('mayoModifier'), locale)}</span>
+                  <div key={idx} className="flex items-center gap-[10px] rounded-[10px] bg-[#F2F2F2] p-2">
+                    <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-white">
+                      <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-[13px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-[13.5px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
+                      <span className="truncate text-[11px] leading-[1.4]">
+                        <span className="font-semibold text-[#64C864]">+</span>{' '}
+                        <span className="text-[#989898]">{locStr(item.modifier || 'Mayo', item.modifierAr || t('mayoModifier'), locale)}</span>
+                      </span>
+                      <span className="flex items-center gap-[3px] text-[11px] italic leading-[1.4] text-[#026F4F]">
+                        <Scissors size={14} strokeWidth={1.6} />
+                        {t('cutInHalf')}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-[13.5px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
+                      <span className="text-[11px] font-medium leading-[1.4] text-[#686868]">{t('qty', { count: item.qty })}</span>
                     </div>
                   </div>
                 ))}

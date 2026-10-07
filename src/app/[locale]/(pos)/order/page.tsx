@@ -8,6 +8,7 @@ import { Search, Minus, Plus, X, Trash2, Scissors, MapPin, ShoppingCart } from '
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, newLineId, clearDraft, modifierTotal, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
 import { locStr } from '@/lib/locale-fields';
+import { foodImage, CATEGORY_IMAGE, FOOD_IMAGES } from '@/lib/menu-images';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 import { DeliveryDetailsModal } from '@/components/pos/DeliveryDetailsModal';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
@@ -96,8 +97,8 @@ function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void 
       onClick={onSelect}
       className="relative flex h-[227px] w-full flex-col overflow-hidden rounded-[8px] bg-white p-[7px] text-left outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:outline-emerald-700/60 active:scale-95"
     >
-      <div className="flex h-[118px] w-full shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-[#F2F2F2] text-[52px]">
-        {item.emoji}
+      <div className="h-[118px] w-full shrink-0 overflow-hidden rounded-[6px] bg-[#F2F2F2]">
+        <img src={foodImage(item.emoji)} alt={locStr(item.name, item.nameAr, locale)} className="h-full w-full object-contain p-[12px]" />
       </div>
       <div className="mt-[9px] flex w-full min-w-0 flex-1 flex-col items-start gap-[3px] px-[6px]">
         <div className="w-full truncate text-[16px] font-medium leading-[1.3] text-[#2D2F33]">
@@ -289,12 +290,13 @@ export default function OrderPage() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  'flex h-[33px] shrink-0 items-center gap-2 rounded-full px-4 text-[13px] font-medium leading-[1.4] transition-all duration-200',
+                  'flex h-[33px] shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13px] font-medium leading-[1.4] transition-all duration-200',
                   activeCategory === cat
                     ? 'bg-[#026F4F] text-white shadow-xs'
                     : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
                 )}
               >
+                <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[23px] w-[23px] shrink-0 rounded-full object-cover" />
                 {tCat(cat.toLowerCase())}
               </button>
             ))}
@@ -404,8 +406,8 @@ export default function OrderPage() {
                 className="w-full flex items-start gap-2.5 pt-3.5 first:pt-0 cursor-pointer"
               >
                 {/* Thumbnail */}
-                <div className="size-20 shrink-0 bg-zinc-100 rounded-md overflow-hidden flex items-center justify-center text-4xl">
-                  {item.emoji ?? '🍜'}
+                <div className="size-20 shrink-0 overflow-hidden rounded-md bg-zinc-100">
+                  <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[10px]" />
                 </div>
 
                 {/* Details */}
@@ -704,8 +706,8 @@ function CustomizeItemModal({
         <div className="mt-[25px] flex flex-col gap-6">
           {/* Item */}
           <div className="flex items-start gap-[13px]">
-            <div className="flex size-[84px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-[#F2F2F2] text-[52px] leading-none">
-              {data.emoji ?? '🍜'}
+            <div className="flex size-[84px] shrink-0 overflow-hidden rounded-[7px] bg-[#F2F2F2]">
+              <img src={foodImage(data.emoji)} alt="" className="h-full w-full object-contain p-[10px]" />
             </div>
             <div className="flex flex-col items-start gap-[15px] leading-[1.4]">
               <p className="text-[19px] font-medium text-[#2D2F33]">{locStr(data.name, data.nameAr, locale)}</p>

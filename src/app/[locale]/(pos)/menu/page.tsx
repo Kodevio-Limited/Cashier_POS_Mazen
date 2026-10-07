@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr } from '@/lib/locale-fields';
+import { foodImage, CATEGORY_IMAGE, FOOD_IMAGES } from '@/lib/menu-images';
 import {
   ADDON_CATALOG,
   MENU_CATALOG,
@@ -100,12 +101,13 @@ export default function CashierMenuPage() {
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                'flex-shrink-0 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-200',
+                'flex h-[33px] flex-shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13px] font-medium transition-all duration-200',
                 activeCategory === cat
-                  ? 'bg-[#2D2F33] text-white shadow-xs'
+                  ? 'bg-[#026F4F] text-white shadow-xs'
                   : 'border border-[#E9E9E9] bg-white text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
               )}
             >
+              <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[23px] w-[23px] shrink-0 rounded-full object-cover" />
               {tCat(cat.toLowerCase())}
             </button>
           ))}
@@ -131,8 +133,8 @@ export default function CashierMenuPage() {
                     available ? 'outline-zinc-200/80' : 'outline-[#E85E5E]/40 bg-[#FFF7F7]',
                   )}
                 >
-                  <div className="relative flex h-28 w-full shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 text-5xl">
-                    {item.emoji}
+                  <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg bg-zinc-100">
+                    <img src={foodImage(item.emoji)} alt={locStr(item.name, item.nameAr, locale)} className="h-full w-full object-contain p-[12px]" />
                     <span
                       className={cn(
                         'absolute start-2 top-2 inline-flex items-center rounded-md px-2 py-1 text-[10.5px] font-medium leading-4 text-white',
