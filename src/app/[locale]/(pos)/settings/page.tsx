@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,11 @@ type SettingKey =
   | 'walletPayments'
   | 'autoPrintReceipt'
   | 'autoPrintKOT'
+  | 'enableInventoryTracking'
+  | 'autoHideUnavailable'
+  | 'invLowStockAlerts'
+  | 'requireOpeningFloat'
+  | 'requireCountedCash'
   | 'orderAlerts'
   | 'lowStockNotif';
 
@@ -22,6 +28,11 @@ const DEFAULTS: Record<SettingKey, boolean> = {
   walletPayments: true,
   autoPrintReceipt: true,
   autoPrintKOT: true,
+  enableInventoryTracking: true,
+  autoHideUnavailable: true,
+  invLowStockAlerts: true,
+  requireOpeningFloat: true,
+  requireCountedCash: true,
   orderAlerts: true,
   lowStockNotif: true,
 };
@@ -81,9 +92,14 @@ export default function SettingsPage() {
   return (
     <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[19px] bg-[#F2F2F2]">
       {/* Header */}
-      <div className="flex flex-col gap-[7px]">
-        <h1 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h1>
-        <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-[7px]">
+          <h1 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h1>
+          <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
+        </div>
+        <div className="relative h-[64px] w-[64px] shrink-0 overflow-hidden rounded-xl sm:h-[76px] sm:w-[76px]">
+          <Image src="/images/menu-items.jpg" alt={t('title')} fill sizes="76px" className="object-cover" />
+        </div>
       </div>
 
       {/* Cards */}
@@ -103,6 +119,17 @@ export default function SettingsPage() {
           >
             {t('testPrint')}
           </button>
+        </Card>
+
+        <Card title={t('inventorySettings')}>
+          <SettingRow label={t('enableInventoryTracking')} settingKey="enableInventoryTracking" values={values} onToggle={toggle} />
+          <SettingRow label={t('autoHideUnavailable')} settingKey="autoHideUnavailable" values={values} onToggle={toggle} />
+          <SettingRow label={t('invLowStockAlerts')} settingKey="invLowStockAlerts" values={values} onToggle={toggle} />
+        </Card>
+
+        <Card title={t('sessionSettings')}>
+          <SettingRow label={t('requireOpeningFloat')} settingKey="requireOpeningFloat" values={values} onToggle={toggle} />
+          <SettingRow label={t('requireCountedCash')} settingKey="requireCountedCash" values={values} onToggle={toggle} />
         </Card>
 
         <Card title={t('notifications')}>

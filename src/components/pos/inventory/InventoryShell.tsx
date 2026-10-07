@@ -8,31 +8,34 @@ import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { INV_TABS, type InvTab, type StockState } from './types';
 
 // ─── Page header + horizontal tab bar (Figma 1996:2494) ───────────────────────
-export function InventoryHeader({ activeTab, onTabChange }: { activeTab: InvTab; onTabChange: (t: InvTab) => void }) {
+export function InventoryHeader({ activeTab, onTabChange, action }: { activeTab: InvTab; onTabChange: (t: InvTab) => void; action?: ReactNode }) {
   const t = useTranslations('inventory');
   return (
     <div className="flex flex-col gap-[19px]">
       <div className="flex flex-col gap-[3px]">
         <h1 className="text-[26.7px] font-medium leading-[1.4] text-[#2D2F33]">{t('title')}</h1>
-        <p className="whitespace-nowrap text-[15.4px] font-normal leading-[1.4] text-[#989898]">
+        <p className="text-[15.4px] font-normal leading-[1.4] text-[#989898]">
           {t('subtitle')}
         </p>
       </div>
-      <div className="max-w-full overflow-x-auto rounded-[33.4px] bg-[#E3E3E3] p-[2.3px]">
-        <div className="flex items-center gap-[3.3px]">
-          {INV_TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              className={cn(
-                'h-[31.4px] w-[121.5px] shrink-0 rounded-[18px] px-[10px] text-center text-[12.7px] leading-[1.4] transition-all',
-                activeTab === tab ? 'bg-white font-medium text-[#026F4F] shadow-xs' : 'font-normal text-[#989898] hover:text-[#2D2F33]',
-              )}
-            >
-              {t(`tabs.${tabKey(tab)}`)}
-            </button>
-          ))}
+      <div className="flex flex-wrap items-center justify-between gap-[15px]">
+        <div className="max-w-full overflow-x-auto rounded-[33.4px] bg-[#E3E3E3] p-[2.3px]">
+          <div className="flex items-center gap-[3.3px]">
+            {INV_TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => onTabChange(tab)}
+                className={cn(
+                  'h-[31.4px] w-[121.5px] shrink-0 rounded-[18px] px-[10px] text-center text-[12.7px] leading-[1.4] transition-all',
+                  activeTab === tab ? 'bg-white font-medium text-[#026F4F] shadow-xs' : 'font-normal text-[#989898] hover:text-[#2D2F33]',
+                )}
+              >
+                {t(`tabs.${tabKey(tab)}`)}
+              </button>
+            ))}
+          </div>
         </div>
+        {action}
       </div>
     </div>
   );
@@ -74,7 +77,7 @@ export function StockPill({ state }: { state: StockState }) {
   const t = useTranslations('inventory.stockState');
   const label = state === 'IN STOCK' ? t('in') : state === 'LOW STOCK' ? t('low') : t('out');
   return (
-    <span className={cn('inline-flex h-[26.6px] w-[96px] items-center justify-center rounded-[14.7px] px-[10px] text-[10px] font-normal leading-[1.4]', STOCK_PILL[state])}>
+    <span className={cn('inline-flex h-[26.6px] w-[96px] items-center justify-center whitespace-nowrap rounded-[14.7px] px-[6px] text-[10px] font-normal uppercase leading-[1.4]', STOCK_PILL[state])}>
       {label}
     </span>
   );

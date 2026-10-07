@@ -118,7 +118,7 @@ export function CollectPaymentModal({
               onChange={(e) => setReceived(e.target.value)}
               inputMode="decimal"
               placeholder="0.00"
-              className="h-[61px] w-full rounded-[10px] bg-[#E9E9E9] pl-[38px] pr-[17px] text-[21px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
+              className="h-[61px] w-full rounded-[10px] bg-[#E9E9E9] pl-[38px] pr-[17px] text-[21px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
         </div>
@@ -295,10 +295,11 @@ export function MergeOrdersModal({
         {/* Header */}
         <div className="flex flex-col gap-3 border-b border-zinc-200 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-zinc-800">{t('title')}</h3>
-            <button onClick={onClose} className="text-neutral-400 hover:text-zinc-800">
-              <X size={20} />
+            <button onClick={onClose} aria-label={t('title')} className="text-black transition-colors hover:text-zinc-500">
+              <X size={22} />
             </button>
+            <h3 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h3>
+            <div className="h-[22px] w-[22px]" />
           </div>
 
           {/* Search bar */}

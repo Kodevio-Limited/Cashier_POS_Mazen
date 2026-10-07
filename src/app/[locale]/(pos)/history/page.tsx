@@ -209,7 +209,7 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<HistoryOrder[]>(INITIAL_HISTORY);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [search, setSearch] = useState('');
-  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [selectedOrderId, setSelectedOrderId] = useState<string>(INITIAL_HISTORY[0]?.id ?? '');
   // Query-driven refund flow: ?modal=refund&mode=refund|cancel&id=h1 (step 1),
   // ?modal=refund-waste (step 2). Back walks back through the steps.
   const [refundOpen, setRefundOpen] = useQueryModal('refund');
@@ -327,7 +327,7 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-38px)] gap-3 bg-[#F2F2F2]">
+    <div className="relative flex min-h-[calc(100vh-38px)] gap-[15px] bg-[#F2F2F2]">
       {/* ── Left: history workspace ──────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
@@ -378,7 +378,7 @@ export default function OrderHistoryPage() {
               <p>{t('emptyFilter')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {filteredOrders.map((order) => {
                 const isSelected = order.id === selectedOrderId;
                 return (
@@ -386,35 +386,67 @@ export default function OrderHistoryPage() {
                     key={order.id}
                     onClick={() => setSelectedOrderId(order.id)}
                     className={cn(
-                      // Bug-13: border instead of ring so the selected outline
-                      // is never clipped at the scroll edges.
-                      'flex min-w-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border-2 bg-white px-3 py-2.5 transition-all hover:shadow-md',
-                      isSelected ? 'border-[#026F4F] shadow-md' : 'border-transparent',
+                      'relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white p-3 transition-all hover:shadow-md',
+                      isSelected ? 'ring-2 ring-[#026F4F]/30' : '',
                     )}
                   >
-                    {/* Order no + table/time */}
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-[14px] font-semibold leading-[1.3] text-[#2D2F33]" dir="ltr">{order.orderNumber}</span>
-                        <span className="flex shrink-0 items-center gap-1 text-[11px] font-normal leading-[1.3] text-[#989898]">
-                          <UtensilsCrossed size={12} strokeWidth={1.8} />
-                          <span className="truncate">{locTable(order.table, locale, tTable)}</span>
+                    {/* Header: customer + pay state + order no */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-[14px] font-medium leading-[1.4] text-black">
+                          {locStr(order.customerName, order.customerNameAr, locale)}
+                        </span>
+                        <span
+                          className={cn(
+                            'flex shrink-0 items-center gap-[4px] rounded-full px-[5px] py-[2px] text-[8px] font-normal leading-[1.4] text-white',
+                            PAY_PILL[order.payState],
+                          )}
+                        >
+                          {order.payState === 'Paid' && <Check size={11} strokeWidth={3} />}
+                          <span>{tPay(mapEnum(order.payState, PAY_STATE_KEY_MAP))}</span>
                         </span>
                       </div>
-                      <span className="flex items-center gap-1 text-[11px] font-normal leading-[1.3] text-[#989898]">
-                        <Clock size={12} strokeWidth={1.8} />
-                        <span className="truncate">{locStr(order.date, order.dateAr, locale)}</span>
-                      </span>
+                      <span className="shrink-0 text-[11px] font-normal leading-[1.4] text-[#989898]">{order.orderNumber}</span>
                     </div>
 
-                    {/* Pay status + completed/cancelled */}
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium leading-[1.4]', PAY_PILL[order.payState])}>
-                        {tPay(mapEnum(order.payState, PAY_STATE_KEY_MAP))}
-                      </span>
+                    {/* Meta */}
+                    <div className="mt-2 flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locStr(order.date, order.dateAr, locale)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locTable(order.table, locale, tTable)}</span>
+                      </div>
+                    </div>
+
+                    {/* Items */}
+                    <div className="mt-2.5 flex flex-col">
+                      {order.items.slice(0, 2).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2.5 border-b border-[#F2F2F2] py-2 last:border-0">
+                          <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#F2F2F2] text-[26px]">
+                            {item.emoji}
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
+                            <span className="truncate text-[10.7px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('mayoModifier'), locale)}&rdquo;</span>
+                            <span className="text-[12.7px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
+                          </div>
+                          <span className="shrink-0 text-[12.7px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Footer: status + total */}
+                    <div className="mt-auto flex items-end justify-between gap-2 pt-2">
                       <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium leading-[1.4]', FOOTER_BADGE[order.footerState])}>
                         {tPay(mapEnum(order.footerState, FOOTER_STATE_KEY_MAP))}
                       </span>
+                      <div className="flex flex-col items-end gap-[6px]">
+                        <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">{t('moreItems', { count: Math.max(0, order.items.length - 2) })}</span>
+                        <span className="text-[14px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 );

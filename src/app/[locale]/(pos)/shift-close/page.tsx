@@ -1,13 +1,13 @@
 'use client';
 
-// Shift & Cash Drawer Management — close the active shift (Z-Report). Guarded:
-// only reachable while a shift is active; closing it ends the shift session and
-// returns the app to the Start Shift screen.
+// Shift Management — Figma node 1136:2090. Shows the live cashier session,
+// cash-drawer tracking, live revenue and order statistics, and closes the
+// active shift (ending the session and returning to Start Shift). Guarded:
+// only reachable while a shift is active.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { Check, Clock, CreditCard, DollarSign, Printer, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { endShift, getActiveShift, subscribeShift, type ActiveShift } from '@/lib/shift-session';
 
@@ -35,184 +35,136 @@ export default function ShiftClosePage() {
   return <ShiftDashboard shift={shift} />;
 }
 
-/* ── Shift dashboard (shown after shift starts) ─────────────────────────── */
+function StatCard({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex flex-col gap-[10px] rounded-[10px] bg-white px-[16px] py-[14px]">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-[#989898]">{label}</span>
+      <span className={cn('text-[20px] font-semibold leading-[1.4] text-black', valueClass)}>{value}</span>
+    </div>
+  );
+}
+
+function StatNum({ value, color, label }: { value: string; color: string; label: string }) {
+  return (
+    <div className="flex flex-col gap-[10px]">
+      <span className="text-[26px] font-semibold leading-[1.2]" style={{ color }}>
+        {value}
+      </span>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-[#989898]">{label}</span>
+    </div>
+  );
+}
+
+/* ── Shift Management dashboard ─────────────────────────────────────────── */
 function ShiftDashboard({ shift }: { shift: ActiveShift }) {
   const router = useRouter();
   const t = useTranslations('shiftClose');
   const { openingFloat, cashierName, startedAt } = shift;
 
-  const [actualCash, setActualCash] = useState('');
-  const [cashError, setCashError] = useState('');
+  const startedLabel = new Date(startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  // Mock live figures (real values will come from the API).
   const cashSales = 480.5;
   const cardSales = 840.2;
-  // TODO: derive from real paid-out/expense data once the API provides it.
-  const paidOutTotal = 30.0;
-  const expectedCash = openingFloat + cashSales - paidOutTotal;
-  const actualCashNumber = parseFloat(actualCash);
-  const hasCount = actualCash.trim() !== '' && Number.isFinite(actualCashNumber);
-  const variance = hasCount ? actualCashNumber - expectedCash : 0;
+  const walletSales = 450;
+  const totalGross = cashSales + cardSales + walletSales;
+  const netCash = openingFloat;
+  const expectedCash = openingFloat + netCash;
 
-  function handleCloseShift() {
-    if (!hasCount) {
-      setCashError(t('errNoCount'));
-      return;
-    }
-    setCashError('');
+  function handleClose() {
     if (confirm(t('confirmCloseDialog'))) {
       endShift();
       router.replace('/shift');
     }
   }
 
-  const startedLabel = new Date(startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
   return (
-    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-3 pb-20">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E9E9E9] bg-white px-5 py-3.5">
-        <div className="min-w-0">
-          <h1 className="text-xl font-medium text-black">{t('heading')}</h1>
-          <p className="text-xs font-normal text-neutral-400">{t('activeCashier', { name: cashierName, time: startedLabel })}</p>
-        </div>
+    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[22px] pb-20">
+      {/* Header */}
+      <div className="flex max-w-[990px] flex-col gap-[7px]">
+        <h1 className="text-[20px] font-medium leading-[1.4] text-black">{t('heading')}</h1>
+        <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
-          <div>
-            <p className="text-xs font-normal text-neutral-400">{t('openingFloat')}</p>
-            <p className="text-xl font-bold text-black">${openingFloat.toFixed(2)}</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 font-bold text-zinc-700">$</div>
+      <div className="flex max-w-[990px] flex-col gap-[22px]">
+        {/* Session info */}
+        <div className="grid grid-cols-1 gap-[16px] sm:grid-cols-3">
+          <StatCard label={t('sessionId')} value="S-2012" />
+          <StatCard label={t('cashierLabel')} value={cashierName} />
+          <StatCard label={t('startedAtLabel')} value={startedLabel} />
         </div>
 
-        <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
-          <div>
-            <p className="text-xs font-normal text-neutral-400">{t('cashSales')}</p>
-            <p className="text-xl font-bold text-emerald-700">${cashSales.toFixed(2)}</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-            <DollarSign size={20} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
-          <div>
-            <p className="text-xs font-normal text-neutral-400">{t('cardSales')}</p>
-            <p className="text-xl font-bold text-blue-700">${cardSales.toFixed(2)}</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-            <CreditCard size={20} />
+        {/* Case Drawer Tracking */}
+        <div className="flex flex-col gap-[12px]">
+          <h2 className="text-[15px] font-medium leading-[1.4] text-black">{t('caseDrawerTracking')}</h2>
+          <div className="grid grid-cols-1 divide-y divide-white/20 rounded-[12px] bg-[#2D2F33] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div className="flex flex-col justify-center gap-[10px] px-[24px] py-[18px]">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-white/60">{t('openingFloatLabel')}</span>
+              <span className="text-[22px] font-semibold leading-[1.3] text-white">${openingFloat.toFixed(2)}</span>
+            </div>
+            <div className="flex flex-col justify-center gap-[10px] px-[24px] py-[18px]">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-white/60">{t('netCashCollected')}</span>
+              <span className="text-[22px] font-semibold leading-[1.3] text-[#4ADE80]">+${netCash.toFixed(2)}</span>
+            </div>
+            <div className="flex flex-col justify-center gap-[10px] px-[24px] py-[18px]">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-white/60">{t('expectedCashInDrawer')}</span>
+              <span className="text-[22px] font-semibold leading-[1.3] text-white">${expectedCash.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl border border-[#E9E9E9] bg-white p-4">
-          <div>
-            <p className="text-xs font-normal text-neutral-400">{t('netRevenue')}</p>
-            <p className="text-xl font-bold text-[#026F4F]">${(cashSales + cardSales).toFixed(2)}</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-[#026F4F]">
-            <ShieldCheck size={20} />
+        {/* Live Revenue Tracking */}
+        <div className="flex flex-col gap-[12px]">
+          <h2 className="text-[15px] font-medium leading-[1.4] text-black">{t('liveRevenueTracking')}</h2>
+          <div className="grid grid-cols-1 gap-[16px] sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label={t('cashSalesLabel')} value={`$${cashSales.toFixed(2)}`} />
+            <StatCard label={t('cardPaymentsLabel')} value={`$${cardSales.toFixed(2)}`} />
+            <StatCard label={t('walletPayments')} value={`$${walletSales.toFixed(2)}`} />
+            <div className="flex flex-col gap-[10px] rounded-[10px] bg-[#026F4F] px-[16px] py-[14px]">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-white/70">{t('totalGrossSales')}</span>
+              <span className="text-[20px] font-semibold leading-[1.4] text-white">${totalGross.toFixed(2)}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Cash Drawer Reconciliation Grid */}
-      <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="flex flex-col justify-between rounded-xl border border-[#E9E9E9] bg-white p-5">
-          <div>
-            <h3 className="mb-4 text-lg font-semibold text-black">{t('drawerCalc')}</h3>
-            <div className="flex flex-col gap-3 text-xs">
-              <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">{t('startingFloat')}</span>
-                <span className="font-medium text-black">${openingFloat.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">{t('cashSalesReceived')}</span>
-                <span className="font-medium text-emerald-700">+${cashSales.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b border-zinc-100 py-2">
-                <span className="text-neutral-500">{t('paidOut')}</span>
-                <span className="font-medium text-rose-600">-${paidOutTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 py-2 text-sm font-bold">
-                <span className="text-black">{t('expectedBalance')}</span>
-                <span className="text-[#026F4F]">${expectedCash.toFixed(2)}</span>
-              </div>
+        {/* Order Statistics + End of Shift */}
+        <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[1.7fr_1fr]">
+          <div className="flex flex-col justify-between gap-[24px] rounded-[12px] bg-white p-[20px]">
+            <h2 className="text-[16px] font-medium leading-[1.4] text-black">{t('orderStatistics')}</h2>
+            <div className="grid grid-cols-2 gap-[16px] sm:grid-cols-4">
+              <StatNum value="42" color="#2563EB" label={t('statTotalOrders')} />
+              <StatNum value="39" color="#16A34A" label={t('statCompleted')} />
+              <StatNum value="2" color="#EA580C" label={`${t('statRefunds')} ($12.50)`} />
+              <StatNum value="1" color="#DC2626" label={t('statCancelled')} />
+            </div>
+            <div className="flex flex-wrap gap-[12px]">
+              <button
+                onClick={() => router.push('/running-order')}
+                className="h-[46px] flex-1 rounded-full bg-[#F2F2F2] text-[14px] font-medium text-[#2D2F33] transition-colors hover:bg-[#E9E9E9]"
+              >
+                {t('viewSessionOrders')}
+              </button>
+              <button
+                onClick={() => alert(t('interimReportAlert'))}
+                className="h-[46px] flex-1 rounded-full bg-[#F2F2F2] text-[14px] font-medium text-[#2D2F33] transition-colors hover:bg-[#E9E9E9]"
+              >
+                {t('printInterimReport')}
+              </button>
             </div>
           </div>
 
-          <button
-            onClick={() => alert(t('xReportAlert'))}
-            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
-          >
-            <Printer size={16} />
-            <span>{t('printXReport')}</span>
-          </button>
-        </div>
-
-        <div className="flex flex-col justify-between rounded-xl border border-[#E9E9E9] bg-white p-5">
-          <div className="flex flex-col gap-4">
-            <h3 className="text-lg font-semibold text-black">{t('reconCount')}</h3>
-            <div className="flex flex-col gap-2">
-              <label htmlFor="actual-cash" className="text-xs font-medium text-stone-500">
-                {t('actualCashLabel')}
-              </label>
-              <input
-                id="actual-cash"
-                type="number"
-                step="0.01"
-                value={actualCash}
-                onChange={(e) => {
-                  setActualCash(e.target.value);
-                  if (cashError) setCashError('');
-                }}
-                placeholder="0.00"
-                className="h-12 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 text-lg font-bold text-black outline-none focus:border-[#026F4F]"
-              />
-              {cashError && <p className="text-xs font-medium text-red-600">{cashError}</p>}
+          <div className="flex flex-col justify-between gap-[16px] rounded-[12px] bg-[#F8CACA] p-[20px]">
+            <div className="flex flex-col gap-[12px]">
+              <h2 className="text-[16px] font-medium leading-[1.4] text-[#B91C1C]">{t('endOfShift')}</h2>
+              <p className="text-[13px] font-normal leading-[1.6] text-[#7F1D1D]">{t('endOfShiftBody')}</p>
             </div>
-            <div
-              className={cn(
-                'flex items-center justify-between rounded-xl border p-4',
-                !hasCount
-                  ? 'border-zinc-200 bg-zinc-50 text-zinc-500'
-                  : variance === 0
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                    : variance > 0
-                      ? 'border-blue-200 bg-blue-50 text-blue-800'
-                      : 'border-rose-200 bg-rose-50 text-rose-800',
-              )}
+            <button
+              onClick={handleClose}
+              className="h-[46px] w-full rounded-full bg-[#DC2626] text-[15px] font-medium text-white transition-colors hover:bg-[#b91c1c]"
             >
-              <div>
-                <p className="flex items-center gap-1.5 text-xs font-semibold">
-                  <Clock size={14} />
-                  {t('cashVariance')}
-                </p>
-                <p className="text-xs opacity-80">
-                  {!hasCount
-                    ? t('awaitingCount')
-                    : variance === 0
-                      ? t('balanced')
-                      : variance > 0
-                        ? t('over')
-                        : t('short')}
-                </p>
-              </div>
-              <span className="text-lg font-bold">
-                {!hasCount ? '—' : variance >= 0 ? `+$${variance.toFixed(2)}` : `-$${Math.abs(variance).toFixed(2)}`}
-              </span>
-            </div>
+              {t('closeSession')}
+            </button>
           </div>
-
-          <button
-            onClick={handleCloseShift}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#015c42]"
-          >
-            <Check size={18} />
-            <span>{t('confirmClose')}</span>
-          </button>
         </div>
       </div>
     </div>

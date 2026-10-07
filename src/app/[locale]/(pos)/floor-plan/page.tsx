@@ -221,8 +221,8 @@ export default function FloorPlanPage() {
         </div>
       </div>
 
-      {/* ── Table grid (Figma 1759:802) ──────────────────────────────── */}
-      <div className="flex flex-wrap gap-x-[46px] gap-y-9 pb-20 pt-9">
+      {/* ── Table grid (Figma 1759:802) — 4 columns at the reference width ── */}
+      <div className="flex flex-wrap gap-x-[28px] gap-y-9 pb-20 pt-9">
         {filteredTables.map((table) => (
           <FloorTableCard
             key={table.id}

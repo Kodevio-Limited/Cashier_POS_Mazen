@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, clearDraft, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
@@ -191,40 +191,36 @@ export default function PlaceOrderPage() {
   const total = subtotal - discount + serviceCharge;
 
   return (
-    <div className="flex h-[calc(100vh-38px)] gap-3">
-      {/* ── Main Content Area: Order Line Items ─────────────────── */}
-      <div className="flex flex-1 flex-col min-w-0 bg-white rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-5">
+    <div className="flex h-[calc(100vh-38px)] gap-[15px]">
+      {/* ── Main Content Area: Order Line Items (on page background, Figma 1032:832) ── */}
+      <div className="flex flex-1 flex-col min-w-0">
         {/* Top bar: Order ID */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#F2F2F2]">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/order"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2F2F2] text-[#2D2F33] hover:bg-[#E9E9E9] transition-colors"
+              className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-white text-[#2D2F33] shadow-xs transition-colors hover:bg-[#F2F2F2]"
             >
               <ArrowLeft size={18} className="rtl:scale-x-[-1]" />
             </Link>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-semibold text-[20px] text-[#2D2F33]">{t('orderTitle', { number: orderNumber })}</h1>
-                {session && (
-                  <span className="rounded-full bg-[#026F4F] px-2.5 py-0.5 text-[11px] font-medium text-white">
-                    {sessionLabel(session, locale, {
+              <h1 className="font-medium text-[20px] leading-[1.4] text-[#2D2F33]">{t('orderTitle', { number: orderNumber })}</h1>
+              <p className="text-[13px] text-[#686868]">
+                {session
+                  ? [sessionLabel(session, locale, {
                       takeOut: tSess('takeOut'),
                       delivery: tSess('delivery'),
                       dineIn: tSess('dineIn'),
-                    })}
-                  </span>
-                )}
-              </div>
-              <p className="text-[13px] text-[#686868]">{t('reviewSubtitle')}</p>
+                    }), session.tableName].filter(Boolean).join(' • ')
+                  : t('reviewSubtitle')}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Current Details Header */}
-        <div className="pt-4 pb-2 flex justify-between items-center">
+        <div className="pb-2 pt-5 flex justify-between items-center">
           <h2 className="font-medium text-[15px] text-[#2D2F33]">{t('currentDetails')}</h2>
-          <span className="text-xs text-[#989898]">{t('itemsCount', { count: items.length })}</span>
         </div>
 
         {/* Missing session block (Bug-64): pick a table / take-out / delivery first */}
@@ -327,11 +323,11 @@ export default function PlaceOrderPage() {
           )}
         </div>
 
-        {/* Add More Items button */}
-        <div className="pt-3 border-t border-[#F2F2F2] flex justify-end">
+        {/* Add More Items */}
+        <div className="flex justify-end pt-3">
           <Link
             href="/order"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-[#026F4F] bg-emerald-50 hover:bg-emerald-100 transition-colors"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#026F4F] transition-colors hover:underline"
           >
             <Plus size={15} />
             <span>{t('addMoreItems')}</span>
@@ -352,7 +348,7 @@ export default function PlaceOrderPage() {
               setNotes('');
               setDeliveryForm(emptyDeliveryDetails());
             }}
-            className="w-9 h-9 rounded-lg bg-red-400 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E56767] text-white transition-colors hover:bg-[#d95454]"
             title={t('clearFields')}
           >
             <Trash2 size={18} />
@@ -503,44 +499,47 @@ export default function PlaceOrderPage() {
             <>
               {/* Phone */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-[#686868] flex items-center gap-1">
-                  <Phone size={12} />
-                  <span>{t('phoneLabel')}</span>
-                </label>
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={t('phonePlaceholder')}
-                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-                />
+                <label className="text-xs text-[#686868]">{t('phoneLabel')}</label>
+                <div className="relative">
+                  <Phone size={14} className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-[#989898]" />
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={t('phonePlaceholder')}
+                    className="w-full h-10 bg-[#E9E9E9] rounded-full pe-4 ps-10 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
               </div>
 
               {/* Full Name */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-[#686868] flex items-center gap-1">
-                  <User size={12} />
-                  <span>{t('nameLabel')}</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t('namePlaceholder')}
-                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-                />
+                <label className="text-xs text-[#686868]">{t('nameLabel')}</label>
+                <div className="relative">
+                  <User size={14} className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-[#989898]" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t('namePlaceholder')}
+                    className="w-full h-10 bg-[#E9E9E9] rounded-full pe-4 ps-10 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
               </div>
 
               {/* Email */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-[#686868]">{t('emailLabel')}</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('emailPlaceholder')}
-                  className="w-full h-10 bg-[#E9E9E9] rounded-full px-4 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
-                />
+                <div className="relative">
+                  <Mail size={14} className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-[#989898]" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('emailPlaceholder')}
+                    className="w-full h-10 bg-[#E9E9E9] rounded-full pe-4 ps-10 text-xs text-[#2D2F33] outline-none focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
               </div>
             </>
           )}
@@ -555,6 +554,58 @@ export default function PlaceOrderPage() {
               placeholder={t('promoPlaceholder')}
               className="flex-1 bg-transparent text-xs uppercase font-medium text-[#2D2F33] placeholder:text-[#B9B9B9] outline-none"
             />
+          </div>
+
+          {/* Split Bill & Merge Bill */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => items.length > 0 && setSplitOpen(true)}
+              disabled={items.length === 0}
+              className={cn(
+                'flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#026F4F] bg-[#E6F1ED] text-xs font-medium text-[#026F4F] transition-colors hover:bg-[#D6E9E1]',
+                items.length === 0 && 'cursor-not-allowed opacity-50',
+              )}
+            >
+              <Split size={15} className="shrink-0" />
+              <span>{t('splitBill')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => items.length > 0 && setMergeOpen(true)}
+              disabled={items.length === 0}
+              className={cn(
+                'flex h-10 flex-1 items-center justify-center gap-1 rounded-lg bg-[#F2F2F2] text-xs font-medium text-[#686868] transition-colors hover:bg-[#E9E9E9]',
+                items.length === 0 && 'cursor-not-allowed opacity-50',
+              )}
+            >
+              <GitMerge size={15} className="shrink-0" />
+              <span>{t('mergeBill')}</span>
+            </button>
+          </div>
+
+          {/* Payment Details Box */}
+          <div className="bg-[#F2F2F2] rounded-lg p-3 flex flex-col gap-2">
+            <p className="font-medium text-[14px] text-[#2D2F33]">{t('paymentsDetails')}</p>
+            <div className="flex justify-between text-xs text-[#686868]">
+              <span>{t('subtotalItems', { count: items.reduce((s, i) => s + i.qty, 0) })}</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-xs text-emerald-700">
+                <span>{t('promoDiscount')}</span>
+                <span>-${discount.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-xs text-[#686868]">
+              <span>{t('serviceCharge')}</span>
+              <span>${serviceCharge.toFixed(2)}</span>
+            </div>
+            <div className="border-t border-dashed border-[#989898] my-0.5" />
+            <div className="flex justify-between text-sm font-medium text-[#2D2F33]">
+              <span>{t('total')}</span>
+              <span className="font-semibold text-[#026F4F]">${total.toFixed(2)}</span>
+            </div>
           </div>
 
           {/* Payment Method Switcher */}
@@ -590,61 +641,10 @@ export default function PlaceOrderPage() {
             </div>
           </div>
 
-          {/* Payment Details Box */}
-          <div className="bg-[#F2F2F2] rounded-lg p-3 flex flex-col gap-2">
-            <p className="font-medium text-[14px] text-[#2D2F33]">{t('paymentsDetails')}</p>
-            <div className="flex justify-between text-xs text-[#686868]">
-              <span>{t('subtotalItems', { count: items.reduce((s, i) => s + i.qty, 0) })}</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between text-xs text-emerald-700">
-                <span>{t('promoDiscount')}</span>
-                <span>-${discount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-xs text-[#686868]">
-              <span>{t('serviceCharge')}</span>
-              <span>${serviceCharge.toFixed(2)}</span>
-            </div>
-            <div className="border-t border-dashed border-[#989898] my-0.5" />
-            <div className="flex justify-between text-sm font-medium text-[#2D2F33]">
-              <span>{t('total')}</span>
-              <span className="font-semibold text-[#026F4F]">${total.toFixed(2)}</span>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Actions */}
-        <div className="p-4 flex flex-col gap-2.5 border-t border-[#F2F2F2] bg-white">
-          {/* Split Bill & Merge Bill */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => items.length > 0 && setSplitOpen(true)}
-              disabled={items.length === 0}
-              className={cn(
-                'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-100 text-xs font-medium text-[#2D2F33] transition-colors hover:bg-zinc-200',
-                items.length === 0 && 'cursor-not-allowed opacity-50 hover:bg-zinc-100',
-              )}
-            >
-              <Split size={15} className="shrink-0" />
-              <span>{t('splitBill')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => items.length > 0 && setMergeOpen(true)}
-              disabled={items.length === 0}
-              className={cn(
-                'flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-zinc-100 text-xs font-medium text-[#2D2F33] transition-colors hover:bg-zinc-200',
-                items.length === 0 && 'cursor-not-allowed opacity-50 hover:bg-zinc-100',
-              )}
-            >
-              <GitMerge size={15} className="shrink-0" />
-              <span>{t('mergeBill')}</span>
-            </button>
-          </div>
-
+        <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2.5">
           {/* Keep Check Running */}
           <button
             onClick={() => router.push('/running-order')}

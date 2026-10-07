@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Plus, ShoppingCart, ArrowLeftRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   INITIAL_INGREDIENTS,
   INITIAL_RECIPES,
@@ -12,7 +14,7 @@ import {
   type InvTab,
   type Recipe,
 } from '@/components/pos/inventory/types';
-import { InventoryHeader } from '@/components/pos/inventory/InventoryShell';
+import { InventoryHeader, PrimaryAction } from '@/components/pos/inventory/InventoryShell';
 import {
   StockTab,
   RecipeTab,
@@ -41,6 +43,7 @@ type DrawerState =
   | null;
 
 export default function InventoryPage() {
+  const t = useTranslations('inventory');
   const [activeTab, setActiveTab] = useState<InvTab>('Stock');
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL_INGREDIENTS);
   const [recipes, setRecipes] = useState<Recipe[]>(INITIAL_RECIPES);
@@ -109,15 +112,24 @@ export default function InventoryPage() {
     setIngredients((prev) => prev.map((i) => (i.id === e.ingredientId ? { ...i, qty: Math.max(0, i.qty - e.qty), updatedAgo: 'Just now' } : i)));
   }
 
+  // Primary action lives on the tab row (Figma 1148:2575).
+  const headerAction =
+    activeTab === 'Stock' ? (
+      <PrimaryAction icon={<Plus size={20} />} label={t('addIngredient')} onClick={() => setDrawer({ kind: 'add' })} />
+    ) : activeTab === 'Purchases' ? (
+      <PrimaryAction icon={<ShoppingCart size={20} />} label={t('logPurchase')} onClick={() => setDrawer({ kind: 'purchase' })} />
+    ) : activeTab === 'Transfers' ? (
+      <PrimaryAction icon={<ArrowLeftRight size={18} />} label={t('newTransfer')} onClick={() => setDrawer({ kind: 'transfer' })} />
+    ) : undefined;
+
   return (
     <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[19px] bg-[#F2F2F2]">
-      <InventoryHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <InventoryHeader activeTab={activeTab} onTabChange={setActiveTab} action={headerAction} />
 
       <div className="pb-20">
         {activeTab === 'Stock' && (
           <StockTab
             ingredients={ingredients}
-            onAdd={() => setDrawer({ kind: 'add' })}
             onEdit={(ing) => setDrawer({ kind: 'edit', ingredient: ing })}
             onDelete={handleDeleteIngredient}
           />
@@ -125,8 +137,8 @@ export default function InventoryPage() {
         {activeTab === 'Recipe' && (
           <RecipeTab recipes={recipes} ingredients={ingredients} onEditRecipe={(r) => setDrawer({ kind: 'mapping', recipe: r })} />
         )}
-        {activeTab === 'Purchases' && <PurchasesTab purchases={purchases} onLogPurchase={() => setDrawer({ kind: 'purchase' })} />}
-        {activeTab === 'Transfers' && <TransfersTab transfers={transfers} onNewTransfer={() => setDrawer({ kind: 'transfer' })} />}
+        {activeTab === 'Purchases' && <PurchasesTab purchases={purchases} />}
+        {activeTab === 'Transfers' && <TransfersTab transfers={transfers} />}
         {activeTab === 'Physical Count' && <PhysicalCountTab counts={counts} ingredients={ingredients} onSubmit={handleSubmitCount} />}
         {activeTab === 'Waste log' && <WasteLogTab entries={waste} ingredients={ingredients} onSubmit={handleSubmitWaste} />}
       </div>

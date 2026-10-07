@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ import {
   type OrderType,
   type RunningOrder,
 } from '@/lib/running-orders';
-import { locStr, locTimeAgo, mapEnum, locTable } from '@/lib/locale-fields';
+import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 
 const ORDER_TYPE_KEY_MAP: Record<string, string> = {
   All: 'all',
@@ -41,16 +41,26 @@ export default function RunningOrderPage() {
   const tTypes = useTranslations('common.orderTypes');
   const tStatus = useTranslations('runningOrder.statusActions');
   const tPay = useTranslations('common.status');
-  const tTime = useTranslations('common.time');
   const tTable = useTranslations('common.table');
   const locale = useLocale();
   const [orders, setOrders] = useState<RunningOrder[]>([]);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const initialized = useRef(false);
 
   useEffect(() => {
-    setOrders(getOrders());
-    return subscribeOrders(() => setOrders(getOrders()));
+    const load = () => {
+      const list = getOrders();
+      setOrders(list);
+      // Figma shows the order-detail panel open by default — select the first
+      // order once on first load so the screen matches the reference.
+      if (!initialized.current && list.length > 0) {
+        initialized.current = true;
+        setSelectedOrderId(list[0].id);
+      }
+    };
+    load();
+    return subscribeOrders(load);
   }, []);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
@@ -72,7 +82,7 @@ export default function RunningOrderPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-38px)] gap-3 bg-[#F2F2F2] relative">
+    <div className="flex min-h-[calc(100vh-38px)] gap-[15px] bg-[#F2F2F2] relative">
       {/* ── Left: Running Orders workspace ─────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
@@ -140,7 +150,7 @@ export default function RunningOrderPage() {
                     <div className="mt-2 flex flex-col gap-1">
                       <div className="flex items-center gap-1.5">
                         <Clock size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locTimeAgo(locStr(order.date, order.dateAr, locale), locale, tTime)}</span>
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locStr(order.date, order.dateAr, locale)}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
@@ -148,16 +158,19 @@ export default function RunningOrderPage() {
                       </div>
                     </div>
 
-                    {/* Items (no photos — compact mode) */}
+                    {/* Items */}
                     <div className="mt-2.5 flex flex-col">
                       {order.items.slice(0, 2).map((item, idx) => (
-                        <div key={idx} className="flex items-end justify-between gap-2 py-2 first:pt-0">
-                          <div className="flex min-w-0 flex-col gap-0.5">
-                            <span className="truncate text-[11px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
-                            <span className="truncate text-[8px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('standardModifier'), locale)}&rdquo;</span>
-                            <span className="text-[10px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
+                        <div key={idx} className="flex items-center gap-2.5 border-b border-[#F2F2F2] py-2 last:border-0">
+                          <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#F2F2F2] text-[26px]">
+                            {item.emoji}
                           </div>
-                          <span className="shrink-0 text-[14px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
+                          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
+                            <span className="truncate text-[10.7px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('standardModifier'), locale)}&rdquo;</span>
+                            <span className="text-[12.7px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
+                          </div>
+                          <span className="shrink-0 text-[12.7px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
                         </div>
                       ))}
                     </div>
@@ -171,17 +184,17 @@ export default function RunningOrderPage() {
                         <span className="text-[12px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
                       </div>
                       {order.status === 'Placed' && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               removeOrder(order.id);
                             }}
                             aria-label={t('rejectAria')}
-                            className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-[10px] bg-[#E85E5E] px-2.5 text-[11.5px] font-medium text-white transition-colors hover:bg-[#d94a4a]"
+                            title={t('reject')}
+                            className="flex h-[40px] w-[44px] shrink-0 items-center justify-center rounded-[12px] bg-[#E85E5E] text-white transition-colors hover:bg-[#d94a4a]"
                           >
-                            <X size={14} strokeWidth={2.5} />
-                            <span>{t('reject')}</span>
+                            <X size={18} strokeWidth={2.5} />
                           </button>
                           <button
                             onClick={(e) => {
@@ -189,10 +202,10 @@ export default function RunningOrderPage() {
                               updateOrderStatus(order.id, 'Preparing');
                             }}
                             aria-label={t('acceptAria')}
-                            className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-[10px] bg-[#64C864] px-2.5 text-[11.5px] font-medium text-white transition-colors hover:bg-[#4fb84f]"
+                            title={t('accept')}
+                            className="flex h-[40px] w-[44px] shrink-0 items-center justify-center rounded-[12px] bg-[#64C864] text-white transition-colors hover:bg-[#4fb84f]"
                           >
-                            <Check size={14} strokeWidth={2.8} />
-                            <span>{t('accept')}</span>
+                            <Check size={18} strokeWidth={2.8} />
                           </button>
                         </div>
                       )}

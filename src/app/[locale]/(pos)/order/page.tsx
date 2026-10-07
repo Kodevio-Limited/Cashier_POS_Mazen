@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
-import { Search, Minus, Plus, X, Trash2, Pencil, Scissors, MapPin } from 'lucide-react';
+import { Search, Minus, Plus, X, Trash2, Scissors, MapPin, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, newLineId, clearDraft, modifierTotal, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
 import { locStr } from '@/lib/locale-fields';
@@ -93,19 +94,19 @@ function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void 
   return (
     <button
       onClick={onSelect}
-      className="w-full h-56 relative bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-zinc-200/80 hover:outline-emerald-700/60 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95 text-left p-[7px] flex flex-col"
+      className="relative flex h-[227px] w-full flex-col overflow-hidden rounded-[8px] bg-white p-[7px] text-left outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:outline-emerald-700/60 active:scale-95"
     >
-      <div className="w-full h-28 bg-zinc-100 rounded-lg overflow-hidden flex items-center justify-center text-5xl shrink-0">
+      <div className="flex h-[118px] w-full shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-[#F2F2F2] text-[52px]">
         {item.emoji}
       </div>
-      <div className="w-full mt-2 flex flex-col justify-start items-start gap-1">
-        <div className="w-full text-zinc-800 text-base font-medium font-['Inter'] leading-5 truncate">
+      <div className="mt-[9px] flex w-full min-w-0 flex-1 flex-col items-start gap-[3px] px-[6px]">
+        <div className="w-full truncate text-[16px] font-medium leading-[1.3] text-[#2D2F33]">
           {locStr(item.name, item.nameAr, locale)}
         </div>
-        <div className="w-full text-neutral-400 text-xs font-normal font-['Inter'] leading-4 uppercase tracking-wider">
+        <div className="w-full truncate text-[12px] font-normal uppercase leading-[1.3] tracking-wider text-[#989898]">
           {tCat(item.category.toLowerCase())}
         </div>
-        <div className="w-full text-emerald-700 text-base font-medium font-['Inter'] leading-5">
+        <div className="w-full text-[16px] font-medium leading-[1.3] text-[#026F4F]">
           ${item.price.toFixed(2)}
         </div>
       </div>
@@ -144,6 +145,7 @@ export default function OrderPage() {
   const deliveryPrompted = useRef(false);
   const tSess = useTranslations('orderSession');
   const [customizeOpen, setCustomizeOpen] = useQueryModal('customize-item');
+  const [panelOpen, setPanelOpen] = useState(false);
   const [customizingItem, setCustomizingItem] = useState<{ item: MenuItem | OrderItem; isEditingIndex?: number } | null>(null);
   // Menu availability toggled by the cashier (Menu page, Bug-63) — shared via
   // localStorage so unavailable items vanish from this order grid too.
@@ -268,56 +270,56 @@ export default function OrderPage() {
   const itemCount = orderItems.reduce((s, o) => s + o.qty, 0);
 
   return (
-    <div className="flex h-[calc(100vh-38px)] gap-3 transition-all duration-300">
-      {/* ── Center: Menu Section ─────────────────────────────────── */}
-      <div className="flex flex-1 flex-col min-w-0 bg-white rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
-        {/* Header row */}
-        <div className="flex flex-wrap items-center justify-between px-5 pt-4 pb-3 border-b border-[#F2F2F2] gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-[19px] text-[#2D2F33]">{t('title')}</span>
-            <span className="text-[13px] text-[#989898]">{t('itemCount', { count: orderableItems.length })}</span>
+    <div className="flex h-[calc(100vh-38px)] gap-[15px] transition-all duration-300">
+      {/* ── Center: Menu Section (sits directly on the page background, Figma 617:4597) ── */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Title */}
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="text-[20px] font-medium leading-[1.4] text-[#2D2F33]">{t('title')}</span>
+          <span className="text-[15px] leading-[1.4] text-[#989898]">
+            {t('itemCount', { count: orderableItems.length })}
+          </span>
+        </div>
+
+        {/* Category pills (left) + search (right) */}
+        <div className="mt-[13px] flex flex-wrap items-center gap-x-[14px] gap-y-2">
+          <div className="flex min-w-0 flex-1 items-center gap-[14px] overflow-x-auto">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={cn(
+                  'flex h-[33px] shrink-0 items-center gap-2 rounded-full px-4 text-[13px] font-medium leading-[1.4] transition-all duration-200',
+                  activeCategory === cat
+                    ? 'bg-[#026F4F] text-white shadow-xs'
+                    : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
+                )}
+              >
+                {tCat(cat.toLowerCase())}
+              </button>
+            ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="flex items-center gap-2 bg-[#F2F2F2] rounded-full px-4 h-9">
-              <Search size={14} className="text-[#989898]" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                className="bg-transparent outline-none text-[13px] text-[#2D2F33] placeholder:text-[#989898] w-36"
-              />
-            </div>
+          {/* Search */}
+          <div className="flex h-[33px] w-[254px] max-w-full shrink-0 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
+            <Search size={14} className="shrink-0 text-[#989898]" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className="w-full min-w-0 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+            />
           </div>
         </div>
 
-        {/* Category tabs */}
-        <div className="flex items-center gap-2 px-5 py-3 overflow-x-auto border-b border-[#F2F2F2]">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={cn(
-                'flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200',
-                activeCategory === cat
-                  ? 'bg-[#026F4F] text-white shadow-xs'
-                  : 'bg-white border border-[#E9E9E9] text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
-              )}
-            >
-              {tCat(cat.toLowerCase())}
-            </button>
-          ))}
-        </div>
-
-        {/* Menu grid - Exactly 5 items per row */}
-        <div className="flex-1 overflow-y-auto p-5">
+        {/* Menu grid — 4 columns at the reference width (Figma card 182×227, gap 20/15) */}
+        <div className="mt-[24px] flex-1 overflow-y-auto pb-4">
           {filtered.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-[#989898] text-[14px]">
+            <div className="flex h-40 items-center justify-center text-[14px] text-[#989898]">
               {t('noItemsFound')}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-[15px] sm:grid-cols-3 lg:grid-cols-4">
               {filtered.map((item) => (
                 <ProductCard
                   key={item.id}
@@ -331,21 +333,28 @@ export default function OrderPage() {
       </div>
 
       {/* ── Right Panel: Current Order (Side Modal - Always visible) ── */}
-      <div className="w-full md:w-80 h-full shrink-0 flex flex-col justify-between bg-white rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-md:absolute max-md:inset-y-3 max-md:end-3 max-md:z-40 max-md:w-[calc(100%-104px-24px)]">
+      <div className={`w-full lg:w-[343px] h-full shrink-0 flex flex-col justify-between bg-white rounded-xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-lg:absolute max-lg:inset-y-3 max-lg:end-3 max-lg:z-40 max-lg:w-[calc(100%-104px-24px)] ${panelOpen ? '' : 'max-lg:hidden'}`}>
           {/* Header */}
-          <div className="px-3 pt-3 pb-2.5 border-b border-zinc-400/40">
+          <div className="px-3 pt-3 pb-2.5 border-b border-[#E9E9E9]">
             <div className="flex justify-between items-center gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-black text-lg font-medium font-['Inter'] leading-7">{t('currentOrder')}</span>
-                <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5">({itemCount})</span>
+                <button
+                  onClick={() => setPanelOpen(false)}
+                  aria-label={t('currentOrder')}
+                  className="lg:hidden -ms-1 me-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#2D2F33] transition-colors hover:bg-[#F2F2F2]"
+                >
+                  <X size={18} />
+                </button>
+                <span className="text-[19px] font-medium leading-[1.4] text-black">{t('currentOrder')}</span>
+                <span className="text-[13px] font-normal leading-[1.4] text-neutral-400">({itemCount})</span>
               </div>
               <button
                 onClick={cancelOrder}
                 title={t('cancelOrder')}
-                className="shrink-0 h-9 px-3 bg-red-500 hover:bg-red-600 rounded-lg flex items-center gap-1.5 text-white text-[13px] font-medium font-['Inter'] transition-colors"
+                aria-label={t('cancelOrder')}
+                className="flex h-[39px] w-[39px] shrink-0 items-center justify-center rounded-[8px] bg-[#E56767] text-white transition-colors hover:bg-[#d95454]"
               >
-                <Trash2 size={15} strokeWidth={2.2} />
-                {t('cancelOrder')}
+                <Trash2 size={20} strokeWidth={2} />
               </button>
             </div>
 
@@ -460,7 +469,7 @@ export default function OrderPage() {
                         title={t('editItemAria')}
                         className="size-6 relative flex items-center justify-center text-neutral-400 hover:text-zinc-800 transition-colors"
                       >
-                        <Pencil size={18} strokeWidth={1.8} />
+                        <Image src="/images/figma/pencil.svg" alt="" width={18} height={18} className="size-[18px]" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -522,8 +531,8 @@ export default function OrderPage() {
 
           {/* Payments Details Box & Place Order Button */}
           <div className="px-3 pb-3 pt-2 flex flex-col gap-3.5 bg-white">
-            <div className="self-stretch relative bg-zinc-100 rounded-md p-2.5 flex flex-col gap-3">
-              <div className="text-zinc-800 text-base font-medium font-['Inter'] leading-5">
+            <div className="self-stretch relative bg-[#F2F2F2] rounded-[8px] p-[10px] flex flex-col gap-3">
+              <div className="text-zinc-800 text-[15px] font-medium font-['Inter'] leading-[1.4]">
                 {t('paymentsDetails')}
               </div>
               <div className="flex flex-col gap-2">
@@ -564,9 +573,9 @@ export default function OrderPage() {
               }}
               disabled={orderItems.length === 0}
               className={cn(
-                'w-full h-12 rounded-[30px] inline-flex justify-center items-center gap-5 text-white text-lg font-medium font-[\'Inter\'] leading-7 transition-all',
+                'w-full h-[50px] rounded-[30px] inline-flex justify-center items-center gap-5 text-[19px] font-medium font-[\'Inter\'] leading-[1.4] text-white transition-all',
                 orderItems.length > 0
-                  ? 'bg-emerald-700 hover:bg-emerald-800 shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] active:scale-95'
+                  ? 'bg-[#026F4F] hover:bg-[#015c42] active:scale-95'
                   : 'bg-[#B9B9B9] cursor-not-allowed shadow-none',
               )}
             >
@@ -574,6 +583,15 @@ export default function OrderPage() {
             </button>
           </div>
         </div>
+
+      {/* ── Floating current-order toggle (tablet / small screens) ─── */}
+      <button
+        onClick={() => setPanelOpen(true)}
+        className={`lg:hidden fixed bottom-4 end-4 z-30 flex h-14 items-center gap-2 rounded-full bg-[#026F4F] px-5 text-white shadow-[0_6px_20px_rgba(0,0,0,0.25)] transition-colors hover:bg-[#015c42] ${panelOpen ? 'hidden' : ''}`}
+      >
+        <ShoppingCart size={20} />
+        <span className="text-sm font-medium">{itemCount}</span>
+      </button>
 
       {/* ── Delivery Details Modal (delivery sessions) ─────────────── */}
       {deliveryOpen && (

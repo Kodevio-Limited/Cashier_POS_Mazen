@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Plus, ShoppingCart, ArrowLeftRight, ChevronDown, ReceiptText } from 'lucide-react';
+import { ChevronDown, ReceiptText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr, locTimeAgo, locUnit, LOCATIONS_KEY } from '@/lib/locale-fields';
 import {
@@ -17,17 +17,15 @@ import {
   type CountEntry,
   type WasteEntry,
 } from './types';
-import { PrimaryAction, StockPill, Field, PillSelect, pillInputClass } from './InventoryShell';
+import { StockPill, Field, PillSelect, pillInputClass } from './InventoryShell';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export function StockTab({
   ingredients,
-  onAdd,
   onEdit,
   onDelete,
 }: {
   ingredients: Ingredient[];
-  onAdd: () => void;
   onEdit: (ing: Ingredient) => void;
   onDelete: (id: string) => void;
 }) {
@@ -36,20 +34,16 @@ export function StockTab({
   const locale = useLocale();
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <PrimaryAction icon={<Plus size={20} />} label={t('addIngredient')} onClick={onAdd} />
-      </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] table-fixed border-collapse">
+          <table className="w-full min-w-[620px] table-fixed border-collapse">
             <thead>
-              <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[130px] ps-6 pe-2 text-start font-medium">{t('col.name')}</th>
-                <th className="w-[110px] px-2 text-start font-medium">{t('col.currentStock')}</th>
-                <th className="w-[110px] px-2 text-start font-medium">{t('col.avgPrice')}</th>
-                <th className="w-[110px] px-2 text-center font-medium">{t('col.status')}</th>
-                <th className="w-[110px] px-2 text-start font-medium">{t('col.lastUpdated')}</th>
-                <th className="w-[110px] py-2 ps-2 pe-6 text-start font-medium">{t('col.actions')}</th>
+              <tr className="h-[44px] bg-[#E9E9E9] text-[10.7px] font-medium uppercase leading-[1.4] tracking-wide text-[#686868]">
+                <th className="w-[170px] ps-6 pe-2 text-start font-medium">{t('col.name')}</th>
+                <th className="w-[150px] px-2 text-start font-medium">{t('col.currentStock')}</th>
+                <th className="w-[150px] px-2 text-center font-medium">{t('col.status')}</th>
+                <th className="w-[150px] px-2 text-start font-medium">{t('col.lastUpdated')}</th>
+                <th className="w-[130px] py-2 ps-2 pe-6 text-start font-medium">{t('col.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -63,11 +57,6 @@ export function StockTab({
                     <td className="px-2 py-[14px] text-start align-middle">
                       <span className="block truncate text-[12.7px] font-medium leading-[1.4] text-black">
                         {ing.qty} / {ing.capacity} <span className="font-normal text-[#989898]">{locUnit(ing.unit, t)}</span>
-                      </span>
-                    </td>
-                    <td className="px-2 py-[14px] text-start align-middle">
-                      <span className="block truncate text-[12.7px] font-medium leading-[1.4] text-[#026F4F]">
-                        ${ing.avgPrice.toFixed(2)}<span className="font-normal text-[#989898]">/{locUnit(ing.unit, t)}</span>
                       </span>
                     </td>
                     <td className="px-2 py-[14px] text-center align-middle"><StockPill state={state} /></td>
@@ -196,14 +185,11 @@ export function RecipeTab({
 }
 
 // ─── PURCHASES ────────────────────────────────────────────────────────────────
-export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase[]; onLogPurchase: () => void }) {
+export function PurchasesTab({ purchases }: { purchases: Purchase[] }) {
   const t = useTranslations('inventory');
   const locale = useLocale();
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <PrimaryAction icon={<ShoppingCart size={20} />} label={t('logPurchase')} onClick={onLogPurchase} />
-      </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[840px] table-fixed border-collapse">
@@ -255,16 +241,13 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
 }
 
 // ─── TRANSFERS ────────────────────────────────────────────────────────────────
-export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer[]; onNewTransfer: () => void }) {
+export function TransfersTab({ transfers }: { transfers: Transfer[] }) {
   const t = useTranslations('inventory');
   const tStatus = useTranslations('inventory.transferStatus');
   const tLoc = useTranslations('inventory.locations');
   const locale = useLocale();
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <PrimaryAction icon={<ArrowLeftRight size={18} />} label={t('newTransfer')} onClick={onNewTransfer} />
-      </div>
       <div className="overflow-hidden rounded-[8px] bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[990px] table-fixed border-collapse">
