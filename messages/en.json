@@ -158,10 +158,11 @@
       "checkRequested": "Check Requested"
     },
     "transfer": {
-      "title": "Transfer {name}",
-      "subtitle": "Select an available target table to transfer active order {orderId}",
-      "selectTarget": "Select Target Table",
-      "confirmTransfer": "Confirm Transfer"
+    "title": "Transfer {name}",
+    "subtitle": "Select the target table for active order {orderId}. Occupied targets trigger a merge.",
+    "selectTarget": "Select Target Table",
+    "confirmTransfer": "Confirm Transfer",
+    "targetOccupied": "Occupied"
     },
     "status": {
       "occupied": "OCCUPIED",

@@ -81,7 +81,7 @@ export function CollectPaymentModal({
           <button
             type="button"
             onClick={onSplit}
-            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-100 text-xs font-medium text-emerald-700 outline outline-1 outline-offset-[-1px] outline-emerald-700 transition-colors hover:bg-emerald-50"
+            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-100 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-200"
           >
             <Split size={15} className="shrink-0" />
             <span>{t('splitBill')}</span>
@@ -443,6 +443,7 @@ export function ConfirmMergeModal({
 }) {
   const t = useTranslations('confirmMerge');
   const tCommon = useTranslations('common.actions');
+  useBodyScrollLock(true);
   return (
     <div className="pos-overlay z-[70] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
       <div className="pos-overlay__panel w-[554px] max-w-full rounded-[17px] bg-white px-[33px] pb-[27px] pt-[56px] shadow-2xl">

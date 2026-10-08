@@ -13,11 +13,6 @@ type SettingKey =
   | 'walletPayments'
   | 'autoPrintReceipt'
   | 'autoPrintKOT'
-  | 'enableInventoryTracking'
-  | 'autoHideUnavailable'
-  | 'invLowStockAlerts'
-  | 'requireOpeningFloat'
-  | 'requireCountedCash'
   | 'orderAlerts'
   | 'lowStockNotif';
 
@@ -27,11 +22,6 @@ const DEFAULTS: Record<SettingKey, boolean> = {
   walletPayments: true,
   autoPrintReceipt: true,
   autoPrintKOT: true,
-  enableInventoryTracking: true,
-  autoHideUnavailable: true,
-  invLowStockAlerts: true,
-  requireOpeningFloat: true,
-  requireCountedCash: true,
   orderAlerts: true,
   lowStockNotif: true,
 };
@@ -113,17 +103,6 @@ export default function SettingsPage() {
           >
             {t('testPrint')}
           </button>
-        </Card>
-
-        <Card title={t('inventorySettings')}>
-          <SettingRow label={t('enableInventoryTracking')} settingKey="enableInventoryTracking" values={values} onToggle={toggle} />
-          <SettingRow label={t('autoHideUnavailable')} settingKey="autoHideUnavailable" values={values} onToggle={toggle} />
-          <SettingRow label={t('invLowStockAlerts')} settingKey="invLowStockAlerts" values={values} onToggle={toggle} />
-        </Card>
-
-        <Card title={t('sessionSettings')}>
-          <SettingRow label={t('requireOpeningFloat')} settingKey="requireOpeningFloat" values={values} onToggle={toggle} />
-          <SettingRow label={t('requireCountedCash')} settingKey="requireCountedCash" values={values} onToggle={toggle} />
         </Card>
 
         <Card title={t('notifications')}>

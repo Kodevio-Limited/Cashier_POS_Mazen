@@ -12,6 +12,7 @@ import { foodImage, CATEGORY_IMAGE, FOOD_IMAGES } from '@/lib/menu-images';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 import { DeliveryDetailsModal } from '@/components/pos/DeliveryDetailsModal';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import {
   loadDeliveryDetails,
   saveDeliveryDetails,
@@ -138,6 +139,9 @@ export default function OrderPage() {
   const locale = useLocale();
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
+  // Search collapses to an icon button so it never squeezes the category pills;
+  // expanding it (while typing) hides the pills to free the full row.
+  const [searchOpen, setSearchOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>(() => loadDraft() ?? []);
   const [session, setSession] = useState<OrderSession | null>(null);
   const [delivery, setDelivery] = useState<DeliveryDetails | null>(null);
@@ -283,35 +287,67 @@ export default function OrderPage() {
         </div>
 
         {/* Category pills (left) + search (right) */}
-        <div className="mt-[13px] flex flex-wrap items-center gap-x-[14px] gap-y-2">
-          <div className="flex min-w-0 flex-1 items-center gap-[14px] overflow-x-auto">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={cn(
-                  'flex h-[33px] shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13px] font-medium leading-[1.4] transition-all duration-200',
-                  activeCategory === cat
-                    ? 'bg-[#026F4F] text-white shadow-xs'
-                    : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
-                )}
-              >
-                <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[23px] w-[23px] shrink-0 rounded-full object-cover" />
-                {tCat(cat.toLowerCase())}
-              </button>
-            ))}
-          </div>
+        <div className="mt-[13px] flex items-center gap-x-[14px] gap-y-2">
+          {!searchOpen && (
+            <div className="flex min-w-0 flex-1 items-center gap-[14px] overflow-x-auto">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={cn(
+                    'flex h-[33px] shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13px] font-medium leading-[1.4] transition-all duration-200',
+                    activeCategory === cat
+                      ? 'bg-[#026F4F] text-white shadow-xs'
+                      : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
+                  )}
+                >
+                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[23px] w-[23px] shrink-0 rounded-full object-cover" />
+                  {tCat(cat.toLowerCase())}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Search */}
-          <div className="flex h-[33px] w-[254px] max-w-full shrink-0 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
-            <Search size={14} className="shrink-0 text-[#989898]" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              className="w-full min-w-0 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
-            />
-          </div>
+          {/* Search — collapsed to a button, expands over the category row */}
+          {searchOpen ? (
+            <div className="flex h-[33px] min-w-0 flex-1 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
+              <Search size={14} className="shrink-0 text-[#989898]" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearch('');
+                    setSearchOpen(false);
+                  }
+                }}
+                placeholder={t('searchPlaceholder')}
+                className="w-full min-w-0 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchOpen(false);
+                }}
+                aria-label={t('searchPlaceholder')}
+                className="shrink-0 text-[#989898] transition-colors hover:text-[#2D2F33]"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t('searchPlaceholder')}
+              title={t('searchPlaceholder')}
+              className="flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full bg-[#F2F2F2] text-[#686868] transition-colors hover:bg-[#E9E9E9] hover:text-[#026F4F]"
+            >
+              <Search size={15} />
+            </button>
+          )}
         </div>
 
         {/* Menu grid — 4 columns at the reference width (Figma card 182×227, gap 20/15) */}
@@ -653,6 +689,7 @@ function CustomizeItemModal({
   const t = useTranslations('order');
   const tc = useTranslations('order.customize');
   const locale = useLocale();
+  useBodyScrollLock(true);
   // Required options come from the cart line's own snapshot first (saved at
   // add time), falling back to the menu definition. Either way the Required
   // section shows both when adding AND when editing — never just the

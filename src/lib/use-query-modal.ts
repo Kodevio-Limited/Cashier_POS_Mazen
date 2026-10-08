@@ -58,13 +58,14 @@ export function useQueryModal(name: string, param = 'modal'): [boolean, (open: b
           window.history.pushState(null, '', url.toString());
           pushedRef.current = true;
         } else if (url.searchParams.get(param) === name) {
-          if (pushedRef.current) {
-            pushedRef.current = false;
-            window.history.back();
-          } else {
-            url.searchParams.delete(param);
-            window.history.replaceState(null, '', url.toString());
-          }
+          // Closing must be synchronous. `history.back()` lands asynchronously,
+          // so it raced any navigation or modal swap issued right after a close
+          // (e.g. New Order: back() undid router.push('/floor-plan')) and double
+          // closes popped two entries. Replace instead — same visible result,
+          // deterministic ordering; the pushed entry just becomes a duplicate.
+          url.searchParams.delete(param);
+          window.history.replaceState(null, '', url.toString());
+          pushedRef.current = false;
         }
       } catch {
         // ignore — local state already updated

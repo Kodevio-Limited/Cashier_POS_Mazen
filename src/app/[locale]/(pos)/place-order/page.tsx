@@ -26,6 +26,7 @@ import {
   MergeOrdersModal,
   ConfirmMergeModal,
 } from '@/components/pos/PaymentModals';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 
 interface OrderLineItem {
   id: string;
@@ -149,6 +150,10 @@ export default function PlaceOrderPage() {
   const [confirmMergeOpen, setConfirmMergeOpen] = useQueryModal('confirm-merge');
   const confirmMergeArmed = useRef(false);
   const [selectedMergeOrders, setSelectedMergeOrders] = useState<string[]>(['ro1', 'ro2']);
+  // Order-success is inline (not a PaymentModals component), so lock here; the
+  // other checkout overlays lock inside their own components. The armed ref
+  // keeps a cold ?modal=order-success load (renders nothing) from locking.
+  useBodyScrollLock(successOpen && successArmed.current);
 
   const openSuccess = () => {
     successArmed.current = true;
@@ -320,19 +325,19 @@ export default function PlaceOrderPage() {
                   </div>
                 </div>
               ))}
+
+              {/* Add More Items — inside the scroll list, right after the last row */}
+              <div className="flex justify-end pt-1">
+                <Link
+                  href="/order"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#026F4F] transition-colors hover:underline"
+                >
+                  <Plus size={15} />
+                  <span>{t('addMoreItems')}</span>
+                </Link>
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Add More Items */}
-        <div className="flex justify-end pt-3">
-          <Link
-            href="/order"
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#026F4F] transition-colors hover:underline"
-          >
-            <Plus size={15} />
-            <span>{t('addMoreItems')}</span>
-          </Link>
         </div>
       </div>
 
@@ -564,7 +569,7 @@ export default function PlaceOrderPage() {
               onClick={() => items.length > 0 && setSplitOpen(true)}
               disabled={items.length === 0}
               className={cn(
-                'flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#026F4F] bg-[#E6F1ED] text-xs font-medium text-[#026F4F] transition-colors hover:bg-[#D6E9E1]',
+                'flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#F2F2F2] text-xs font-medium text-[#686868] transition-colors hover:bg-[#E9E9E9]',
                 items.length === 0 && 'cursor-not-allowed opacity-50',
               )}
             >

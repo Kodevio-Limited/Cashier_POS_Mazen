@@ -158,10 +158,11 @@
       "checkRequested": "طلب الحساب"
     },
     "transfer": {
-      "title": "تحويل {name}",
-      "subtitle": "اختر طاولة متاحة لتحويل الطلب النشط {orderId}",
-      "selectTarget": "اختر الطاولة المستهدفة",
-      "confirmTransfer": "تأكيد التحويل"
+    "title": "تحويل {name}",
+    "subtitle": "اختر الطاولة المستهدفة للطلب النشط {orderId}. الطاولات المشغولة تؤدي إلى دمج.",
+    "selectTarget": "اختر الطاولة المستهدفة",
+    "confirmTransfer": "تأكيد التحويل",
+    "targetOccupied": "مشغولة"
     },
     "status": {
       "occupied": "مشغولة",

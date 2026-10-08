@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
@@ -328,7 +329,9 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-38px)] gap-[15px] bg-[#F2F2F2]">
+    // Fixed (not min) viewport height: the detail panel must hug the viewport so
+    // Refund / Print Receipt stay pinned at the bottom without page scrolling.
+    <div className="relative flex h-[calc(100vh-38px)] gap-[15px] bg-[#F2F2F2]">
       {/* ── Left: history workspace ──────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
@@ -647,6 +650,7 @@ function RefundItemsModal({
   const t = useTranslations('history');
   const tCommon = useTranslations('common.actions');
   const locale = useLocale();
+  useBodyScrollLock(true);
   const selectedCount = Object.values(refundQty).filter((q) => q > 0).length;
   const title = mode === 'refund' ? t('refundTitle') : t('cancelTitle');
   const confirmLabel = mode === 'refund' ? t('confirmRefund') : t('confirmCancellation');
@@ -807,6 +811,7 @@ function LogWasteModal({
   const t = useTranslations('history');
   const tCommon = useTranslations('common.actions');
   const locale = useLocale();
+  useBodyScrollLock(true);
   return (
     <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
       <div className="pos-overlay__panel w-[600px] max-w-full rounded-[17px] bg-white px-[32px] pb-[26px] pt-[26px] shadow-2xl">

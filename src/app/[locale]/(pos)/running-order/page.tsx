@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -110,8 +110,9 @@ export default function RunningOrderPage() {
           ))}
         </div>
 
-        {/* Cards grid */}
-        <div className="mt-[24px] flex-1 overflow-y-auto pb-20">
+        {/* Cards grid — pt/px keep the selected card's 2px ring from being
+            clipped by the scroll container's padding box */}
+        <div className="mt-[24px] flex-1 overflow-y-auto px-1 pb-20 pt-1">
           {filteredOrders.length === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center rounded-xl bg-white text-sm text-[#989898]">
               <Clock size={32} className="mb-2" />
@@ -316,34 +317,32 @@ export default function RunningOrderPage() {
                   const isDone = i <= idx;
                   const Icon = step.icon;
                   return (
-                    <div key={step.key} className="flex flex-col items-center">
-                      <div
-                        className={cn(
-                          'flex h-[32px] w-[32px] items-center justify-center rounded-full border',
-                          isDone ? 'border-[#026F4F] bg-[#E6F1ED] text-[#026F4F]' : 'border-[#B9B9B9] bg-white text-[#989898]',
-                        )}
-                      >
-                        <Icon size={18} strokeWidth={1.6} />
+                    <Fragment key={step.key}>
+                      {/* Connector — in-flow so it tracks the real step spacing */}
+                      {i > 0 && (
+                        <div
+                          className={cn(
+                            'mt-[15px] h-0 min-w-[16px] flex-1 border-t-2 border-dashed',
+                            isDone ? 'border-[#026F4F]' : 'border-[#B9B9B9]',
+                          )}
+                        />
+                      )}
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={cn(
+                            'flex h-[32px] w-[32px] items-center justify-center rounded-full border',
+                            isDone ? 'border-[#026F4F] bg-[#E6F1ED] text-[#026F4F]' : 'border-[#B9B9B9] bg-white text-[#989898]',
+                          )}
+                        >
+                          <Icon size={18} strokeWidth={1.6} />
+                        </div>
+                        <span className={cn('mt-[8px] text-[9px] font-normal leading-[1.4]', isDone ? 'text-[#026F4F]' : 'text-[#B9B9B9]')}>
+                          {tStatus(mapEnum(step.key, STATUS_KEY_MAP))}
+                        </span>
                       </div>
-                      <span className={cn('mt-[8px] text-[9px] font-normal leading-[1.4]', isDone ? 'text-[#026F4F]' : 'text-[#B9B9B9]')}>
-                        {tStatus(mapEnum(step.key, STATUS_KEY_MAP))}
-                      </span>
-                    </div>
+                    </Fragment>
                   );
                 })}
-                {/* connectors */}
-                {STATUS_STEPS.slice(0, 3).map((_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'absolute top-[15px] w-[45px] border-t-2 border-dashed',
-                      i + 1 <= STATUS_STEPS.findIndex((s) => s.key === selectedOrder.status)
-                        ? 'border-[#026F4F]'
-                        : 'border-[#B9B9B9]',
-                    )}
-                    style={{ left: 16 + i * 81.5 }}
-                  />
-                ))}
               </div>
             </div>
 

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { X, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { emptyDeliveryDetails, isDeliveryDetailsComplete, loadCustomerByPhone, saveCustomer, type DeliveryDetails } from '@/lib/delivery-details';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 
 // Delivery address form for delivery-type orders. Only name / phone /
 // address / street are required (Bug-12); landmark / floor / apartment /
@@ -24,6 +25,7 @@ export function DeliveryDetailsModal({
   const tc = useTranslations('order.customize');
   const tCommon = useTranslations('common.actions');
   const [form, setForm] = useState<DeliveryDetails>(initial ?? emptyDeliveryDetails());
+  useBodyScrollLock(true);
 
   const set = (key: keyof DeliveryDetails) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));

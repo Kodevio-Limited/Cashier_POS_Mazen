@@ -11,6 +11,8 @@ import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session
 import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
+import { ConfirmMergeModal } from '@/components/pos/PaymentModals';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
@@ -65,6 +67,10 @@ export default function FloorPlanPage() {
   const [tableOpen, setTableOpen] = useQueryModal('table');
   const [transferOpen, setTransferOpen] = useQueryModal('transfer-table');
   const [targetTransferTable, setTargetTransferTable] = useState('');
+  // Occupied targets ask for confirmation before the two orders are merged.
+  const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
+  // Table modal + transfer sub-modal (+ its merge confirm) cover the floor.
+  useBodyScrollLock(tableOpen || transferOpen);
   const [requests, setRequests] = useState<TableRequest[]>([]);
 
   const openTableModal = (t: FloorTable) => {
@@ -150,6 +156,19 @@ export default function FloorPlanPage() {
 
   function handleTransferTable() {
     if (!activeModalTable || !targetTransferTable) return;
+    const target = tables.find((t) => t.id === targetTransferTable);
+    if (!target) return;
+    // Occupied target → ask before the two orders are merged.
+    if (target.status === 'occupied') {
+      setMergeConfirmOpen(true);
+      return;
+    }
+    applyTransfer();
+  }
+
+  // Free target: hand the order over — the source frees up, the target takes it.
+  function applyTransfer() {
+    if (!activeModalTable || !targetTransferTable) return;
     const source = activeModalTable;
     setTables((prev) =>
       prev.map((t) => {
@@ -172,6 +191,40 @@ export default function FloorPlanPage() {
         return t;
       }),
     );
+    finishTransfer();
+  }
+
+  // Occupied target: real merge — the target keeps its own order and absorbs the
+  // source's guests, items and total; the source table is freed.
+  function applyMerge() {
+    if (!activeModalTable || !targetTransferTable) return;
+    const source = activeModalTable;
+    setTables((prev) =>
+      prev.map((t) => {
+        if (t.id === source.id) {
+          return { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined };
+        }
+        if (t.id === targetTransferTable) {
+          return {
+            ...t,
+            status: 'occupied' as FloorTableStatus,
+            guestsCount: (t.guestsCount ?? 0) + (source.guestsCount ?? 0),
+            itemsCount: (t.itemsCount ?? 0) + (source.itemsCount ?? 0),
+            orderTotal: (t.orderTotal ?? 0) + (source.orderTotal ?? 0),
+            orderId: t.orderId ?? source.orderId,
+            timeSeated: t.timeSeated ?? source.timeSeated,
+            reservedName: undefined,
+            reservedTime: undefined,
+          };
+        }
+        return t;
+      }),
+    );
+    setMergeConfirmOpen(false);
+    finishTransfer();
+  }
+
+  function finishTransfer() {
     setTransferOpen(false);
     closeTableModal();
     setTargetTransferTable('');
@@ -221,8 +274,8 @@ export default function FloorPlanPage() {
         </div>
       </div>
 
-      {/* ── Table grid (Figma 1759:802) — 4 columns at the reference width ── */}
-      <div className="flex flex-wrap gap-x-[28px] gap-y-9 pb-20 pt-9">
+      {/* ── Table grid (Figma 1759:802) — auto-fills 256px tracks, grows to fill ── */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(256px,1fr))] gap-x-[28px] gap-y-9 pb-20 pt-9">
         {filteredTables.map((table) => (
           <FloorTableCard
             key={table.id}
@@ -245,7 +298,7 @@ export default function FloorPlanPage() {
           />
         ))}
         {filteredTables.length === 0 && (
-          <p className="py-16 text-sm text-[#989898]">{t('noTables')}</p>
+          <p className="col-span-full py-16 text-sm text-[#989898]">{t('noTables')}</p>
         )}
       </div>
 
@@ -378,10 +431,11 @@ export default function FloorPlanPage() {
             >
               <option value="">{t('transfer.selectTarget')}</option>
               {tables
-                .filter((tbl) => tbl.status === 'available')
+                .filter((tbl) => tbl.id !== activeModalTable.id)
                 .map((tbl) => (
                   <option key={tbl.id} value={tbl.id}>
-                    {locStr(tbl.name, tbl.nameAr, locale)} ({t('zones.' + tbl.zone.toLowerCase())} - {tbl.capacity} {t('modal.seats')})
+                    {locStr(tbl.name, tbl.nameAr, locale)} ({t('zones.' + tbl.zone.toLowerCase())} - {tbl.capacity} {t('modal.seats')}
+                    {tbl.status === 'occupied' ? ` • ${t('transfer.targetOccupied')}` : ''})
                   </option>
                 ))}
             </select>
@@ -400,8 +454,21 @@ export default function FloorPlanPage() {
                 {t('transfer.confirmTransfer')}
               </button>
             </div>
-          </div>
+           </div>
         </div>
+      )}
+
+      {/* ── Merge confirmation when the transfer target is occupied ── */}
+      {mergeConfirmOpen && activeModalTable && targetTransferTable && (
+        <ConfirmMergeModal
+          ordersCount={2}
+          combinedTotal={
+            (activeModalTable.orderTotal ?? 0) +
+            (tables.find((tbl) => tbl.id === targetTransferTable)?.orderTotal ?? 0)
+          }
+          onClose={() => setMergeConfirmOpen(false)}
+          onConfirm={applyMerge}
+        />
       )}
     </div>
   );
