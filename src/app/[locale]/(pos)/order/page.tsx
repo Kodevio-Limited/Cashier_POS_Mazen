@@ -350,8 +350,10 @@ export default function OrderPage() {
           )}
         </div>
 
-        {/* Menu grid — 4 columns at the reference width (Figma card 182×227, gap 20/15) */}
-        <div className="mt-[24px] flex-1 overflow-y-auto pb-4">
+        {/* Menu grid — 4 columns at the reference width (Figma card 182×227, gap 20/15).
+            pt/px give the first-row cards room for the 2px hover lift + outline so the
+            top hover line is not clipped by this scroll container (cf. Bug-13). */}
+        <div className="mt-[24px] flex-1 overflow-y-auto px-0.5 pb-4 pt-1">
           {filtered.length === 0 ? (
             <div className="flex h-40 items-center justify-center text-[14px] text-[#989898]">
               {t('noItemsFound')}
