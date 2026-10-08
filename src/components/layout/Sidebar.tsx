@@ -13,7 +13,6 @@ import {
   Package,
   Settings,
   LogOut,
-  Bell,
   Wallet,
   UtensilsCrossed,
 } from 'lucide-react';
@@ -29,6 +28,32 @@ import {
 import { getOrders, pendingCount, subscribeOrders } from '@/lib/running-orders';
 import { endShift } from '@/lib/shift-session';
 import { LanguageToggle } from './LanguageToggle';
+
+/** Sidebar notification bell — exact Figma glyph (streamline-plump:bell, node 1549:4704). */
+function FigmaBell({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 22 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M11 3.5C16.291 3.5 20.6685 7.414 21.3945 12.5045C21.511 13.3245 20.8305 14 20.002 14H1.998C1.1695 14 0.4885 13.325 0.6055 12.5045C1.3315 7.414 5.7085 3.5 11 3.5Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M11 6C13.878 6 16.3775 7.621 17.635 10M11 0.5V3.5M13 0.5H9M20.0725 17.0455C20.6775 17.0535 21.3275 17.257 21.4575 17.8475C21.484 17.967 21.5 18.101 21.5 18.25C21.5 18.399 21.484 18.533 21.4575 18.6525C21.3275 19.243 20.6775 19.4465 20.0725 19.4545C18.708 19.472 15.791 19.5 11 19.5C6.209 19.5 3.292 19.472 1.9275 19.4545C1.3225 19.4465 0.6725 19.243 0.5425 18.6525C0.516 18.533 0.5 18.399 0.5 18.25C0.5 18.101 0.516 17.967 0.5425 17.8475C0.6725 17.257 1.3225 17.0535 1.9275 17.0455C3.292 17.028 6.209 17 11 17C15.791 17 18.708 17.028 20.0725 17.0455Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 const NAV_KEYS = [
   { id: 'floor-plan',    key: 'floorPlan',    icon: LayoutGrid,   href: '/floor-plan' },
@@ -98,7 +123,7 @@ export function Sidebar() {
                 : 'text-[#989898] hover:bg-[#F2F2F2] hover:text-[#2D2F33]',
             )}
           >
-            <Bell size={24} strokeWidth={requests.length > 0 ? 2.2 : 1.8} />
+            <FigmaBell className="size-6" />
             {requests.length > 0 && (
               <span className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white ring-2 ring-white">
                 {requests.length}
