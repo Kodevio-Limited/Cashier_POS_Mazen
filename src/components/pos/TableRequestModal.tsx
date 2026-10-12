@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { Clock, Bell, CheckCircle2, Printer, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,11 @@ export function TableRequestModal({
             <Clock size={14} />
             <span>{t('sortedHint')}</span>
           </div>
-          <button onClick={onDismissAll} className="text-xs font-medium text-emerald-700 hover:underline">
+          <button
+            onClick={onDismissAll}
+            disabled={requests.length === 0}
+            className="text-xs font-medium text-emerald-700 enabled:hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+          >
             {t('dismissAll')}
           </button>
         </div>
@@ -66,7 +71,13 @@ export function TableRequestModal({
                       <span className="text-2xl font-medium text-black">{locTable(req.table, locale, tTable)}</span>
                       {req.paymentMethod && (
                         <div className="flex items-center gap-1 rounded-[20px] bg-zinc-100 px-1.5 py-1">
-                          <span className={cn('h-2 w-2 rounded-full', req.paymentMethod === 'Card' ? 'bg-yellow-500' : 'bg-green-600')} />
+                          <Image
+                            src={req.paymentMethod === 'Card' ? '/images/figma/payment-card.png' : '/images/figma/payment-cash.png'}
+                            alt=""
+                            width={req.paymentMethod === 'Card' ? 14 : 12}
+                            height={req.paymentMethod === 'Card' ? 14 : 8}
+                            className={cn('shrink-0', req.paymentMethod === 'Card' ? 'h-3.5 w-3.5' : 'h-2 w-3')}
+                          />
                           <span className="text-[8px] font-normal text-zinc-800">{tPay(mapEnum(req.paymentMethod, PAYMENT_METHOD_KEY_MAP))}</span>
                         </div>
                       )}
