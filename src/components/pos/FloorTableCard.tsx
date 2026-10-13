@@ -58,7 +58,7 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
         if (e.key === 'Enter') onClick?.();
       }}
       style={{ containerType: 'inline-size' }}
-      className="relative aspect-[256/198] w-full min-w-[256px] cursor-pointer transition-transform duration-200 hover:-translate-y-1"
+      className="relative aspect-[256/198] w-full cursor-pointer transition-transform duration-200 hover:-translate-y-1"
     >
       {/* Active table requests (waiter / check) */}
       {requests && requests.length > 0 && (

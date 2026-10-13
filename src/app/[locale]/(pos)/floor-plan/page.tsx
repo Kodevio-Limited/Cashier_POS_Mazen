@@ -133,17 +133,6 @@ export default function FloorPlanPage() {
     router.push('/order');
   }
 
-  function clearTable(table: FloorTable) {
-    setTables((prev) =>
-      prev.map((t) =>
-        t.id === table.id
-          ? { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined }
-          : t,
-      ),
-    );
-    closeTableModal();
-  }
-
   // Print Bill / Request Check: raise a check request for this table so it
   // surfaces on the table card + the sidebar request list.
   function requestCheck(table: FloorTable) {
@@ -244,7 +233,7 @@ export default function FloorPlanPage() {
                 key={zone}
                 onClick={() => setZoneFilter(zone)}
                 className={cn(
-                  'flex h-[33px] items-center justify-center rounded-[32.5px] px-4 text-[13px] font-normal leading-[1.4] transition-all',
+                  'flex h-[51px] items-center justify-center rounded-[56px] px-[19px] text-[18px] font-normal leading-[1.4] transition-all',
                   zoneFilter === zone
                     ? 'bg-[#026F4F] text-white shadow-xs'
                     : 'bg-white text-[#686868] hover:text-[#026F4F]',
@@ -274,8 +263,9 @@ export default function FloorPlanPage() {
         </div>
       </div>
 
-      {/* ── Table grid (Figma 1759:802) — auto-fills 256px tracks, grows to fill ── */}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(256px,1fr))] gap-x-[28px] gap-y-9 pb-20 pt-9">
+      {/* ── Table grid (Figma 1759:802) — 4 across on tablet landscape (lg…xl),
+          auto-filling 256px tracks on desktop so it grows to fill. ── */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(256px,1fr))] gap-x-[28px] gap-y-9 pb-20 pt-9 lg:grid-cols-4 xl:grid-cols-[repeat(auto-fill,minmax(256px,1fr))]">
         {filteredTables.map((table) => (
           <FloorTableCard
             key={table.id}
@@ -401,7 +391,7 @@ export default function FloorPlanPage() {
                     <span>{t('modal.printBill')}</span>
                   </button>
                   <button
-                    onClick={() => { clearTable(activeModalTable); }}
+                    onClick={() => router.push('/place-order')}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-medium text-white transition-colors hover:bg-green-700"
                   >
                     <CreditCard size={16} />
