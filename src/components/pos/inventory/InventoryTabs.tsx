@@ -17,20 +17,10 @@ import {
   type CountEntry,
   type WasteEntry,
 } from './types';
-import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction, EditBtn, DeleteBtn } from './InventoryShell';
+import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction } from './InventoryShell';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
-export function StockTab({
-  ingredients,
-  onAdd,
-  onEdit,
-  onDelete,
-}: {
-  ingredients: Ingredient[];
-  onAdd: () => void;
-  onEdit: (ing: Ingredient) => void;
-  onDelete: (id: string) => void;
-}) {
+export function StockTab({ ingredients }: { ingredients: Ingredient[] }) {
   const t = useTranslations('inventory');
   const tTime = useTranslations('common.time');
   const locale = useLocale();
@@ -51,17 +41,15 @@ export function StockTab({
             className="h-12 w-full rounded-xl border border-neutral-200 bg-white ps-12 pe-4 text-base outline-none transition-colors focus:border-emerald-500"
           />
         </div>
-        <PrimaryAction icon={<Plus size={20} />} label={t('addIngredient')} onClick={onAdd} />
       </div>
 
       <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
         <table className="w-full table-fixed">
           <colgroup>
-            <col className="w-[26%]" />
-            <col className="w-[15%]" />
-            <col className="w-[16%]" />
-            <col className="w-[19%]" />
-            <col className="w-[24%]" />
+            <col className="w-1/4" />
+            <col className="w-1/4" />
+            <col className="w-1/4" />
+            <col className="w-1/4" />
           </colgroup>
           <thead>
             <tr className="divide-x divide-[#E0E0E0] border-b border-neutral-100 bg-gray-200">
@@ -69,7 +57,6 @@ export function StockTab({
               <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.currentStock')}</th>
               <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.status')}</th>
               <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.lastUpdated')}</th>
-              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -85,18 +72,12 @@ export function StockTab({
                   </td>
                   <td className="px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5"><StockPill state={state} /></td>
                   <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-xs text-neutral-500 sm:px-4 sm:py-4 sm:text-sm lg:px-6 lg:py-5">{locTimeAgo(ing.updatedAgo, locale, tTime)}</td>
-                  <td className="px-3 py-3 align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-                    <div className="flex items-center justify-center gap-1 sm:gap-2">
-                      <EditBtn onClick={() => onEdit(ing)} label={t('editIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })} />
-                      <DeleteBtn onClick={() => onDelete(ing.id)} label={t('deleteIngredientAria', { name: locStr(ing.name, ing.nameAr, locale) })} />
-                    </div>
-                  </td>
                 </tr>
               );
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-neutral-400">{t('emptyIngredients')}</td>
+                <td colSpan={4} className="px-6 py-12 text-center text-neutral-400">{t('emptyIngredients')}</td>
               </tr>
             )}
           </tbody>

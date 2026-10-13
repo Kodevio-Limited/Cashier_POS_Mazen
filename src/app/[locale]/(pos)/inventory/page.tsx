@@ -60,10 +60,6 @@ export default function InventoryPage() {
     setDrawer(null);
   }
 
-  function handleDeleteIngredient(id: string) {
-    setIngredients((prev) => prev.filter((i) => i.id !== id));
-  }
-
   // ── Purchases ──
   function handleLogPurchase(f: PurchaseForm) {
     const poId = `PO-${886 + purchases.length}`;
@@ -115,12 +111,7 @@ export default function InventoryPage() {
 
       <div className="pb-20">
         {activeTab === 'Stock' && (
-          <StockTab
-            ingredients={ingredients}
-            onAdd={() => setDrawer({ kind: 'add' })}
-            onEdit={(ing) => setDrawer({ kind: 'edit', ingredient: ing })}
-            onDelete={handleDeleteIngredient}
-          />
+          <StockTab ingredients={ingredients} />
         )}
         {activeTab === 'Recipe' && (
           <RecipeTab recipes={recipes} ingredients={ingredients} onEditRecipe={(r) => setDrawer({ kind: 'mapping', recipe: r })} />
