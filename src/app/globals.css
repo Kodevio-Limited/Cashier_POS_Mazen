@@ -35,6 +35,8 @@ html,
 body {
   background: #F2F2F2;
   color: #2D2F33;
+  /* No rubber-band / scroll-chaining animation at the ends of the page. */
+  overscroll-behavior: none;
 }
 
 * {

@@ -58,11 +58,14 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2]">
+    // Fixed app shell: the document itself never scrolls, so the sidebar stays
+    // put and there is no page-level overscroll/bounce. Only the content column
+    // scrolls, and only when its content actually overflows the viewport.
+    <div className="h-screen overflow-hidden bg-[#F2F2F2]">
       <Sidebar />
       {/* Offset equals the fixed sidebar (start-3 + w-[89px] + gap) — logical
           properties so the content shifts correctly in RTL too. */}
-      <div className="ps-[119px] pe-[15px] pt-[26px] pb-3 min-h-screen">
+      <div className="h-screen overflow-y-auto overscroll-none ps-[119px] pe-[15px] pt-[26px] pb-3">
         {children}
       </div>
       <TableRequestToast />
