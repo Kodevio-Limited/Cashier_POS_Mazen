@@ -68,7 +68,7 @@ export function StockTab({ ingredients }: { ingredients: Ingredient[] }) {
                     <div className="truncate text-center text-sm font-medium text-zinc-800 sm:text-base">{locStr(ing.name, ing.nameAr, locale)}</div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium text-zinc-800 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">
-                    {ing.qty} / {ing.capacity} <span className="font-normal text-neutral-400">{locUnit(ing.unit, t)}</span>
+                    {ing.qty} <span className="font-normal text-neutral-400">{locUnit(ing.unit, t)}</span>
                   </td>
                   <td className="px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5"><StockPill state={state} /></td>
                   <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-xs text-neutral-500 sm:px-4 sm:py-4 sm:text-sm lg:px-6 lg:py-5">{locTimeAgo(ing.updatedAgo, locale, tTime)}</td>
