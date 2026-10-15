@@ -213,11 +213,11 @@ export default function PlaceOrderPage() {
               <h1 className="font-medium text-[20px] leading-[1.4] text-[#2D2F33]">{t('orderTitle', { number: orderNumber })}</h1>
               <p className="text-[13px] text-[#686868]">
                 {session
-                  ? [sessionLabel(session, locale, {
+                  ? sessionLabel(session, locale, {
                       takeOut: tSess('takeOut'),
                       delivery: tSess('delivery'),
                       dineIn: tSess('dineIn'),
-                    }), session.tableName].filter(Boolean).join(' • ')
+                    })
                   : t('reviewSubtitle')}
               </p>
             </div>

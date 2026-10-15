@@ -7,7 +7,7 @@ import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, 
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
 import { clearDraft } from '@/lib/order-draft';
-import { newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
+import { loadSession, newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
 import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
@@ -135,6 +135,22 @@ export default function FloorPlanPage() {
 
   // Print Bill / Request Check: raise a check request for this table so it
   // surfaces on the table card + the sidebar request list.
+  // Collect Payment & Clear Table → open the checkout for THIS table. The
+  // session is re-bound to the table first, otherwise /place-order would show
+  // whatever order happened to be selected before (the "random place" bug).
+  // The order number is kept when the session already belongs to this table.
+  function collectPayment(table: FloorTable) {
+    const current = loadSession();
+    const sameTable = current?.type === 'dine-in' && current.tableName === table.name;
+    saveSession({
+      orderNumber: sameTable ? current!.orderNumber : newOrderNumber(),
+      type: 'dine-in',
+      tableName: table.name,
+      tableNameAr: table.nameAr,
+    });
+    router.push('/place-order');
+  }
+
   function requestCheck(table: FloorTable) {
     const alreadyRequested = requestsForTable(table.name).some((r) => r.type === 'Check Requested');
     if (!alreadyRequested) {
@@ -391,7 +407,7 @@ export default function FloorPlanPage() {
                     <span>{t('modal.printBill')}</span>
                   </button>
                   <button
-                    onClick={() => router.push('/place-order')}
+                    onClick={() => collectPayment(activeModalTable)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-medium text-white transition-colors hover:bg-green-700"
                   >
                     <CreditCard size={16} />
