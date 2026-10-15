@@ -79,14 +79,14 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-[22px] pb-20">
+    <div className="flex w-full min-h-[calc(100vh-38px)] flex-col gap-[22px] pb-20">
       {/* Header */}
-      <div className="flex max-w-[990px] flex-col gap-[7px]">
+      <div className="flex w-full flex-col gap-[7px]">
         <h1 className="text-[20px] font-medium leading-[1.4] text-black">{t('heading')}</h1>
         <p className="text-[13px] font-normal leading-[1.4] text-[#989898]">{t('manageSubtitle')}</p>
       </div>
 
-      <div className="flex max-w-[990px] flex-col gap-[22px]">
+      <div className="flex w-full flex-col gap-[22px]">
         {/* Session info */}
         <div className="grid grid-cols-1 gap-[16px] sm:grid-cols-3">
           <StatCard label={t('sessionId')} value="S-2012" />
