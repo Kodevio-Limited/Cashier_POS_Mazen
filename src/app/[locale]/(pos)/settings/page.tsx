@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter, usePathname } from '@/i18n/routing';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,8 @@ const DEFAULTS: Record<SettingKey, boolean> = {
   lowStockNotif: true,
 };
 
-const LANGUAGES = ['English (US)', 'Arabic (SA)', 'Urdu (PK)', 'Hindi (IN)'];
+// Only English + Arabic are supported — the switch below changes the app locale.
+const LANGUAGES: Record<'en' | 'ar', string> = { en: 'English (US)', ar: 'Arabic (SA)' };
 
 // ─── iOS-style toggle (Figma 49x24, bright green on) ─────────────────────────
 function Toggle({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
@@ -71,11 +73,18 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const [values, setValues] = useState<Record<SettingKey, boolean>>(DEFAULTS);
-  const [language, setLanguage] = useState(LANGUAGES[0]);
 
   function toggle(key: SettingKey) {
     setValues((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function switchLanguage(next: 'en' | 'ar') {
+    if (next === locale) return;
+    router.replace(pathname, { locale: next });
   }
 
   return (
@@ -117,15 +126,12 @@ export default function SettingsPage() {
             <div className="relative">
               <select
                 aria-label={t('systemLanguageAria')}
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+                value={locale}
+                onChange={(e) => switchLanguage(e.target.value as 'en' | 'ar')}
                 className="h-[43px] w-full appearance-none rounded-[7px] border border-[#989898] bg-white py-[11px] ps-[17px] pe-[40px] text-[14px] font-normal leading-[1.4] text-[#989898] outline-none focus:border-[#026F4F]"
               >
-                {LANGUAGES.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
+                <option value="en">{LANGUAGES.en}</option>
+                <option value="ar">{LANGUAGES.ar}</option>
               </select>
               <ChevronDown size={20} className="pointer-events-none absolute end-[17px] top-1/2 -translate-y-1/2 text-[#989898]" />
             </div>

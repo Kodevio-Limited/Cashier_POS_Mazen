@@ -2,22 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Bell, CheckCircle2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { getRequests, subscribeRequests, type TableRequest } from '@/lib/table-requests';
-import { mapEnum, locTimeAgo, locTable } from '@/lib/locale-fields';
-
-const REQUEST_TYPE_KEY_MAP: Record<string, string> = {
-  'Waiter Requested': 'waiterRequested',
-  'Check Requested': 'checkRequested',
-};
-
-const PAYMENT_METHOD_KEY_MAP: Record<string, string> = { Card: 'card', Cash: 'cash' };
+import { locTable } from '@/lib/locale-fields';
 
 /** Small transient notification for a newly arrived table request. */
 export function TableRequestToast() {
   const t = useTranslations('tableRequests');
-  const tType = useTranslations('floorPlan.modal');
-  const tTime = useTranslations('common.time');
   const tTable = useTranslations('common.table');
   const locale = useLocale();
   const [toast, setToast] = useState<TableRequest | null>(null);
@@ -42,47 +33,38 @@ export function TableRequestToast() {
 
   if (!toast) return null;
 
-  const isWaiter = toast.type === 'Waiter Requested';
+  // One short line: "Table A05 Waiter" / "Table A05 Check Cash" / "…Check Card".
+  const table = locTable(toast.table, locale, tTable);
+  const line =
+    toast.type === 'Waiter Requested'
+      ? t('toastWaiter', { table })
+      : toast.paymentMethod === 'Card'
+        ? t('toastCheckCard', { table })
+        : toast.paymentMethod === 'Cash'
+          ? t('toastCheckCash', { table })
+          : t('toastCheck', { table });
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        window.dispatchEvent(new Event('pos-open-table-requests'));
-        setToast(null);
-      }}
-      className="fixed left-1/2 top-6 z-[80] flex w-[320px] max-w-[calc(100vw-2rem)] -translate-x-1/2 items-start gap-3 rounded-xl bg-white p-4 text-start shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5 animate-in slide-in-from-top-4 fade-in duration-300"
-    >
-      <span
-        className={
-          isWaiter
-            ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fuchsia-100 text-fuchsia-700'
-            : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700'
-        }
-      >
-        {isWaiter ? <Bell size={20} /> : <CheckCircle2 size={20} />}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-[#2D2F33]">{t('newToast')}</span>
-          <span className="text-[11px] text-[#989898]">{locTimeAgo(toast.timeAgo, locale, tTime)}</span>
-        </span>
-        <span className="mt-0.5 block truncate text-[13px] text-[#686868]">
-          <span className="font-medium text-[#026F4F]">{locTable(toast.table, locale, tTable)}</span> · {tType(mapEnum(toast.type, REQUEST_TYPE_KEY_MAP))}
-        </span>
-      </span>
-      <span
-        role="button"
-        tabIndex={0}
-        aria-label={t('dismissToast')}
-        onClick={(e) => {
-          e.stopPropagation();
+    <div className="fixed left-1/2 top-6 z-[80] -translate-x-1/2">
+      <button
+        type="button"
+        onClick={() => {
+          window.dispatchEvent(new Event('pos-open-table-requests'));
           setToast(null);
         }}
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#989898] transition-colors hover:bg-zinc-100 hover:text-black"
+        className="flex items-center rounded-full bg-white py-2.5 ps-5 pe-8 text-start shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5 animate-in slide-in-from-top-4 fade-in duration-300"
       >
-        <X size={14} />
-      </span>
-    </button>
+        <span className="whitespace-nowrap text-sm font-semibold text-[#2D2F33]">{line}</span>
+      </button>
+      {/* Bigger close target, hanging slightly outside the popup */}
+      <button
+        type="button"
+        aria-label={t('dismissToast')}
+        onClick={() => setToast(null)}
+        className="absolute -end-2.5 -top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#686868] shadow-[0_2px_8px_rgba(0,0,0,0.18)] ring-1 ring-black/10 transition-colors hover:bg-zinc-100 hover:text-black"
+      >
+        <X size={18} strokeWidth={2.2} />
+      </button>
+    </div>
   );
 }

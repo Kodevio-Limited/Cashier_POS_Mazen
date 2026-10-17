@@ -13,11 +13,13 @@ import {
   type Ingredient,
   type Recipe,
   type Purchase,
+  type Expense,
   type Transfer,
   type CountEntry,
   type WasteEntry,
 } from './types';
 import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction } from './InventoryShell';
+import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export function StockTab({ ingredients }: { ingredients: Ingredient[] }) {
@@ -231,7 +233,17 @@ export function RecipeTab({
 }
 
 // ─── PURCHASES ────────────────────────────────────────────────────────────────
-export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase[]; onLogPurchase: () => void }) {
+export function PurchasesTab({
+  purchases,
+  expenses,
+  onLogPurchase,
+  onLogExpense,
+}: {
+  purchases: Purchase[];
+  expenses: Expense[];
+  onLogPurchase: () => void;
+  onLogExpense: () => void;
+}) {
   const t = useTranslations('inventory');
   const locale = useLocale();
   return (
@@ -251,7 +263,10 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
             <ChevronDown size={16} />
           </div>
         </div>
-        <PrimaryAction icon={<Plus size={20} />} label={t('logPurchase')} onClick={onLogPurchase} />
+        <div className="flex flex-wrap items-center gap-3">
+          <PrimaryAction icon={<Plus size={20} />} label={t('logExpense')} onClick={onLogExpense} />
+          <PrimaryAction icon={<Plus size={20} />} label={t('logPurchase')} onClick={onLogPurchase} />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
@@ -298,6 +313,52 @@ export function PurchasesTab({ purchases, onLogPurchase }: { purchases: Purchase
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Expenses (free-text, no stock effect — feeds reports/margins) */}
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <div className="px-4 pt-4">
+          <p className="text-base font-medium leading-6 text-black">{t('expenses')}</p>
+        </div>
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-[30%]" />
+            <col className="w-[45%]" />
+            <col className="w-[25%]" />
+          </colgroup>
+          <thead>
+            <tr className="divide-x divide-[#E0E0E0] bg-gray-200">
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.date')}</th>
+              <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.expenseName')}</th>
+              <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.amount')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-sm text-neutral-400">—</td>
+              </tr>
+            ) : (
+              expenses.map((ex) => (
+                <tr key={ex.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-sm font-medium leading-6 text-zinc-800 sm:text-base">{ex.id}</span>
+                      <span className="text-xs leading-5 text-neutral-400 sm:text-sm">{locStr(ex.date, ex.dateAr, locale)}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <span className="block truncate text-sm font-medium leading-6 text-zinc-800 sm:text-base">{ex.name}</span>
+                    {ex.notes && <span className="block truncate text-xs leading-5 text-neutral-400 sm:text-sm">{ex.notes}</span>}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <span className="text-sm font-semibold leading-6 text-emerald-700 sm:text-base"><bdi dir="ltr">${ex.amount.toFixed(2)}</bdi></span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -573,12 +634,25 @@ export function WasteLogTab({
   const [reason, setReason] = useState(WASTE_REASONS[0]);
   const [responsible, setResponsible] = useState('');
   const [notes, setNotes] = useState('');
+  const [pinOpen, setPinOpen] = useState(false);
   const t = useTranslations('inventory');
   const tReason = useTranslations('inventory.wasteReasons');
   const locale = useLocale();
 
   const selected = ingredients.find((i) => i.id === ingredientId);
   const unit = selected?.unit ?? 'pcs';
+
+  function submitWaste() {
+    if (!ingredientId || !qty) return;
+    setPinOpen(true);
+  }
+
+  function commitWaste() {
+    onSubmit({ ingredientId, qty: parseFloat(qty) || 0, unit, reason, responsible: responsible || t('unassigned'), notes: notes || tReason(wasteReasonKey(reason)) });
+    setQty('');
+    setNotes('');
+    setPinOpen(false);
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[324px_1fr]">
@@ -639,16 +713,14 @@ export function WasteLogTab({
           </Field>
         </div>
         <button
-          onClick={() => {
-            if (!ingredientId || !qty) return;
-            onSubmit({ ingredientId, qty: parseFloat(qty) || 0, unit, reason, responsible: responsible || t('unassigned'), notes: notes || tReason(wasteReasonKey(reason)) });
-            setQty('');
-            setNotes('');
-          }}
+          onClick={submitWaste}
           className="mt-[20px] flex h-[39px] w-full items-center justify-center rounded-[20px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
         >
           {t('submitCount')}
         </button>
+        {pinOpen && (
+          <PinVerifyModal onVerify={commitWaste} onCancel={() => setPinOpen(false)} />
+        )}
       </div>
 
       {/* History */}

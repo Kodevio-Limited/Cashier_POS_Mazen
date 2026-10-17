@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Link, usePathname, useRouter } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -12,7 +12,6 @@ import {
   History,
   Package,
   Settings,
-  LogOut,
   Wallet,
   UtensilsCrossed,
 } from 'lucide-react';
@@ -26,8 +25,6 @@ import {
   type TableRequest,
 } from '@/lib/table-requests';
 import { getOrders, pendingCount, subscribeOrders } from '@/lib/running-orders';
-import { endShift } from '@/lib/shift-session';
-import { LanguageToggle } from './LanguageToggle';
 
 /** Sidebar notification bell — exact Figma glyph (streamline-plump:bell, node 1549:4704). */
 function FigmaBell({ className }: { className?: string }) {
@@ -69,7 +66,6 @@ const NAV_KEYS = [
 export function Sidebar() {
   const t = useTranslations('sidebar');
   const pathname = usePathname();
-  const router = useRouter();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [pendingOrders, setPendingOrders] = useState(0);
   // Query-driven requests drawer: ?modal=requests (all POS pages)
@@ -170,26 +166,9 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Language toggle — same component as Owner, stacked to fit the rail */}
-        <div className="w-full px-1 pb-1">
-          <LanguageToggle className="w-full flex-col gap-1 rounded-xl bg-[#F2F2F2] p-1 [&_button]:w-full" />
-        </div>
-
-        {/* Logout */}
-        <div className="w-full border-t border-[#F2F2F2] py-3 flex justify-center">
-          <button
-            title={t('logout')}
-            onClick={() => {
-              if (confirm(t('logoutConfirm'))) {
-                endShift();
-                router.replace('/shift');
-              }
-            }}
-            className="flex h-[50px] w-[50px] items-center justify-center rounded-full text-[#989898] transition-colors hover:bg-[#FFE6E6] hover:text-[#E56767]"
-          >
-            <LogOut size={24} strokeWidth={1.8} />
-          </button>
-        </div>
+        {/* Spacer — logout + language toggle intentionally removed:
+            cashiers cannot log out mid-session; language changes in Settings only. */}
+        <div className="h-3 w-full" />
       </aside>
 
       {requestsOpen && (

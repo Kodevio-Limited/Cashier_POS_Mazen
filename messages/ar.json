@@ -26,8 +26,8 @@
     },
     "orderTypes": {
       "all": "الكل",
-      "dineIn": "تناول بالمكان",
-      "takeaway": "استلام من المطعم",
+      "dineIn": "داخل المطعم",
+      "takeaway": "تيك اواي",
       "delivery": "توصيل"
     },
     "paymentMethods": {
@@ -77,7 +77,9 @@
     "floatPlaceholder": "50.00$",
     "startShift": "بدء الوردية",
     "errPin": "يرجى إدخال رمز PIN لبدء الوردية.",
-    "errFloat": "يرجى إدخال مبلغ نقدي ابتدائي صحيح."
+    "errFloat": "يرجى إدخال مبلغ نقدي ابتدائي صحيح.",
+    "logout": "تسجيل الخروج",
+    "logoutConfirm": "هل أنت متأكد أنك تريد تسجيل الخروج؟"
   },
   "shiftClose": {
     "title": "إغلاق الوردية",
@@ -135,7 +137,7 @@
     "title": "مخطط الطابق",
     "tablesCount": "({count} طاولة)",
     "noTables": "لا توجد طاولات في هذه المنطقة بعد.",
-    "takeOut": "وجبة جاهزة",
+    "takeOut": "تيك اواي",
     "delivery": "توصيل",
     "zones": {
       "all": "الكل",
@@ -158,11 +160,11 @@
       "checkRequested": "طلب الحساب"
     },
     "transfer": {
-    "title": "تحويل {name}",
-    "subtitle": "اختر الطاولة المستهدفة للطلب النشط {orderId}. الطاولات المشغولة تؤدي إلى دمج.",
-    "selectTarget": "اختر الطاولة المستهدفة",
-    "confirmTransfer": "تأكيد التحويل",
-    "targetOccupied": "مشغولة"
+      "title": "تحويل {name}",
+      "subtitle": "اختر الطاولة المستهدفة للطلب النشط {orderId}. الطاولات المشغولة تؤدي إلى دمج.",
+      "selectTarget": "اختر الطاولة المستهدفة",
+      "confirmTransfer": "تأكيد التحويل",
+      "targetOccupied": "مشغولة"
     },
     "status": {
       "occupied": "مشغولة",
@@ -599,7 +601,9 @@
       "variance": "الفرق",
       "item": "العنصر",
       "qtyWasted": "الكمية الهالكة",
-      "reason": "السبب"
+      "reason": "السبب",
+      "expenseName": "المصروف",
+      "amount": "المبلغ"
     },
     "units": {
       "pcs": "حبة",
@@ -608,7 +612,13 @@
       "g": "جم",
       "ml": "مل",
       "box": "صندوق"
-    }
+    },
+    "logExpense": "تسجيل مصروف",
+    "expenses": "المصروفات",
+    "fieldNameExpense": "اسم المصروف",
+    "phExpenseName": "مثال: الإيجار، الكهرباء، الماء",
+    "fieldNameAmount": "المبلغ",
+    "expenseHint": "المصروفات لا تؤثر على المخزون. تُحتسب في التقارير وهوامش الربح."
   },
   "settings": {
     "title": "الإعدادات",
@@ -622,7 +632,7 @@
     "autoPrintKOT": "طباعة طلبات المطبخ تلقائيًا",
     "testPrint": "طباعة تجريبية",
     "testPrintAlert": "تم إرسال صفحة تجريبية إلى الطابعة!",
- "notifications": "الإشعارات",
+    "notifications": "الإشعارات",
     "orderAlerts": "تنبيهات الطلبات",
     "lowStockNotif": "تنبيهات انخفاض المخزون",
     "inventorySettings": "إعدادات المخزون",
@@ -648,10 +658,16 @@
     "newToast": "طلب جديد من طاولة",
     "dismissToast": "تجاهل الإشعار",
     "waiter": "نادل",
-    "check": "فاتورة"
+    "check": "فاتورة",
+    "unpaidItems": "عناصر غير مدفوعة",
+    "noUnpaidItems": "لا توجد عناصر غير مدفوعة",
+    "toastWaiter": "{table} نادل",
+    "toastCheck": "{table} شيك",
+    "toastCheckCash": "{table} شيك كاش",
+    "toastCheckCard": "{table} شيك كارد"
   },
   "orderSession": {
-    "takeOut": "استلام من المطعم",
+    "takeOut": "تيك اواي",
     "delivery": "توصيل",
     "dineIn": "تناول بالمكان"
   },
@@ -692,5 +708,14 @@
     "newTotal": "الإجمالي المجمع الجديد",
     "cancel": "إلغاء",
     "confirm": "تأكيد الدمج"
+  },
+  "pinVerify": {
+    "title": "تأكيد رمز PIN",
+    "subtitle": "أدخل رمز PIN للمتابعة.",
+    "placeholder": "****",
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "required": "الرجاء إدخال رمز PIN."
   }
 }

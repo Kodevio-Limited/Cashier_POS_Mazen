@@ -111,7 +111,6 @@ export function LogPurchaseDrawer({
   onSave: (f: PurchaseForm) => void;
 }) {
   const t = useTranslations('inventory');
-  const tActions = useTranslations('common.actions');
   const locale = useLocale();
   const [ingredientName, setIngredientName] = useState(ingredients[0]?.name ?? '');
   const [qty, setQty] = useState('');
@@ -159,6 +158,60 @@ export function LogPurchaseDrawer({
         </Field>
         <p className="text-[8.7px] font-normal leading-[1.4] text-[#52D269]">
           {t('purchaseHint')}
+        </p>
+      </FormCard>
+    </Drawer>
+  );
+}
+
+// ─── LOG EXPENSE (free-text business expense — never touches stock) ──────────
+export interface ExpenseForm {
+  name: string;
+  amount: number;
+  date: string;
+  notes: string;
+}
+
+export function LogExpenseDrawer({
+  onBack,
+  onSave,
+}: {
+  onBack: () => void;
+  onSave: (f: ExpenseForm) => void;
+}) {
+  const t = useTranslations('inventory');
+  const locale = useLocale();
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(todayISO());
+  const [notes, setNotes] = useState('');
+
+  return (
+    <Drawer
+      title={t('logExpense')}
+      onBack={onBack}
+      onCancel={onBack}
+      saveLabel={t('logExpense')}
+      onSave={() => {
+        if (!name.trim() || !amount) return;
+        onSave({ name: name.trim(), amount: parseFloat(amount) || 0, date: formatDisplayDate(date, locale), notes: notes.trim() });
+      }}
+    >
+      <FormCard>
+        <Field label={t('fieldNameDate')}>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={pillInputClass} />
+        </Field>
+        <Field label={t('fieldNameExpense')}>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('phExpenseName')} className={pillInputClass} />
+        </Field>
+        <Field label={t('fieldNameAmount')}>
+          <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" placeholder="$0.00" className={pillInputClass} />
+        </Field>
+        <Field label={t('notesOptional')}>
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('addContext')} className={pillInputClass} />
+        </Field>
+        <p className="text-[8.7px] font-normal leading-[1.4] text-[#52D269]">
+          {t('expenseHint')}
         </p>
       </FormCard>
     </Drawer>

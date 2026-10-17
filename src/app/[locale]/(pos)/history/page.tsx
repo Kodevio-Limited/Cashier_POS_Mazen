@@ -8,6 +8,7 @@ import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
@@ -222,6 +223,8 @@ export default function OrderHistoryPage() {
   const [refundReason, setRefundReason] = useState('');
   const [wasteLog, setWasteLog] = useState<Record<number, boolean>>({});
   const [wasteIngredients, setWasteIngredients] = useState<Record<number, string[]>>({});
+  // PIN gate between item selection and the waste-logging step.
+  const [pinOpen, setPinOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState<number | null>(null);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
@@ -277,8 +280,13 @@ export default function OrderHistoryPage() {
     }
   }, []);
 
-  // Step 1 confirm → carry the chosen lines into the Log Waste step.
+  // Step 1 confirm → require PIN before opening the Log Waste step.
   function confirmItems() {
+    setPinOpen(true);
+  }
+
+  // PIN verified → carry the chosen lines into the Log Waste step.
+  function proceedToWaste() {
     const initialLog: Record<number, boolean> = {};
     refundLines.forEach((l) => {
       initialLog[l.idx] = true;
@@ -286,6 +294,7 @@ export default function OrderHistoryPage() {
     setWasteLog(initialLog);
     setWasteIngredients({});
     setCustomOpen(null);
+    setPinOpen(false);
     setShowWasteModal(true);
   }
 
@@ -323,6 +332,7 @@ export default function OrderHistoryPage() {
     setWasteLog({});
     setWasteIngredients({});
     setCustomOpen(null);
+    setPinOpen(false);
     setShowWasteModal(false);
     setRefundOpen(false);
     closeRefundQuery();
@@ -581,7 +591,7 @@ export default function OrderHistoryPage() {
       )}
 
       {/* ── Step 1: pick items to refund / cancel ─────────────────────── */}
-      {refundOpen && refundMode && selectedOrder && !showWasteModal && (
+      {refundOpen && refundMode && selectedOrder && !showWasteModal && !pinOpen && (
         <RefundItemsModal
           mode={refundMode}
           orderNumber={selectedOrder.orderNumber}
@@ -594,6 +604,11 @@ export default function OrderHistoryPage() {
           onClose={closeFlow}
           onConfirm={confirmItems}
         />
+      )}
+
+      {/* ── PIN gate before the waste-logging step ────────────────────── */}
+      {pinOpen && refundMode && selectedOrder && !showWasteModal && (
+        <PinVerifyModal onVerify={proceedToWaste} onCancel={() => setPinOpen(false)} />
       )}
 
       {/* ── Step 2: log waste ─────────────────────────────────────────── */}

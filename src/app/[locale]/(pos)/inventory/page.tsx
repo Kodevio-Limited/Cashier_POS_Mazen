@@ -8,9 +8,11 @@ import {
   INITIAL_TRANSFERS,
   INITIAL_COUNTS,
   INITIAL_WASTE,
+  INITIAL_EXPENSES,
   type Ingredient,
   type InvTab,
   type Recipe,
+  type Expense,
 } from '@/components/pos/inventory/types';
 import { InventoryHeader } from '@/components/pos/inventory/InventoryShell';
 import {
@@ -24,10 +26,12 @@ import {
 import {
   AddIngredientDrawer,
   LogPurchaseDrawer,
+  LogExpenseDrawer,
   RecipeMappingDrawer,
   TransferStockDrawer,
   type IngredientForm,
   type PurchaseForm,
+  type ExpenseForm,
   type TransferForm,
 } from '@/components/pos/inventory/InventoryDrawers';
 import type { CountEntry, Purchase, Transfer, WasteEntry, RecipeMap } from '@/components/pos/inventory/types';
@@ -36,6 +40,7 @@ type DrawerState =
   | { kind: 'add' }
   | { kind: 'edit'; ingredient: Ingredient }
   | { kind: 'purchase' }
+  | { kind: 'expense' }
   | { kind: 'mapping'; recipe: Recipe }
   | { kind: 'transfer' }
   | null;
@@ -45,6 +50,7 @@ export default function InventoryPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL_INGREDIENTS);
   const [recipes, setRecipes] = useState<Recipe[]>(INITIAL_RECIPES);
   const [purchases, setPurchases] = useState<Purchase[]>(INITIAL_PURCHASES);
+  const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
   const [transfers, setTransfers] = useState<Transfer[]>(INITIAL_TRANSFERS);
   const [counts, setCounts] = useState<CountEntry[]>(INITIAL_COUNTS);
   const [waste, setWaste] = useState<WasteEntry[]>(INITIAL_WASTE);
@@ -72,6 +78,12 @@ export default function InventoryPage() {
       const avgPrice = newQty > 0 ? (i.qty * i.avgPrice + f.totalCost) / newQty : i.avgPrice;
       return { ...i, qty: newQty, avgPrice, updatedAgo: 'Just now' };
     }));
+    setDrawer(null);
+  }
+
+  // ── Expenses (free-text, no stock effect) ──
+  function handleLogExpense(f: ExpenseForm) {
+    setExpenses((prev) => [{ id: `EX-${101 + prev.length}`, date: f.date, name: f.name, amount: f.amount, notes: f.notes || undefined }, ...prev]);
     setDrawer(null);
   }
 
@@ -116,7 +128,9 @@ export default function InventoryPage() {
         {activeTab === 'Recipe' && (
           <RecipeTab recipes={recipes} ingredients={ingredients} onEditRecipe={(r) => setDrawer({ kind: 'mapping', recipe: r })} />
         )}
-        {activeTab === 'Purchases' && <PurchasesTab purchases={purchases} onLogPurchase={() => setDrawer({ kind: 'purchase' })} />}
+        {activeTab === 'Purchases' && (
+          <PurchasesTab purchases={purchases} expenses={expenses} onLogPurchase={() => setDrawer({ kind: 'purchase' })} onLogExpense={() => setDrawer({ kind: 'expense' })} />
+        )}
         {activeTab === 'Transfers' && <TransfersTab transfers={transfers} onNewTransfer={() => setDrawer({ kind: 'transfer' })} />}
         {activeTab === 'Physical Count' && <PhysicalCountTab counts={counts} ingredients={ingredients} onSubmit={handleSubmitCount} />}
         {activeTab === 'Waste log' && <WasteLogTab entries={waste} ingredients={ingredients} onSubmit={handleSubmitWaste} />}
@@ -131,6 +145,9 @@ export default function InventoryPage() {
       )}
       {drawer?.kind === 'purchase' && (
         <LogPurchaseDrawer ingredients={ingredients} onBack={() => setDrawer(null)} onSave={handleLogPurchase} />
+      )}
+      {drawer?.kind === 'expense' && (
+        <LogExpenseDrawer onBack={() => setDrawer(null)} onSave={handleLogExpense} />
       )}
       {drawer?.kind === 'mapping' && (
         <RecipeMappingDrawer

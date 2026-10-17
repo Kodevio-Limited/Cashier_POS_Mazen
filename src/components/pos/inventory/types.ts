@@ -70,6 +70,16 @@ export interface Purchase {
   supplierAr?: string;
 }
 
+/** Free-text business expense (rent, utilities…). Never touches stock. */
+export interface Expense {
+  id: string;
+  date: string;
+  dateAr?: string;
+  name: string;
+  amount: number;
+  notes?: string;
+}
+
 export interface Transfer {
   id: string;
   date: string;
@@ -201,6 +211,11 @@ export const INITIAL_PURCHASES: Purchase[] = [
   { id: 'PO-885', date: 'Jul 28, 2026', dateAr: '28 يوليو 2026', ingredient: 'Chicken Breast', ingredientAr: 'صدور دجاج', qty: 80, unit: 'L', avgCost: 2.1, total: 168.0, supplier: 'Metro Meats Co.', supplierAr: 'شركة ميترو ميتس' },
   { id: 'PO-884', date: 'Jul 27, 2026', dateAr: '27 يوليو 2026', ingredient: 'Burger Buns', ingredientAr: 'خبز البرجر', qty: 200, unit: 'pcs', avgCost: 0.4, total: 80.0, supplier: 'General Supplier', supplierAr: 'المورّد العام' },
   { id: 'PO-883', date: 'Jul 27, 2026', dateAr: '27 يوليو 2026', ingredient: 'Cheddar Cheese', ingredientAr: 'جبنة شيدر', qty: 60, unit: 'pcs', avgCost: 0.9, total: 54.0, supplier: 'Dairy Fresh', supplierAr: 'ديري فريش' },
+];
+
+export const INITIAL_EXPENSES: Expense[] = [
+  { id: 'EX-101', date: 'Jul 28, 2026', dateAr: '28 يوليو 2026', name: 'Electricity Bill', amount: 240.0 },
+  { id: 'EX-100', date: 'Jul 27, 2026', dateAr: '27 يوليو 2026', name: 'Rent', amount: 1500.0 },
 ];
 
 export const INITIAL_TRANSFERS: Transfer[] = [

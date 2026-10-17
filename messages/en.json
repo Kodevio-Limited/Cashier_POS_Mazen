@@ -77,7 +77,9 @@
     "floatPlaceholder": "$50.00",
     "startShift": "Start Shift",
     "errPin": "Please enter your PIN code to start the shift.",
-    "errFloat": "Please enter a valid starting cash amount."
+    "errFloat": "Please enter a valid starting cash amount.",
+    "logout": "Log Out",
+    "logoutConfirm": "Are you sure you want to log out?"
   },
   "shiftClose": {
     "title": "Close Shift",
@@ -158,11 +160,11 @@
       "checkRequested": "Check Requested"
     },
     "transfer": {
-    "title": "Transfer {name}",
-    "subtitle": "Select the target table for active order {orderId}. Occupied targets trigger a merge.",
-    "selectTarget": "Select Target Table",
-    "confirmTransfer": "Confirm Transfer",
-    "targetOccupied": "Occupied"
+      "title": "Transfer {name}",
+      "subtitle": "Select the target table for active order {orderId}. Occupied targets trigger a merge.",
+      "selectTarget": "Select Target Table",
+      "confirmTransfer": "Confirm Transfer",
+      "targetOccupied": "Occupied"
     },
     "status": {
       "occupied": "OCCUPIED",
@@ -599,7 +601,9 @@
       "variance": "Variance",
       "item": "Item",
       "qtyWasted": "Qty Wasted",
-      "reason": "Reason"
+      "reason": "Reason",
+      "expenseName": "Expense",
+      "amount": "Amount"
     },
     "units": {
       "pcs": "pcs",
@@ -608,7 +612,13 @@
       "g": "g",
       "ml": "ml",
       "box": "box"
-    }
+    },
+    "logExpense": "Log Expense",
+    "expenses": "Expenses",
+    "fieldNameExpense": "Expense name",
+    "phExpenseName": "e.g. Rent, Electricity, Water",
+    "fieldNameAmount": "Amount",
+    "expenseHint": "Expenses do not affect stock. They are counted in reports and margins."
   },
   "settings": {
     "title": "Settings",
@@ -622,7 +632,7 @@
     "autoPrintKOT": "Auto Print KOT",
     "testPrint": "Test Print",
     "testPrintAlert": "Test page sent to printer!",
- "notifications": "Notifications",
+    "notifications": "Notifications",
     "orderAlerts": "Order Alerts",
     "lowStockNotif": "Low Stock Alerts",
     "inventorySettings": "Inventory Settings",
@@ -648,7 +658,13 @@
     "newToast": "New Table Request",
     "dismissToast": "Dismiss notification",
     "waiter": "Waiter",
-    "check": "Check"
+    "check": "Check",
+    "unpaidItems": "Unpaid items",
+    "noUnpaidItems": "No unpaid items",
+    "toastWaiter": "{table} Waiter",
+    "toastCheck": "{table} Check",
+    "toastCheckCash": "{table} Check Cash",
+    "toastCheckCard": "{table} Check Card"
   },
   "orderSession": {
     "takeOut": "Take Out",
@@ -692,5 +708,14 @@
     "newTotal": "New Combined Total",
     "cancel": "Cancel",
     "confirm": "Confirm Merge"
+  },
+  "pinVerify": {
+    "title": "PIN Verification",
+    "subtitle": "Enter your PIN code to continue.",
+    "placeholder": "****",
+    "confirm": "Verify",
+    "cancel": "Cancel",
+    "close": "Close",
+    "required": "Please enter your PIN code."
   }
 }
