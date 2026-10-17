@@ -47,18 +47,18 @@ export default function ShiftPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] py-8">
-      <div className="relative w-[690px] max-w-full rounded-[30px] bg-white px-[56px] pb-[76px] pt-[40px] shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
-        {/* Log out — top right of the Start Shift card */}
-        <button
-          type="button"
-          title={t('logout')}
-          onClick={handleLogout}
-          className="absolute end-[24px] top-[24px] flex h-[44px] w-[44px] items-center justify-center rounded-full text-[#989898] transition-colors hover:bg-[#FFE6E6] hover:text-[#E56767]"
-        >
-          <LogOut size={22} strokeWidth={1.8} />
-        </button>
+    <div className="relative flex min-h-screen items-center justify-center bg-[#F2F2F2] py-8">
+      {/* Log out — top right of the screen */}
+      <button
+        type="button"
+        title={t('logout')}
+        onClick={handleLogout}
+        className="absolute right-[24px] top-[24px] flex h-[44px] w-[44px] items-center justify-center rounded-full text-[#989898] transition-colors hover:bg-[#FFE6E6] hover:text-[#E56767]"
+      >
+        <LogOut size={22} strokeWidth={1.8} />
+      </button>
 
+      <div className="relative w-[690px] max-w-full rounded-[30px] bg-white px-[56px] pb-[76px] pt-[40px] shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
         {/* Logo */}
         <div className="flex justify-center">
           <div className="relative h-[54px] w-[184px]">
