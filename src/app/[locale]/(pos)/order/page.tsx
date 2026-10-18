@@ -295,13 +295,13 @@ export default function OrderPage() {
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    'flex h-[33px] shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13px] font-medium leading-[1.4] transition-all duration-200',
+                    'flex h-[45px] shrink-0 items-center gap-[8px] rounded-full pe-[16px] ps-[6px] text-[16px] font-medium leading-[1.3] transition-all duration-200',
                     activeCategory === cat
                       ? 'bg-[#026F4F] text-white shadow-xs'
                       : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
                   )}
                 >
-                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[23px] w-[23px] shrink-0 rounded-full object-cover" />
+                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[33px] w-[33px] shrink-0 rounded-full object-cover" />
                   {tCat(cat.toLowerCase())}
                 </button>
               ))}
@@ -310,8 +310,8 @@ export default function OrderPage() {
 
           {/* Search — collapsed to a button, expands over the category row */}
           {searchOpen ? (
-            <div className="flex h-[33px] min-w-0 flex-1 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
-              <Search size={14} className="shrink-0 text-[#989898]" />
+            <div className="flex h-[45px] min-w-0 flex-1 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
+              <Search size={18} className="shrink-0 text-[#989898]" />
               <input
                 autoFocus
                 value={search}
@@ -343,9 +343,9 @@ export default function OrderPage() {
               onClick={() => setSearchOpen(true)}
               aria-label={t('searchPlaceholder')}
               title={t('searchPlaceholder')}
-              className="flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full bg-[#F2F2F2] text-[#686868] transition-colors hover:bg-[#E9E9E9] hover:text-[#026F4F]"
+              className="flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-[#F2F2F2] text-[#686868] transition-colors hover:bg-[#E9E9E9] hover:text-[#026F4F]"
             >
-              <Search size={15} />
+              <Search size={20} />
             </button>
           )}
         </div>
