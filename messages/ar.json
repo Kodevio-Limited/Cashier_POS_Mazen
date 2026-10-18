@@ -181,7 +181,7 @@
   },
   "order": {
     "title": "القائمة",
-    "itemCount": "({count} عناصر)",
+    "itemCount": "({count} عنصر)",
     "searchPlaceholder": "البحث في القائمة...",
     "noItemsFound": "لم يُعثر على عناصر.",
     "currentOrder": "الطلب الحالي",
