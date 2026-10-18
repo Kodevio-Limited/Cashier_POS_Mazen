@@ -83,9 +83,9 @@ export default function RunningOrderPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-38px)] gap-[15px] bg-[#F2F2F2] relative">
+    <div className="flex h-[calc(100vh-12px)] -mt-[26px] gap-[15px] bg-[#F2F2F2] relative">
       {/* ── Left: Running Orders workspace ─────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col pt-[26px]">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-[7px]">
@@ -265,7 +265,7 @@ export default function RunningOrderPage() {
 
       {/* ── Right panel: order detail (overlay drawer below lg) ─────── */}
       {selectedOrder && (
-        <div className="flex w-[343px] max-w-[calc(100vw-140px)] shrink-0 flex-col overflow-hidden rounded-lg bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] max-lg:fixed max-lg:bottom-3 max-lg:end-3 max-lg:top-3 max-lg:z-40 max-lg:shadow-2xl">
+        <div className="flex h-full w-[343px] max-w-[calc(100vw-140px)] shrink-0 flex-col overflow-hidden bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] max-lg:fixed max-lg:bottom-3 max-lg:end-3 max-lg:top-3 max-lg:z-40 max-lg:rounded-lg max-lg:shadow-2xl lg:rounded-none">
           {/* Header */}
           <div className="flex items-center justify-between px-3 pt-3">
             <button

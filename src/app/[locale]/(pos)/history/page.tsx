@@ -341,9 +341,9 @@ export default function OrderHistoryPage() {
   return (
     // Fixed (not min) viewport height: the detail panel must hug the viewport so
     // Refund / Print Receipt stay pinned at the bottom without page scrolling.
-    <div className="relative flex h-[calc(100vh-38px)] gap-[15px] bg-[#F2F2F2]">
+    <div className="relative flex h-[calc(100vh-12px)] -mt-[26px] gap-[15px] bg-[#F2F2F2]">
       {/* ── Left: history workspace ──────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col pt-[26px]">
         {/* Header */}
         <div className="flex flex-col gap-[7px]">
           <h1 className="text-[19px] font-medium leading-[1.4] text-black">{t('title')}</h1>
@@ -472,7 +472,7 @@ export default function OrderHistoryPage() {
 
       {/* ── Right panel: order detail (overlay drawer below lg) ──────── */}
       {selectedOrder && (
-        <div className="flex w-[343px] max-w-[calc(100vw-140px)] shrink-0 flex-col overflow-hidden rounded-lg bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] max-lg:fixed max-lg:bottom-3 max-lg:end-3 max-lg:top-3 max-lg:z-40 max-lg:shadow-2xl">
+        <div className="flex h-full w-[343px] max-w-[calc(100vw-140px)] shrink-0 flex-col overflow-hidden bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] max-lg:fixed max-lg:bottom-3 max-lg:end-3 max-lg:top-3 max-lg:z-40 max-lg:rounded-lg max-lg:shadow-2xl lg:rounded-none">
           {/* Header */}
           <div className="flex items-center justify-between px-3 pt-3">
             <button

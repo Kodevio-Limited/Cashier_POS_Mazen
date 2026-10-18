@@ -275,9 +275,9 @@ export default function OrderPage() {
   const itemCount = orderItems.reduce((s, o) => s + o.qty, 0);
 
   return (
-    <div className="flex h-[calc(100vh-38px)] gap-[15px] transition-all duration-300">
+    <div className="flex h-[calc(100vh-12px)] -mt-[26px] gap-[15px] transition-all duration-300">
       {/* ── Center: Menu Section (sits directly on the page background, Figma 617:4597) ── */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col pt-[26px]">
         {/* Title */}
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-[20px] font-medium leading-[1.4] text-[#2D2F33]">{t('title')}</span>
@@ -373,7 +373,7 @@ export default function OrderPage() {
       </div>
 
       {/* ── Right Panel: Current Order (Side Modal - Always visible) ── */}
-      <div className={`w-full lg:w-[343px] h-full shrink-0 flex flex-col justify-between bg-white rounded-xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-lg:absolute max-lg:inset-y-3 max-lg:end-3 max-lg:z-40 max-lg:w-[calc(100%-104px-24px)] ${panelOpen ? '' : 'max-lg:hidden'}`}>
+      <div className={`w-full lg:w-[343px] h-full shrink-0 flex flex-col justify-between bg-white overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.08)] relative max-lg:absolute max-lg:inset-y-3 max-lg:end-3 max-lg:z-40 max-lg:w-[calc(100%-104px-24px)] max-lg:rounded-xl lg:rounded-none ${panelOpen ? '' : 'max-lg:hidden'}`}>
           {/* Header */}
           <div className="px-3 pt-3 pb-2.5 border-b border-[#E9E9E9]">
             <div className="flex justify-between items-center gap-2">
