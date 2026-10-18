@@ -135,6 +135,8 @@ export function locTimeAgo(
   if (locale !== 'ar') return value;
   const m = value.match(/^(\d+)\s*min(s)?\s*ago$/i);
   if (m) return t('minsAgo', { count: Number(m[1]) });
+  const seated = value.match(/^(\d+)\s*mins?$/i);
+  if (seated) return t('mins', { count: Number(seated[1]) });
   if (/^just now$/i.test(value)) return t('justNow');
   return value;
 }

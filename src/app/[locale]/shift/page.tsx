@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { ChevronDown, LogOut } from 'lucide-react';
 import { getActiveShift, startShift } from '@/lib/shift-session';
+import { clearAuthSession, getAuthSession } from '@/lib/auth-session';
 
 const CASHIERS = ['Alex m', 'Sarah J', 'Mike T'];
 
@@ -17,13 +18,19 @@ export default function ShiftPage() {
   const [floatInput, setFloatInput] = useState('$50.00');
   const [formError, setFormError] = useState('');
 
+  // Auth gate: not signed in → Login. Signed in with a running shift → floor plan.
   useEffect(() => {
+    if (!getAuthSession()) {
+      router.replace('/login');
+      return;
+    }
     if (getActiveShift()) router.replace('/floor-plan');
   }, [router]);
 
   function handleLogout() {
     if (confirm(t('logoutConfirm'))) {
-      router.replace('/shift');
+      clearAuthSession();
+      router.replace('/login');
     }
   }
 

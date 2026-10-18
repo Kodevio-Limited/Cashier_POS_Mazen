@@ -33,6 +33,8 @@ export interface DraftItem {
    */
   lineId: string;
   name: string;
+  /** Arabic twin of `name` (mock data / catalog), picked by locale at render. */
+  nameAr?: string;
   price: number;
   qty: number;
   emoji?: string;

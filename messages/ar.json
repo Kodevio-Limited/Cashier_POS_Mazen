@@ -36,7 +36,8 @@
     },
     "time": {
       "justNow": "الآن",
-      "minsAgo": "قبل {count} دقيقة"
+      "minsAgo": "قبل {count} دقيقة",
+      "mins": "{count} دقيقة"
     },
     "qty": "الكمية: {count}",
     "itemsCount": "{count, plural, one {صنف واحد} two {صنفان} few {# أصناف} many {# صنفًا} other {# صنف}}",
@@ -717,5 +718,16 @@
     "cancel": "إلغاء",
     "close": "إغلاق",
     "required": "الرجاء إدخال رمز PIN."
+  },
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "subtitle": "ادخل إلى حسابك بالمعلومات الصحيحة",
+      "emailLabel": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني...",
+      "passwordLabel": "كلمة المرور",
+      "passwordPlaceholder": "********",
+      "signIn": "تسجيل الدخول"
+    }
   }
 }

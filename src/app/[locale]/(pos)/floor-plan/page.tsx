@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
-import { clearDraft } from '@/lib/order-draft';
+import { clearDraft, lineTotal, newLineId, saveDraft, type DraftItem } from '@/lib/order-draft';
+import { addClearedTable, getClearedTables, removeClearedTable } from '@/lib/cleared-tables';
 import { loadSession, newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
 import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
@@ -28,6 +29,8 @@ interface FloorTable {
   itemsCount?: number;
   orderId?: string;
   orderTotal?: number;
+  /** The table's running check — fed to the checkout by Collect Payment. */
+  orderItems?: DraftItem[];
   timeSeated?: string;
   reservedTime?: string;
   reservedName?: string;
@@ -35,19 +38,56 @@ interface FloorTable {
   reservedNameAr?: string;
 }
 
+type SeedLine = Omit<DraftItem, 'lineId'>;
+
+/** Build an occupied table whose card numbers always match its item list. */
+function occupied(
+  base: Omit<FloorTable, 'status' | 'orderId' | 'orderItems' | 'itemsCount' | 'orderTotal'>,
+  orderId: string,
+  lines: SeedLine[],
+): FloorTable {
+  const orderItems = lines.map((l, idx) => ({ ...l, lineId: `seed-${base.id}-${idx}` }));
+  return {
+    ...base,
+    status: 'occupied',
+    orderId,
+    orderItems,
+    itemsCount: orderItems.reduce((s, i) => s + i.qty, 0),
+    orderTotal: orderItems.reduce((s, i) => s + lineTotal(i), 0),
+  };
+}
+
 const INITIAL_TABLES: FloorTable[] = [
   { id: 't1', name: 'Table A01', nameAr: 'طاولة A01', capacity: 2, status: 'available', zone: 'Indoor' },
-  { id: 't2', name: 'Table A02', nameAr: 'طاولة A02', capacity: 4, status: 'occupied', zone: 'Indoor', guestsCount: 3, itemsCount: 4, orderId: '#044', orderTotal: 15.99, timeSeated: '35 mins' },
+  occupied({ id: 't2', name: 'Table A02', nameAr: 'طاولة A02', capacity: 4, zone: 'Indoor', guestsCount: 3, timeSeated: '35 mins' }, '#044', [
+    { id: 'm1', name: 'Classic Burger', nameAr: 'برجر كلاسيك', price: 15.99, qty: 1, emoji: '🍔' },
+    { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', price: 4.99, qty: 1, emoji: '🍟' },
+    { id: 'm11', name: 'Coca-Cola', nameAr: 'كوكا كولا', price: 2.99, qty: 2, emoji: '🥤' },
+  ]),
   { id: 't3', name: 'Table A03', nameAr: 'طاولة A03', capacity: 4, status: 'available', zone: 'Indoor' },
   { id: 't4', name: 'Table A04', nameAr: 'طاولة A04', capacity: 2, status: 'reserved', zone: 'Indoor', reservedTime: '7:30 PM', reservedName: 'John Smith', reservedNameAr: 'جون سميث' },
-  { id: 't5', name: 'Table A05', nameAr: 'طاولة A05', capacity: 6, status: 'occupied', zone: 'Indoor', guestsCount: 4, itemsCount: 2, orderId: '#045', orderTotal: 42.5, timeSeated: '20 mins' },
+  occupied({ id: 't5', name: 'Table A05', nameAr: 'طاولة A05', capacity: 6, zone: 'Indoor', guestsCount: 4, timeSeated: '20 mins' }, '#045', [
+    { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', price: 18.99, qty: 1, emoji: '🍜', options: ['Medium'] },
+    { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', price: 19.99, qty: 1, emoji: '🍔' },
+  ]),
   { id: 't6', name: 'Table A06', nameAr: 'طاولة A06', capacity: 4, status: 'available', zone: 'Indoor' },
-  { id: 't7', name: 'Table A07', nameAr: 'طاولة A07', capacity: 2, status: 'occupied', zone: 'Indoor', guestsCount: 2, itemsCount: 3, orderId: '#048', orderTotal: 28.75, timeSeated: '50 mins' },
+  occupied({ id: 't7', name: 'Table A07', nameAr: 'طاولة A07', capacity: 2, zone: 'Indoor', guestsCount: 2, timeSeated: '50 mins' }, '#048', [
+    { id: 'm4', name: 'Miso Ramen', nameAr: 'رامن ميسو', price: 16.99, qty: 1, emoji: '🍜', options: ['Medium'] },
+    { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', price: 4.99, qty: 1, emoji: '🍟' },
+    { id: 'm10', name: 'Onion Rings', nameAr: 'حلقات البصل', price: 5.49, qty: 1, emoji: '🧅' },
+  ]),
   { id: 't8', name: 'Table A08', nameAr: 'طاولة A08', capacity: 8, status: 'available', zone: 'Indoor' },
   { id: 't9', name: 'Table B01', nameAr: 'طاولة B01', capacity: 4, status: 'available', zone: 'Outdoor' },
-  { id: 't10', name: 'Table B02', nameAr: 'طاولة B02', capacity: 4, status: 'occupied', zone: 'Outdoor', guestsCount: 4, itemsCount: 5, orderId: '#051', orderTotal: 82.1, timeSeated: '15 mins' },
+  occupied({ id: 't10', name: 'Table B02', nameAr: 'طاولة B02', capacity: 4, zone: 'Outdoor', guestsCount: 4, timeSeated: '15 mins' }, '#051', [
+    { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', price: 19.99, qty: 2, emoji: '🍔' },
+    { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', price: 18.99, qty: 2, emoji: '🍜', options: ['Medium'] },
+    { id: 'm9', name: 'French Fries', nameAr: 'بطاطس مقلية', price: 4.99, qty: 1, emoji: '🍟' },
+  ]),
   { id: 't11', name: 'Table B03', nameAr: 'طاولة B03', capacity: 6, status: 'reserved', zone: 'Outdoor', reservedTime: '8:00 PM', reservedName: 'Sarah Lee', reservedNameAr: 'سارة لي' },
-  { id: 't12', name: 'Table C01', nameAr: 'طاولة C01', capacity: 4, status: 'occupied', zone: 'Patio', guestsCount: 3, itemsCount: 2, orderId: '#053', orderTotal: 33.98, timeSeated: '10 mins' },
+  occupied({ id: 't12', name: 'Table C01', nameAr: 'طاولة C01', capacity: 4, zone: 'Patio', guestsCount: 3, timeSeated: '10 mins' }, '#053', [
+    { id: 'm2', name: 'Shoyu Ramen', nameAr: 'رامن شويو', price: 15.99, qty: 1, emoji: '🍜', options: ['Medium'] },
+    { id: 'm5', name: 'Cheese Burger', nameAr: 'برجر بالجبن', price: 17.99, qty: 1, emoji: '🍔' },
+  ]),
   { id: 't13', name: 'Table C02', nameAr: 'طاولة C02', capacity: 2, status: 'available', zone: 'Patio' },
 ];
 
@@ -99,6 +139,19 @@ export default function FloorPlanPage() {
     return subscribeRequests(() => setRequests(getRequests()));
   }, []);
 
+  // Tables whose check was collected (paid) stay available across mounts.
+  useEffect(() => {
+    const cleared = getClearedTables();
+    if (cleared.length === 0) return;
+    setTables((prev) =>
+      prev.map((t) =>
+        t.status === 'occupied' && cleared.includes(t.name)
+          ? { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, orderItems: undefined, timeSeated: undefined }
+          : t,
+      ),
+    );
+  }, []);
+
   const requestsForTable = (name: string) => requests.filter((r) => r.table === name);
 
   const filteredTables = useMemo(
@@ -107,10 +160,11 @@ export default function FloorPlanPage() {
   );
 
   function seatTable(table: FloorTable) {
+    removeClearedTable(table.name);
     setTables((prev) =>
       prev.map((t) =>
         t.id === table.id
-          ? { ...t, status: 'occupied' as FloorTableStatus, guestsCount: 2, itemsCount: 0, orderId: '#NEW', orderTotal: 0, timeSeated: 'Just now', reservedName: undefined, reservedTime: undefined }
+          ? { ...t, status: 'occupied' as FloorTableStatus, guestsCount: 2, itemsCount: 0, orderId: '#NEW', orderTotal: 0, orderItems: undefined, timeSeated: 'Just now', reservedName: undefined, reservedTime: undefined }
           : t,
       ),
     );
@@ -135,19 +189,23 @@ export default function FloorPlanPage() {
 
   // Print Bill / Request Check: raise a check request for this table so it
   // surfaces on the table card + the sidebar request list.
-  // Collect Payment & Clear Table → open the checkout for THIS table. The
-  // session is re-bound to the table first, otherwise /place-order would show
-  // whatever order happened to be selected before (the "random place" bug).
-  // The order number is kept when the session already belongs to this table.
+  // Collect Payment & Clear Table → open the checkout for THIS table's running
+  // check. The cart is seeded with the table's own items and the session is
+  // flagged collectOnly, so place-order disables "Keep Check Running" (the
+  // check is already open — the cashier is only collecting payment). The order
+  // number keeps the table's own id (#044) so the header matches the floor card.
   function collectPayment(table: FloorTable) {
     const current = loadSession();
     const sameTable = current?.type === 'dine-in' && current.tableName === table.name;
+    saveDraft((table.orderItems ?? []).map((i) => ({ ...i, lineId: newLineId() })));
     saveSession({
-      orderNumber: sameTable ? current!.orderNumber : newOrderNumber(),
+      orderNumber: sameTable ? current!.orderNumber : (table.orderId?.replace('#', '') ?? newOrderNumber()),
       type: 'dine-in',
       tableName: table.name,
       tableNameAr: table.nameAr,
+      collectOnly: true,
     });
+    closeTableModal();
     router.push('/place-order');
   }
 
@@ -178,7 +236,7 @@ export default function FloorPlanPage() {
     setTables((prev) =>
       prev.map((t) => {
         if (t.id === source.id) {
-          return { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined };
+          return { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, orderItems: undefined, timeSeated: undefined };
         }
         if (t.id === targetTransferTable) {
           return {
@@ -188,6 +246,7 @@ export default function FloorPlanPage() {
             itemsCount: source.itemsCount,
             orderId: source.orderId,
             orderTotal: source.orderTotal,
+            orderItems: source.orderItems,
             timeSeated: source.timeSeated,
             reservedName: undefined,
             reservedTime: undefined,
@@ -207,7 +266,7 @@ export default function FloorPlanPage() {
     setTables((prev) =>
       prev.map((t) => {
         if (t.id === source.id) {
-          return { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, timeSeated: undefined };
+          return { ...t, status: 'available' as FloorTableStatus, guestsCount: undefined, itemsCount: undefined, orderId: undefined, orderTotal: undefined, orderItems: undefined, timeSeated: undefined };
         }
         if (t.id === targetTransferTable) {
           return {
@@ -216,6 +275,7 @@ export default function FloorPlanPage() {
             guestsCount: (t.guestsCount ?? 0) + (source.guestsCount ?? 0),
             itemsCount: (t.itemsCount ?? 0) + (source.itemsCount ?? 0),
             orderTotal: (t.orderTotal ?? 0) + (source.orderTotal ?? 0),
+            orderItems: [...(t.orderItems ?? []), ...(source.orderItems ?? [])],
             orderId: t.orderId ?? source.orderId,
             timeSeated: t.timeSeated ?? source.timeSeated,
             reservedName: undefined,

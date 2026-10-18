@@ -12,6 +12,13 @@ export interface OrderSession {
   tableName?: string;
   /** Arabic twin of `tableName` (mock data), set when the locale is ar. */
   tableNameAr?: string;
+  /**
+   * Set when the checkout was opened via "Collect Payment & Clear Table" on an
+   * occupied floor-plan table: the cart is THAT table's running check, so
+   * "Keep Check Running" is disabled (the check is already running and no new
+   * items are being added).
+   */
+  collectOnly?: boolean;
 }
 
 const KEY = 'pos-order-session';
@@ -49,6 +56,7 @@ export function loadSession(): OrderSession | null {
       type: s.type,
       tableName: s.tableName,
       tableNameAr: typeof s.tableNameAr === 'string' ? s.tableNameAr : undefined,
+      collectOnly: s.collectOnly === true ? true : undefined,
     };
   } catch {
     return null;

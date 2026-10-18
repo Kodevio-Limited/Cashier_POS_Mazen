@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { TableRequestToast } from '@/components/pos/TableRequestToast';
 import { addRequest } from '@/lib/table-requests';
 import { getActiveShift, subscribeShift } from '@/lib/shift-session';
+import { getAuthSession, subscribeAuthSession } from '@/lib/auth-session';
 
 // TEMP: stand-in for the real customer/QR backend. Surfaces an occasional mock
 // table request so the cashier notification + sidebar badge can be exercised;
@@ -14,14 +15,26 @@ const SIMULATE_TABLE_REQUESTS = true;
 
 export default function PosLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  // Auth gate: every POS route requires a signed-in cashier. Checked first —
+  // without a session the app redirects to the Login screen.
+  const [authed, setAuthed] = useState<boolean | null>(null);
   // Shift gate: every POS route requires an active shift. Without one, the app
   // cannot be opened — everything redirects to the Start Shift screen.
   const [hasShift, setHasShift] = useState<boolean | null>(null);
 
   useEffect(() => {
+    setAuthed(Boolean(getAuthSession()));
+    return subscribeAuthSession(() => setAuthed(Boolean(getAuthSession())));
+  }, []);
+
+  useEffect(() => {
     setHasShift(Boolean(getActiveShift()));
     return subscribeShift(() => setHasShift(Boolean(getActiveShift())));
   }, []);
+
+  useEffect(() => {
+    if (authed === false) router.replace('/login');
+  }, [authed, router]);
 
   useEffect(() => {
     if (hasShift === false) router.replace('/shift');
@@ -48,12 +61,12 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Nothing renders (not even the sidebar) until the shift check resolves.
-  if (hasShift === null) {
+  // Nothing renders (not even the sidebar) until the auth + shift checks resolve.
+  if (authed === null || hasShift === null) {
     return <div className="min-h-screen bg-[#F2F2F2]" />;
   }
 
-  if (!hasShift) {
+  if (!authed || !hasShift) {
     return <div className="min-h-screen bg-[#F2F2F2]" />;
   }
 

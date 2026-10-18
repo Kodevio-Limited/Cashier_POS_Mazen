@@ -36,7 +36,8 @@
     },
     "time": {
       "justNow": "Just now",
-      "minsAgo": "{count} min ago"
+      "minsAgo": "{count} min ago",
+      "mins": "{count} mins"
     },
     "qty": "Qty: {count}",
     "itemsCount": "{count, plural, one {# item} other {# items}}",
@@ -717,5 +718,16 @@
     "cancel": "Cancel",
     "close": "Close",
     "required": "Please enter your PIN code."
+  },
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Access your account with correct information",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email...",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "********",
+      "signIn": "Sign In"
+    }
   }
 }

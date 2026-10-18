@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, clearDraft, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
+import { addClearedTable } from '@/lib/cleared-tables';
 import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/lib/order-session';
 import {
   loadDeliveryDetails,
@@ -79,6 +80,16 @@ export default function PlaceOrderPage() {
   const missingSession = sessionReady && !session;
 
   const orderNumber = session?.orderNumber ?? 'ORD-1025';
+
+  // Collect Payment & Clear Table (floor plan): the cart is this table's
+  // running check — the check stays open, so "Keep Check Running" is disabled
+  // and the back-arrow returns to the floor plan instead of the menu.
+  const collectOnly = session?.collectOnly === true;
+
+  // Payment finished — free the table on the floor plan (both success actions).
+  function clearCollectedTable() {
+    if (collectOnly && session?.tableName) addClearedTable(session.tableName);
+  }
 
   // Customer details
   // Demo customer defaults are localized at first render via messages
@@ -204,7 +215,7 @@ export default function PlaceOrderPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
-              href="/order"
+              href={collectOnly ? '/floor-plan' : '/order'}
               className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-white text-[#2D2F33] shadow-xs transition-colors hover:bg-[#F2F2F2]"
             >
               <ArrowLeft size={18} className="rtl:scale-x-[-1]" />
@@ -651,12 +662,18 @@ export default function PlaceOrderPage() {
 
         {/* Bottom Actions */}
         <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2.5">
-          {/* Keep Check Running */}
+          {/* Keep Check Running — disabled when collecting an already-running check */}
           <button
             onClick={() => router.push('/running-order')}
-            className="w-full h-[46px] rounded-full border border-[#B9B9B9] bg-[#E9E9E9] hover:bg-[#E0E0E0] text-[#2D2F33] text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+            disabled={collectOnly}
+            className={cn(
+              'w-full h-[46px] rounded-full border border-[#B9B9B9] text-[#2D2F33] text-sm font-medium flex items-center justify-center gap-2 transition-colors',
+              collectOnly
+                ? 'cursor-not-allowed bg-[#F2F2F2] text-[#989898] opacity-70'
+                : 'bg-[#E9E9E9] hover:bg-[#E0E0E0]',
+            )}
           >
-            <PauseCircle size={18} className="text-[#686868]" />
+            <PauseCircle size={18} className={collectOnly ? 'text-[#989898]' : 'text-[#686868]'} />
             <span>{t('keepRunning')}</span>
           </button>
 
@@ -766,6 +783,7 @@ export default function PlaceOrderPage() {
                 onClick={() => {
                   window.print();
                   closeSuccess();
+                  clearCollectedTable();
                   clearDraft();
                   clearSession();
                   setItems([]);
@@ -779,6 +797,7 @@ export default function PlaceOrderPage() {
               <button
                 onClick={() => {
                   closeSuccess();
+                  clearCollectedTable();
                   clearDraft();
                   clearSession();
                   setItems([]);
