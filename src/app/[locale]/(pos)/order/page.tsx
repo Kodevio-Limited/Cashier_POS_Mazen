@@ -287,21 +287,21 @@ export default function OrderPage() {
         </div>
 
         {/* Category pills (left) + search (right) */}
-        <div className="mt-[13px] flex items-center gap-x-[14px] gap-y-2">
+        <div className="mt-[13px] flex items-center gap-x-[10px] gap-y-2 xl:gap-x-[14px]">
           {!searchOpen && (
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[10px] lg:gap-[14px]">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[8px] lg:flex-nowrap lg:gap-[5px] xl:gap-[14px]">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    'flex h-[36px] shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13.5px] font-medium leading-[1.3] transition-all duration-200 lg:h-[45px] lg:gap-[8px] lg:pe-[16px] lg:ps-[6px] lg:text-[16px]',
+                    'flex h-[36px] shrink-0 items-center justify-center gap-[4px] rounded-full pe-[12px] ps-[4px] text-[13.5px] font-medium leading-[1.3] transition-all duration-200 lg:h-[36px] lg:gap-[3px] lg:pe-[10px] lg:ps-[3px] lg:text-[12.5px] xl:h-[45px] xl:gap-[8px] xl:pe-[16px] xl:ps-[6px] xl:text-[16px]',
                     activeCategory === cat
                       ? 'bg-[#026F4F] text-white shadow-xs'
                       : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
                   )}
                 >
-                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[26px] w-[26px] shrink-0 rounded-full object-cover lg:h-[33px] lg:w-[33px]" />
+                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[24px] w-[24px] shrink-0 rounded-full object-cover lg:h-[20px] lg:w-[20px] xl:h-[33px] xl:w-[33px]" />
                   {tCat(cat.toLowerCase())}
                 </button>
               ))}
@@ -310,8 +310,8 @@ export default function OrderPage() {
 
           {/* Search — collapsed to a button, expands over the category row */}
           {searchOpen ? (
-            <div className="flex h-[36px] min-w-0 flex-1 items-center gap-2 rounded-full bg-[#F2F2F2] px-4 lg:h-[45px]">
-              <Search size={16} className="shrink-0 text-[#989898] lg:size-[18]" />
+            <div className="flex h-[38px] min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-4 outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] xl:h-[45px]">
+              <Search size={17} className="shrink-0 text-[#989898] xl:size-[18]" />
               <input
                 autoFocus
                 value={search}
@@ -343,9 +343,9 @@ export default function OrderPage() {
               onClick={() => setSearchOpen(true)}
               aria-label={t('searchPlaceholder')}
               title={t('searchPlaceholder')}
-              className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-[#F2F2F2] text-[#686868] transition-colors hover:bg-[#E9E9E9] hover:text-[#026F4F] lg:h-[45px] lg:w-[45px]"
+              className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] transition-colors hover:text-[#026F4F] hover:outline-[#026F4F] xl:h-[45px] xl:w-[45px]"
             >
-              <Search size={17} className="lg:size-[20]" />
+              <Search size={15} className="xl:size-[20]" />
             </button>
           )}
         </div>
