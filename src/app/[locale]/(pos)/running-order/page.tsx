@@ -101,7 +101,7 @@ export default function RunningOrderPage() {
               key={tab}
               onClick={() => setActiveTypeTab(tab)}
               className={cn(
-                'rounded-[33.8px] px-[12px] py-[5px] text-[13.5px] font-normal leading-[1.4] transition-all',
+                'flex h-[45px] items-center rounded-full px-[16px] text-[16px] font-medium leading-[1.3] transition-all',
                 activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
               )}
             >
