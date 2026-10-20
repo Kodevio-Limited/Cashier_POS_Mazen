@@ -574,30 +574,45 @@ export function PhysicalCountTab({
         </div>
       </div>
 
-      {/* Recent counts */}
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-        <p className="px-[22px] pt-[14px] text-[16px] font-medium leading-[1.4] text-black">{t('recentCounts')}</p>
+      {/* Recent counts — same table styling as Stock / Purchases / Transfers */}
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <p className="px-4 pt-4 text-base font-medium leading-6 text-black">{t('recentCounts')}</p>
         <div className="mt-[14px] overflow-x-auto pb-[18px]">
-          <table className="w-full min-w-[620px] table-fixed border-collapse">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[22%]" />
+              <col className="w-[30%]" />
+              <col className="w-[16%]" />
+              <col className="w-[16%]" />
+              <col className="w-[16%]" />
+            </colgroup>
             <thead>
-              <tr className="h-[40px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[130px] ps-[22px] pe-2 text-start font-medium">{t('col.date')}</th>
-                <th className="w-[190px] px-2 text-center font-medium">{t('col.ingredient')}</th>
-                <th className="w-[90px] px-2 text-center font-medium">{t('col.theo')}</th>
-                <th className="w-[90px] px-2 text-center font-medium">{t('col.phys')}</th>
-                <th className="w-[120px] py-2 ps-2 pe-[22px] text-center font-medium">{t('col.variance')}</th>
+              <tr className="divide-x divide-[#E0E0E0] border-b border-neutral-100 bg-gray-200">
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.date')}</th>
+                <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.ingredient')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.theo')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.phys')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.variance')}</th>
               </tr>
             </thead>
             <tbody>
-              {counts.map((c) => (
-                <tr key={c.id} className="border-b border-[#F7F7F7] last:border-0">
-                  <td className="py-[12px] ps-[22px] pe-2 text-start align-middle text-[10.7px] font-medium text-black">{locStr(c.date, c.dateAr, locale)}</td>
-                  <td className="truncate px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{locStr(c.ingredient, c.ingredientAr, locale)}</td>
-                  <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.theo}</td>
-                  <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{c.phys}</td>
-                  <td className="py-[12px] ps-2 pe-[22px] text-center align-middle text-[10.7px] font-medium text-[#F23232]">{c.phys - c.theo}</td>
-                </tr>
-              ))}
+              {counts.map((c) => {
+                const variance = c.phys - c.theo;
+                return (
+                  <tr key={c.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
+                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{locStr(c.date, c.dateAr, locale)}</td>
+                    <td className="max-w-[150px] truncate px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:max-w-[200px] sm:px-4 sm:py-4 sm:text-base lg:max-w-none lg:px-6 lg:py-5">{locStr(c.ingredient, c.ingredientAr, locale)}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.theo}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.phys}</td>
+                    <td className={cn(
+                      'whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5',
+                      variance < 0 ? 'text-red-500' : variance > 0 ? 'text-green-500' : 'text-black',
+                    )}>
+                      {variance > 0 ? `+${variance}` : variance}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -682,7 +697,7 @@ export function WasteLogTab({
                 placeholder="2"
                 className={cn(pillInputClass, 'h-[41px] pe-[48px]')}
               />
-              <span className="absolute end-[14px] top-1/2 -translate-y-1/2 font-satoshi text-[10.7px] text-[#989898]">{locUnit(unit, t).toUpperCase()}</span>
+              <span className="absolute end-[14px] top-1/2 -translate-y-1/2 font-satoshi text-[12px] font-medium text-[#989898]">{locUnit(unit, t).toUpperCase()}</span>
             </div>
           </Field>
           <Field label={t('reasonForWaste')}>
@@ -708,7 +723,7 @@ export function WasteLogTab({
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t('addContext')}
               rows={3}
-              className="h-[74px] w-full resize-none rounded-[9px] bg-[#F2F2F2] p-[11px] font-satoshi text-[10.7px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
+              className="h-[74px] w-full resize-none rounded-[9px] bg-[#F2F2F2] p-[11px] font-satoshi text-[12px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]"
             />
           </Field>
         </div>
@@ -723,36 +738,45 @@ export function WasteLogTab({
         )}
       </div>
 
-      {/* History */}
-      <div className="min-w-0 overflow-hidden rounded-xl bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-[17px] pt-[14px]">
-          <p className="text-[16px] font-medium leading-[1.4] text-black">{t('wasteLogHistory')}</p>
-          <span className="flex items-center gap-2 rounded-[37px] border border-[#B9B9B9] bg-white px-[12.5px] py-[8px] text-[11.9px] text-[#686868]">
+      {/* History — same table styling as Stock / Purchases / Transfers */}
+      <div className="min-w-0 overflow-x-auto rounded-xl bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
+          <p className="text-base font-medium leading-6 text-black">{t('wasteLogHistory')}</p>
+          <span className="flex items-center gap-2 rounded-[37px] border border-[#B9B9B9] bg-white px-[12.5px] py-[8px] font-satoshi text-base font-normal leading-5 text-stone-500">
             {t('perMonth')} <ChevronDown size={12} />
           </span>
         </div>
         <div className="mt-[14px] overflow-x-auto pb-[14px]">
-          <table className="w-full min-w-[680px] table-fixed border-collapse">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[16%]" />
+              <col className="w-[28%]" />
+              <col className="w-[16%]" />
+              <col className="w-[16%]" />
+              <col className="w-[24%]" />
+            </colgroup>
             <thead>
-              <tr className="h-[40px] bg-[#E9E9E9] text-[10.7px] font-medium leading-[1.4] text-[#686868]">
-                <th className="w-[110px] ps-[17px] pe-2 text-start font-medium">{t('col.date')}</th>
-                <th className="w-[190px] px-2 text-center font-medium">{t('col.item')}</th>
-                <th className="w-[110px] px-2 text-center font-medium">{t('col.qtyWasted')}</th>
-                <th className="w-[120px] px-2 text-center font-medium">{t('col.reason')}</th>
-                <th className="w-[150px] py-2 ps-2 pe-[17px] text-center font-medium">{t('col.responsible')}</th>
+              <tr className="divide-x divide-[#E0E0E0] border-b border-neutral-100 bg-gray-200">
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.date')}</th>
+                <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.item')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.qtyWasted')}</th>
+                <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.reason')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.responsible')}</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((w) => (
-                <tr key={w.id} className="border-b border-[#F7F7F7] last:border-0">
-                  <td className="py-[12px] ps-[17px] pe-2 text-start align-middle text-[10.7px] font-medium text-black">{locStr(w.date, w.dateAr, locale)}</td>
-                  <td className="px-2 py-[12px] text-center align-middle">
-                    <div className="truncate text-[12px] font-medium text-black">{locStr(w.item, w.itemAr, locale)}</div>
-                    <div className="mt-[2px] truncate text-[10.7px] font-normal text-[#989898]">{locStr(w.note, w.noteAr, locale)}</div>
+                <tr key={w.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{locStr(w.date, w.dateAr, locale)}</td>
+                  <td className="px-3 py-3 align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="max-w-[150px] truncate text-sm font-medium leading-6 text-black sm:max-w-[200px] sm:text-base lg:max-w-none">{locStr(w.item, w.itemAr, locale)}</span>
+                      <span className="max-w-[150px] truncate text-xs font-normal leading-6 text-neutral-400 sm:max-w-[200px] sm:text-sm lg:max-w-none">{locStr(w.note, w.noteAr, locale)}</span>
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-2 py-[12px] text-center align-middle text-[12px] font-medium text-[#F23232]">{w.qty} {locUnit(w.unit, t)}</td>
-                  <td className="px-2 py-[12px] text-center align-middle text-[10.7px] font-medium text-black">{tReason(wasteReasonKey(w.reason))}</td>
-                  <td className="truncate py-[12px] ps-2 pe-[17px] text-center align-middle text-[12px] font-medium text-[#2D2F33]">{w.loggedBy}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-red-500 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{w.qty} {locUnit(w.unit, t)}</td>
+                  <td className="max-w-[120px] truncate px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:max-w-[160px] sm:px-4 sm:py-4 sm:text-base lg:max-w-none lg:px-6 lg:py-5">{tReason(wasteReasonKey(w.reason))}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-zinc-800 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{w.loggedBy}</td>
                 </tr>
               ))}
             </tbody>
