@@ -95,7 +95,7 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     isPaid: false,
     date: '7 Apr, 12:00 PM',
     dateAr: '٧ أبريل، ١٢:٠٠ م',
-    table: 'Takeaway #12',
+    table: '',
     type: 'Takeaway',
     status: 'Placed',
     items: [
@@ -105,6 +105,27 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     subtotal: 36.97,
     serviceCharge: 3.7,
     total: 40.67,
+  },
+  {
+    id: 'ro4',
+    orderNumber: '#047',
+    customerName: 'Sarah Jenkins',
+    customerNameAr: 'سارة جنكينز',
+    phone: '+01284984',
+    email: 'sarah.j@example.com',
+    isPaid: true,
+    date: '7 Apr, 12:15 PM',
+    dateAr: '٧ أبريل، ١٢:١٥ م',
+    table: '',
+    type: 'Delivery',
+    status: 'Preparing',
+    items: [
+      { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍜' },
+      { name: 'Coca-Cola', nameAr: 'كوكا كولا', qty: 1, price: 2.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🥤' },
+    ],
+    subtotal: 18.98,
+    serviceCharge: 1.9,
+    total: 20.88,
   },
 ];
 

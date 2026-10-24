@@ -27,7 +27,7 @@
     "orderTypes": {
       "all": "All",
       "dineIn": "Dine In",
-      "takeaway": "Takeaway",
+      "takeaway": "Take Away",
       "delivery": "Delivery"
     },
     "paymentMethods": {
@@ -138,7 +138,7 @@
     "title": "Floor Plan",
     "tablesCount": "({count} tables)",
     "noTables": "No tables in this zone yet.",
-    "takeOut": "Take Out",
+    "takeOut": "Take Away",
     "delivery": "Delivery",
     "zones": {
       "all": "All",
@@ -402,6 +402,7 @@
     "serviceCharge": "Service Charge (10%)",
     "total": "Total",
     "tableLabel": "Table: 03",
+    "back": "Back",
     "backToOrders": "Back to orders",
     "printReceipt": "Print Receipt",
     "refundBtn": "Refund",
@@ -604,7 +605,8 @@
       "qtyWasted": "Qty Wasted",
       "reason": "Reason",
       "expenseName": "Expense",
-      "amount": "Amount"
+      "amount": "Amount",
+      "loggedBy": "Logged by"
     },
     "units": {
       "pcs": "pcs",
@@ -662,13 +664,13 @@
     "check": "Check",
     "unpaidItems": "Unpaid items",
     "noUnpaidItems": "No unpaid items",
-    "toastWaiter": "{table} Waiter",
-    "toastCheck": "{table} Check",
-    "toastCheckCash": "{table} Check Cash",
-    "toastCheckCard": "{table} Check Card"
+    "toastWaiter": "{table}: Waiter",
+    "toastCheck": "{table}: Check",
+    "toastCheckCash": "{table}: Check - Cash",
+    "toastCheckCard": "{table}: Check - Card"
   },
   "orderSession": {
-    "takeOut": "Take Out",
+    "takeOut": "Take Away",
     "delivery": "Delivery",
     "dineIn": "Dine In"
   },

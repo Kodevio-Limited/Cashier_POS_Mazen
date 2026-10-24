@@ -103,10 +103,10 @@ export default function InventoryPage() {
   }
 
   // ── Physical count ──
-  function handleSubmitCount(ingredientId: string, phys: number) {
+  function handleSubmitCount(ingredientId: string, phys: number, loggedBy?: string) {
     const ing = ingredients.find((i) => i.id === ingredientId);
     if (!ing) return;
-    setCounts((prev) => [{ id: `c-${Date.now()}`, date: '2023-10-25', ingredient: ing.name, ingredientAr: ing.nameAr, theo: ing.qty, phys }, ...prev]);
+    setCounts((prev) => [{ id: `c-${Date.now()}`, date: '2023-10-25', ingredient: ing.name, ingredientAr: ing.nameAr, theo: ing.qty, phys, unit: ing.unit, loggedBy: loggedBy || 'John. D' }, ...prev]);
   }
 
   // ── Waste ──

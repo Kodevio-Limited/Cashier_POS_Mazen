@@ -456,14 +456,29 @@ export function PhysicalCountTab({
 }: {
   counts: CountEntry[];
   ingredients: Ingredient[];
-  onSubmit: (ingredientId: string, phys: number) => void;
+  onSubmit: (ingredientId: string, phys: number, loggedBy?: string) => void;
 }) {
-  const [ingredientId, setIngredientId] = useState('');
+  const [ingredientId, setIngredientId] = useState(ingredients[0]?.id ?? '');
   const [phys, setPhys] = useState('');
+  const [pinOpen, setPinOpen] = useState(false);
   const t = useTranslations('inventory');
   const locale = useLocale();
   const tDays = useTranslations('inventory.days');
   const tSeries = useTranslations('inventory.series');
+
+  const selectedIng = ingredients.find((i) => i.id === ingredientId);
+  const selectedUnit = selectedIng?.unit ?? '';
+
+  function submitCount() {
+    if (!ingredientId || !phys) return;
+    setPinOpen(true);
+  }
+
+  function commitCount() {
+    onSubmit(ingredientId, parseFloat(phys) || 0, 'John. D');
+    setPhys('');
+    setPinOpen(false);
+  }
 
   const maxV = 100;
   return (
@@ -472,7 +487,7 @@ export function PhysicalCountTab({
         {/* Log form */}
         <div className="rounded-xl bg-white p-[15px] shadow-sm">
           <p className="text-center text-[16px] font-medium leading-[1.4] text-black">{t('logPhysicalCount')}</p>
-          <div className="mt-[20px] flex flex-col gap-[23px]">
+          <div className="mt-[20px] flex flex-col gap-[20px]">
             <Field label={t('col.ingredient')}>
               <PillSelect
                 ariaLabel={t('col.ingredient')}
@@ -487,23 +502,26 @@ export function PhysicalCountTab({
               />
             </Field>
             <Field label={t('actualPhysicalCount')}>
-              <input
-                value={phys}
-                onChange={(e) => setPhys(e.target.value)}
-                inputMode="decimal"
-                dir="ltr"
-                placeholder="120"
-                className={cn(pillInputClass, 'h-[41px]')}
-              />
+              <div className="relative">
+                <input
+                  value={phys}
+                  onChange={(e) => setPhys(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  placeholder="120"
+                  className={cn(pillInputClass, selectedUnit ? 'pe-[52px]' : '')}
+                />
+                {selectedUnit && (
+                  <span className="absolute end-[16px] top-1/2 -translate-y-1/2 font-satoshi text-[13px] font-medium text-[#989898]">
+                    {locUnit(selectedUnit, t).toUpperCase()}
+                  </span>
+                )}
+              </div>
             </Field>
           </div>
           <button
-            onClick={() => {
-              if (!ingredientId || !phys) return;
-              onSubmit(ingredientId, parseFloat(phys) || 0);
-              setPhys('');
-            }}
-            className="mt-[20px] flex h-[39px] w-full items-center justify-center rounded-[20px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
+            onClick={submitCount}
+            className="mt-[20px] flex h-[46px] w-full items-center justify-center rounded-[24px] bg-[#026F4F] text-[14px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
           >
             {t('submitCount')}
           </button>
@@ -556,7 +574,8 @@ export function PhysicalCountTab({
                 </div>
               </div>
               {/* X labels */}
-              <div className="ms-[38px] flex justify-around">                        {VARIANCE_DAYS.map((day) => (
+              <div className="ms-[38px] flex justify-around">
+                {VARIANCE_DAYS.map((day) => (
                   <span key={day} className="flex-1 text-center text-[12px] text-[rgba(0,0,0,0.7)]">{tDays(day.toLowerCase())}</span>
                 ))}
               </div>
@@ -580,10 +599,11 @@ export function PhysicalCountTab({
         <div className="mt-[14px] overflow-x-auto pb-[18px]">
           <table className="w-full table-fixed">
             <colgroup>
-              <col className="w-[22%]" />
-              <col className="w-[30%]" />
-              <col className="w-[16%]" />
-              <col className="w-[16%]" />
+              <col className="w-[18%]" />
+              <col className="w-[24%]" />
+              <col className="w-[14%]" />
+              <col className="w-[14%]" />
+              <col className="w-[14%]" />
               <col className="w-[16%]" />
             </colgroup>
             <thead>
@@ -593,23 +613,27 @@ export function PhysicalCountTab({
                 <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.theo')}</th>
                 <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.phys')}</th>
                 <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.variance')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.loggedBy')}</th>
               </tr>
             </thead>
             <tbody>
               {counts.map((c) => {
                 const variance = c.phys - c.theo;
+                const unitStr = c.unit || ingredients.find((i) => i.name === c.ingredient)?.unit || 'pcs';
+                const localizedUnit = locUnit(unitStr, t);
                 return (
                   <tr key={c.id} className="divide-x divide-[#F0F0F0] border-b border-neutral-50 transition-colors hover:bg-neutral-50">
                     <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{locStr(c.date, c.dateAr, locale)}</td>
                     <td className="max-w-[150px] truncate px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:max-w-[200px] sm:px-4 sm:py-4 sm:text-base lg:max-w-none lg:px-6 lg:py-5">{locStr(c.ingredient, c.ingredientAr, locale)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.theo}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.phys}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.theo} {localizedUnit}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.phys} {localizedUnit}</td>
                     <td className={cn(
                       'whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5',
                       variance < 0 ? 'text-red-500' : variance > 0 ? 'text-green-500' : 'text-black',
                     )}>
-                      {variance > 0 ? `+${variance}` : variance}
+                      {variance > 0 ? `+${variance}` : variance} {localizedUnit}
                     </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{c.loggedBy || 'John. D'}</td>
                   </tr>
                 );
               })}
@@ -617,6 +641,14 @@ export function PhysicalCountTab({
           </table>
         </div>
       </div>
+
+      {pinOpen && (
+        <PinVerifyModal
+          title={t('logPhysicalCount')}
+          onVerify={commitCount}
+          onCancel={() => setPinOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -635,6 +667,8 @@ function wasteReasonKey(reason: string): string {
   }
 }
 
+const STAFF_OPTIONS = ['John. D', 'Sarah J.', 'Mike T.', 'Robert F.'];
+
 export function WasteLogTab({
   entries,
   ingredients,
@@ -647,7 +681,7 @@ export function WasteLogTab({
   const [ingredientId, setIngredientId] = useState(ingredients[0]?.id ?? '');
   const [qty, setQty] = useState('');
   const [reason, setReason] = useState(WASTE_REASONS[0]);
-  const [responsible, setResponsible] = useState('');
+  const [responsible, setResponsible] = useState(STAFF_OPTIONS[0]);
   const [notes, setNotes] = useState('');
   const [pinOpen, setPinOpen] = useState(false);
   const t = useTranslations('inventory');
@@ -695,7 +729,7 @@ export function WasteLogTab({
                 inputMode="decimal"
                 dir="ltr"
                 placeholder="2"
-                className={cn(pillInputClass, 'h-[41px] pe-[48px]')}
+                className={cn(pillInputClass, 'pe-[48px]')}
               />
               <span className="absolute end-[14px] top-1/2 -translate-y-1/2 font-satoshi text-[12px] font-medium text-[#989898]">{locUnit(unit, t).toUpperCase()}</span>
             </div>
@@ -710,11 +744,12 @@ export function WasteLogTab({
             />
           </Field>
           <Field label={t('responsible')}>
-            <input
+            <PillSelect
+              ariaLabel={t('responsible')}
               value={responsible}
-              onChange={(e) => setResponsible(e.target.value)}
-              placeholder={t('chooseResponsible')}
-              className={cn(pillInputClass, 'h-[41px]')}
+              onChange={setResponsible}
+              options={STAFF_OPTIONS}
+              getLabel={(v) => v}
             />
           </Field>
           <Field label={t('notesOptional')}>
@@ -729,7 +764,7 @@ export function WasteLogTab({
         </div>
         <button
           onClick={submitWaste}
-          className="mt-[20px] flex h-[39px] w-full items-center justify-center rounded-[20px] bg-[#026F4F] text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
+          className="mt-[20px] flex h-[46px] w-full items-center justify-center rounded-[24px] bg-[#026F4F] text-[14px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
         >
           {t('submitCount')}
         </button>

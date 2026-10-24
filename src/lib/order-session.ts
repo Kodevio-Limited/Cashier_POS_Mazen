@@ -34,7 +34,7 @@ export function sessionLabel(s: OrderSession, locale = 'en', labels?: { takeOut:
     if (s.type === 'delivery') return labels.delivery;
     return s.tableNameAr ?? labels.dineIn;
   }
-  if (s.type === 'take-out') return 'Take Out';
+  if (s.type === 'take-out') return 'Take Away';
   if (s.type === 'delivery') return 'Delivery';
   return s.tableName ?? 'Dine In';
 }

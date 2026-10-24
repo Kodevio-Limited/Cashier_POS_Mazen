@@ -402,6 +402,7 @@
     "serviceCharge": "رسوم الخدمة (10%)",
     "total": "الإجمالي",
     "tableLabel": "الطاولة: 03",
+    "back": "رجوع",
     "backToOrders": "العودة إلى الطلبات",
     "printReceipt": "طباعة الإيصال",
     "refundBtn": "استرداد",
@@ -604,7 +605,8 @@
       "qtyWasted": "الكمية الهالكة",
       "reason": "السبب",
       "expenseName": "المصروف",
-      "amount": "المبلغ"
+      "amount": "المبلغ",
+      "loggedBy": "تم التسجيل بواسطة"
     },
     "units": {
       "pcs": "حبة",
@@ -662,10 +664,10 @@
     "check": "فاتورة",
     "unpaidItems": "عناصر غير مدفوعة",
     "noUnpaidItems": "لا توجد عناصر غير مدفوعة",
-    "toastWaiter": "{table} نادل",
-    "toastCheck": "{table} شيك",
-    "toastCheckCash": "{table} شيك كاش",
-    "toastCheckCard": "{table} شيك كارد"
+    "toastWaiter": "{table}: نادل",
+    "toastCheck": "{table}: شيك",
+    "toastCheckCash": "{table}: شيك - كاش",
+    "toastCheckCard": "{table}: شيك - كارد"
   },
   "orderSession": {
     "takeOut": "تيك اواي",

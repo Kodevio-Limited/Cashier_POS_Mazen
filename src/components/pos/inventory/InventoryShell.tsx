@@ -134,37 +134,36 @@ export function Drawer({
 }) {
   useBodyScrollLock(true);
   const tCommon = useTranslations('common.actions');
-  const tBack = useTranslations('history');
   return (
     <div className="pos-overlay z-50 bg-black/40">
-      <aside className="absolute bottom-3 end-3 top-3 flex w-[413px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-[#F2F2F2] shadow-2xl animate-in slide-in-from-right-8 duration-200">
+      <aside className="absolute bottom-3 end-3 top-3 flex w-[440px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-[#F2F2F2] shadow-2xl animate-in slide-in-from-right-8 duration-200">
         {/* Header */}
-        <div className="flex items-center gap-3 px-[20px] pt-[33px]">
+        <div className="flex items-center gap-3 px-[20px] pt-[30px]">
           <button
             onClick={onBack}
-            aria-label={tBack('back')}
-            className="flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full bg-[#E9E9E9] text-black transition-colors hover:bg-[#E0E0E0]"
+            aria-label={tCommon('back')}
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#E9E9E9] text-black transition-colors hover:bg-[#E0E0E0]"
           >
-            <ArrowLeft size={16} className="rtl:scale-x-[-1]" />
+            <ArrowLeft size={18} className="rtl:scale-x-[-1]" />
           </button>
           <h2 className="flex-1 text-center text-[22px] font-medium leading-[1.4] text-black">{title}</h2>
-          <div className="h-[33px] w-[33px] shrink-0" />
+          <div className="h-[38px] w-[38px] shrink-0" />
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 flex-col gap-[13px] overflow-y-auto px-[20px] pt-[32px]">{children}</div>
+        <div className="flex flex-1 flex-col gap-[14px] overflow-y-auto px-[20px] pt-[24px]">{children}</div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-[5px] px-[20px] pb-[19px] pt-[13px]">
+        <div className="flex items-center justify-between gap-[8px] px-[20px] pb-[20px] pt-[14px]">
           <button
             onClick={onCancel}
-            className="h-[39px] w-[185px] max-w-[48%] rounded-[20px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[12.7px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
+            className="h-[46px] w-[185px] max-w-[48%] rounded-[24px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[14px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
           >
             {tCommon('cancel')}
           </button>
           <button
             onClick={onSave}
-            className="h-[39px] w-[185px] max-w-[48%] rounded-[20px] bg-[#026F4F] font-satoshi text-[12.7px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
+            className="h-[46px] w-[185px] max-w-[48%] rounded-[24px] bg-[#026F4F] font-satoshi text-[14px] font-medium leading-[1.4] text-white shadow-[0px_2.7px_5.4px_rgba(0,0,0,0.12)] transition-colors hover:bg-[#015c42]"
           >
             {saveLabel}
           </button>
@@ -177,9 +176,9 @@ export function Drawer({
 // ─── White form card ─────────────────────────────────────────────────────────
 export function FormCard({ title, children }: { title?: string; children: ReactNode }) {
   return (
-    <div className="rounded-[8.7px] bg-white p-[13px]">
-      {title && <p className="mb-[10px] text-[12.7px] font-medium leading-[1.4] text-[#2D2F33]">{title}</p>}
-      <div className="flex flex-col gap-[10px]">{children}</div>
+    <div className="rounded-[12px] bg-white p-[16px]">
+      {title && <p className="mb-[12px] text-[14px] font-medium leading-[1.4] text-[#2D2F33]">{title}</p>}
+      <div className="flex flex-col gap-[12px]">{children}</div>
     </div>
   );
 }
@@ -193,15 +192,15 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-[5px]">
-      <label className="text-[12px] font-medium leading-[1.4] text-[#686868]">{label}</label>
+    <div className="flex flex-col gap-[6px]">
+      <label className="text-[13px] font-medium leading-[1.4] text-[#686868]">{label}</label>
       {children}
     </div>
   );
 }
 
 export const pillInputClass =
-  'h-[35px] w-full rounded-[58px] bg-[#F2F2F2] px-[11px] font-satoshi text-[12px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]';
+  'h-[44px] w-full rounded-[58px] bg-[#F2F2F2] px-[16px] font-satoshi text-[14px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F]';
 
 // ─── Pill select (native select styled as Figma pill) ────────────────────────
 export function PillSelect({
@@ -224,7 +223,7 @@ export function PillSelect({
         aria-label={ariaLabel}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-[35px] w-full appearance-none rounded-[58px] bg-[#F2F2F2] py-[10px] ps-[11px] pe-[32px] font-satoshi text-[12px] font-medium leading-[1.4] text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
+        className="h-[44px] w-full appearance-none rounded-[58px] bg-[#F2F2F2] py-[10px] ps-[16px] pe-[36px] font-satoshi text-[14px] font-medium leading-[1.4] text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
       >
         {options.map((o) => (
           <option key={o} value={o}>
@@ -232,7 +231,7 @@ export function PillSelect({
           </option>
         ))}
       </select>
-      <ChevronDown size={14} className="pointer-events-none absolute end-[11px] top-1/2 -translate-y-1/2 text-[#989898]" />
+      <ChevronDown size={16} className="pointer-events-none absolute end-[14px] top-1/2 -translate-y-1/2 text-[#989898]" />
     </div>
   );
 }

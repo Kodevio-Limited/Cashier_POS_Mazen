@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer } from 'lucide-react';
+import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer, ShoppingBag, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
@@ -86,7 +86,7 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     customerName: 'Robert Fox',
     customerNameAr: 'روبرت فوكس',
     phone: '+01284980',
-    email: 'mike.t@example.com',
+    email: 'robert.f@example.com',
     payState: 'Paid',
     footerState: 'Completed',
     date: '7 Apr, 11:30 AM',
@@ -103,16 +103,16 @@ const INITIAL_HISTORY: HistoryOrder[] = [
   },
   {
     id: 'h2',
-    orderNumber: '#044',
-    customerName: 'Robert Fox',
-    customerNameAr: 'روبرت فوكس',
-    phone: '+01284980',
-    email: 'mike.t@example.com',
+    orderNumber: '#045',
+    customerName: 'Emily Blunt',
+    customerNameAr: 'إميلي بلانت',
+    phone: '+01284981',
+    email: 'emily.b@example.com',
     payState: 'Refunded',
     footerState: 'Cancelled',
-    date: '7 Apr, 11:30 AM',
-    dateAr: '٧ أبريل، ١١:٣٠ ص',
-    table: 'Table 03',
+    date: '7 Apr, 11:32 AM',
+    dateAr: '٧ أبريل، ١١:٣٢ ص',
+    table: 'Table 05',
     type: 'Dine In',
     items: [
       { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍜' },
@@ -124,37 +124,58 @@ const INITIAL_HISTORY: HistoryOrder[] = [
   },
   {
     id: 'h3',
-    orderNumber: '#044',
-    customerName: 'Robert Fox',
-    customerNameAr: 'روبرت فوكس',
-    phone: '+01284980',
-    email: 'mike.t@example.com',
-    payState: 'Unpaid',
+    orderNumber: '#046',
+    customerName: 'Alex Morgan',
+    customerNameAr: 'أليكس مورغان',
+    phone: '+01284982',
+    email: 'alex.m@example.com',
+    payState: 'Paid',
     footerState: 'Completed',
-    date: '7 Apr, 11:30 AM',
-    dateAr: '٧ أبريل، ١١:٣٠ ص',
-    table: 'Table 03',
+    date: '7 Apr, 11:35 AM',
+    dateAr: '٧ أبريل، ١١:٣٥ ص',
+    table: '',
     type: 'Takeaway',
     items: [
-      { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍜' },
-      { name: 'Iced Green Tea', nameAr: 'شاي أخضر مثلج', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍵' },
+      { name: 'Classic Burger', nameAr: 'برجر كلاسيك', qty: 2, price: 15.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🍔' },
+      { name: 'French Fries', nameAr: 'بطاطس مقلية', qty: 1, price: 4.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🍟' },
     ],
-    subtotal: 25.99,
-    serviceCharge: 2.6,
-    total: 30.99,
+    subtotal: 36.97,
+    serviceCharge: 3.7,
+    total: 40.67,
   },
   {
     id: 'h4',
-    orderNumber: '#045',
-    customerName: 'Mike Thompson',
-    customerNameAr: 'مايك تومسون',
-    phone: '+01284980',
-    email: 'mike.t@example.com',
+    orderNumber: '#047',
+    customerName: 'David Miller',
+    customerNameAr: 'ديفيد ميلر',
+    phone: '+01284983',
+    email: 'david.m@example.com',
+    payState: 'Unpaid',
+    footerState: 'Completed',
+    date: '7 Apr, 11:40 AM',
+    dateAr: '٧ أبريل، ١١:٤٠ ص',
+    table: '',
+    type: 'Takeaway',
+    items: [
+      { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍜' },
+      { name: 'Coca-Cola', nameAr: 'كوكا كولا', qty: 1, price: 2.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🥤' },
+    ],
+    subtotal: 18.98,
+    serviceCharge: 1.9,
+    total: 20.88,
+  },
+  {
+    id: 'h5',
+    orderNumber: '#048',
+    customerName: 'Sarah Jenkins',
+    customerNameAr: 'سارة جنكينز',
+    phone: '+01284984',
+    email: 'sarah.j@example.com',
     payState: 'Paid',
     footerState: 'Completed',
     date: '7 Apr, 11:45 AM',
     dateAr: '٧ أبريل، ١١:٤٥ ص',
-    table: 'Table 07',
+    table: '',
     type: 'Delivery',
     items: [
       { name: 'Shoyu Ramen', nameAr: 'رامن شويو', qty: 1, price: 15.99, modifier: 'Extra Chili', modifierAr: 'فلفل إضافي', emoji: '🍜' },
@@ -163,6 +184,27 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     subtotal: 18.98,
     serviceCharge: 1.9,
     total: 20.88,
+  },
+  {
+    id: 'h6',
+    orderNumber: '#049',
+    customerName: 'Michael Scott',
+    customerNameAr: 'مايكل سكوت',
+    phone: '+01284985',
+    email: 'michael.s@example.com',
+    payState: 'Paid',
+    footerState: 'Completed',
+    date: '7 Apr, 11:50 AM',
+    dateAr: '٧ أبريل، ١١:٥٠ ص',
+    table: '',
+    type: 'Delivery',
+    items: [
+      { name: 'Classic Burger', nameAr: 'برجر كلاسيك', qty: 1, price: 15.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🍔' },
+      { name: 'Iced Green Tea', nameAr: 'شاي أخضر مثلج', qty: 1, price: 15.99, modifier: 'No Spice', modifierAr: 'بدون بهار', emoji: '🍵' },
+    ],
+    subtotal: 31.98,
+    serviceCharge: 3.2,
+    total: 35.18,
   },
 ];
 
@@ -227,17 +269,38 @@ export default function OrderHistoryPage() {
   const [pinOpen, setPinOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState<number | null>(null);
 
-  const selectedOrder = orders.find((o) => o.id === selectedOrderId);
-
   const filteredOrders = orders.filter((o) => {
     if (activeTypeTab !== 'All' && o.type !== activeTypeTab) return false;
     const q = search.trim().toLowerCase().replace(/^#/, '');
     if (!q) return true;
     return (
       o.orderNumber.toLowerCase().replace(/^#/, '').includes(q) ||
-      o.table.toLowerCase().includes(q)
+      (o.table ? o.table.toLowerCase().includes(q) : false) ||
+      o.customerName.toLowerCase().includes(q)
     );
   });
+
+  const selectedOrder =
+    filteredOrders.find((o) => o.id === selectedOrderId) ??
+    filteredOrders[0] ??
+    null;
+
+  function handleTypeTabChange(tab: OrderType) {
+    setActiveTypeTab(tab);
+    const q = search.trim().toLowerCase().replace(/^#/, '');
+    const nextFiltered = orders.filter((o) => {
+      if (tab !== 'All' && o.type !== tab) return false;
+      if (!q) return true;
+      return (
+        o.orderNumber.toLowerCase().replace(/^#/, '').includes(q) ||
+        (o.table ? o.table.toLowerCase().includes(q) : false) ||
+        o.customerName.toLowerCase().includes(q)
+      );
+    });
+    if (nextFiltered.length > 0) {
+      setSelectedOrderId(nextFiltered[0].id);
+    }
+  }
 
   const refundLines = (selectedOrder?.items ?? [])
     .map((item, idx) => ({ item, idx, qty: refundQty[idx] ?? 0 }))
@@ -355,7 +418,7 @@ export default function OrderHistoryPage() {
           {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTypeTab(tab)}
+              onClick={() => handleTypeTabChange(tab)}
               className={cn(
                 'rounded-[33.8px] px-[12px] py-[5px] text-[13.5px] font-normal leading-[1.4] transition-all',
                 activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
@@ -430,8 +493,20 @@ export default function OrderHistoryPage() {
                         <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locStr(order.date, order.dateAr, locale)}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locTable(order.table, locale, tTable)}</span>
+                        {order.type === 'Takeaway' ? (
+                          <ShoppingBag size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        ) : order.type === 'Delivery' ? (
+                          <Bike size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        ) : (
+                          <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        )}
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">
+                          {order.type === 'Takeaway'
+                            ? tTypes('takeaway')
+                            : order.type === 'Delivery'
+                              ? tTypes('delivery')
+                              : locTable(order.table, locale, tTable)}
+                        </span>
                       </div>
                     </div>
 
@@ -484,7 +559,22 @@ export default function OrderHistoryPage() {
             </button>
             <div className="flex flex-col items-center gap-[7px]">
               <p className="text-[19px] font-medium leading-[1.4] text-black">{t('orderTitle', { number: selectedOrder.orderNumber })}</p>
-              <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">{t('tableLabel', { table: '03' })}</p>
+              <div className="flex items-center gap-1.5">
+                {selectedOrder.type === 'Takeaway' ? (
+                  <ShoppingBag size={13} strokeWidth={1.6} className="shrink-0 text-[#686868]" />
+                ) : selectedOrder.type === 'Delivery' ? (
+                  <Bike size={13} strokeWidth={1.6} className="shrink-0 text-[#686868]" />
+                ) : (
+                  <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#686868]" />
+                )}
+                <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">
+                  {selectedOrder.type === 'Takeaway'
+                    ? tTypes('takeaway')
+                    : selectedOrder.type === 'Delivery'
+                      ? tTypes('delivery')
+                      : locTable(selectedOrder.table, locale, tTable)}
+                </p>
+              </div>
             </div>
             <div className="h-[28px] w-[28px]" />
           </div>

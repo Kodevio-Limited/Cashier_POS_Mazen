@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors } from 'lucide-react';
+import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors, ShoppingBag, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getOrders,
@@ -64,12 +64,25 @@ export default function RunningOrderPage() {
     return subscribeOrders(load);
   }, []);
 
-  const selectedOrder = orders.find((o) => o.id === selectedOrderId);
-
   const filteredOrders = orders
     .filter((o) => activeTypeTab === 'All' || o.type === activeTypeTab)
     // Pending acceptance (Placed) always float to the top.
     .sort((a, b) => Number(b.status === 'Placed') - Number(a.status === 'Placed'));
+
+  const selectedOrder =
+    filteredOrders.find((o) => o.id === selectedOrderId) ??
+    filteredOrders[0] ??
+    null;
+
+  function handleTypeTabChange(tab: OrderType) {
+    setActiveTypeTab(tab);
+    const nextFiltered = orders
+      .filter((o) => tab === 'All' || o.type === tab)
+      .sort((a, b) => Number(b.status === 'Placed') - Number(a.status === 'Placed'));
+    if (nextFiltered.length > 0) {
+      setSelectedOrderId(nextFiltered[0].id);
+    }
+  }
 
   function advanceStatus(order: RunningOrder) {
     const next: Record<OrderStatus, OrderStatus> = {
@@ -99,7 +112,7 @@ export default function RunningOrderPage() {
           {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTypeTab(tab)}
+              onClick={() => handleTypeTabChange(tab)}
               className={cn(
                 'flex h-[45px] items-center rounded-full px-[16px] text-[16px] font-medium leading-[1.3] transition-all',
                 activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
@@ -155,8 +168,20 @@ export default function RunningOrderPage() {
                         <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locStr(order.date, order.dateAr, locale)}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
-                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">{locTable(order.table, locale, tTable)}</span>
+                        {order.type === 'Takeaway' ? (
+                          <ShoppingBag size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        ) : order.type === 'Delivery' ? (
+                          <Bike size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        ) : (
+                          <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#989898]" />
+                        )}
+                        <span className="truncate text-[11px] font-normal leading-[1.4] text-[#989898]">
+                          {order.type === 'Takeaway'
+                            ? tTypes('takeaway')
+                            : order.type === 'Delivery'
+                              ? tTypes('delivery')
+                              : locTable(order.table, locale, tTable)}
+                        </span>
                       </div>
                     </div>
 
@@ -278,7 +303,20 @@ export default function RunningOrderPage() {
             <div className="flex flex-col items-center gap-[7px]">
               <p className="text-[19px] font-medium leading-[1.4] text-black">{selectedOrder.orderNumber}</p>
               <div className="flex items-center gap-[6px]">
-                <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">{t('tableLabel', { table: '03' })}</p>
+                {selectedOrder.type === 'Takeaway' ? (
+                  <ShoppingBag size={13} strokeWidth={1.6} className="shrink-0 text-[#686868]" />
+                ) : selectedOrder.type === 'Delivery' ? (
+                  <Bike size={13} strokeWidth={1.6} className="shrink-0 text-[#686868]" />
+                ) : (
+                  <UtensilsCrossed size={13} strokeWidth={1.6} className="shrink-0 text-[#686868]" />
+                )}
+                <p className="text-[10.5px] font-normal leading-[1.4] text-[#686868]">
+                  {selectedOrder.type === 'Takeaway'
+                    ? tTypes('takeaway')
+                    : selectedOrder.type === 'Delivery'
+                      ? tTypes('delivery')
+                      : locTable(selectedOrder.table, locale, tTable)}
+                </p>
                 <span
                   className={cn(
                     'rounded-full px-[7px] py-[2px] text-[9px] font-medium leading-[1.4] text-white',

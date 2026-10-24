@@ -302,28 +302,28 @@ export function RecipeMappingDrawer({
         onSave(maps);
       }}
     >
-      <p className="text-center font-satoshi text-[14.3px] font-medium leading-[1.4] text-[#2D2F33]">{recipeName}</p>
+      <p className="text-center font-satoshi text-[16px] font-medium leading-[1.4] text-[#2D2F33]">{recipeName}</p>
 
-      <div className="rounded-[8.7px] bg-white p-[12px]">
-        <div className="mb-[10px] flex items-center justify-between">
-          <p className="text-[12.7px] font-medium leading-[1.4] text-[#2D2F33]">{t('mappingIngredients')}</p>
+      <div className="rounded-[12px] bg-white p-[16px]">
+        <div className="mb-[14px] flex items-center justify-between">
+          <p className="text-[14px] font-medium leading-[1.4] text-[#2D2F33]">{t('mappingIngredients')}</p>
           <button
             onClick={() => {
               const first = ingredients[0];
               setRows((prev) => [...prev, { key: Date.now(), ingredientName: first?.name ?? '', qty: '1', unit: first?.unit ?? 'pcs' }]);
             }}
-            className="flex items-center gap-1 text-[10.7px] font-medium leading-[1.4] text-[#026F4F]"
+            className="flex items-center gap-1.5 text-[13px] font-medium leading-[1.4] text-[#026F4F] transition-opacity hover:opacity-80"
           >
-            <span className="text-[12.7px]">+</span> {t('addRow')}
+            <span className="text-[16px] font-semibold">+</span> {t('addRow')}
           </button>
         </div>
-        <div className="flex flex-col gap-[10px]">
+        <div className="flex flex-col gap-[12px]">
           {rows.map((row) => {
             const bad = rowBad(row);
             const ing = ingredients.find((i) => i.name === row.ingredientName);
             const units = compatibleUnits(ing?.unit ?? 'pcs');
             return (
-              <div key={row.key} className="flex items-center gap-[8px]">
+              <div key={row.key} className="flex items-center gap-[10px]">
                 <div className="min-w-0 flex-1">
                   <PillSelect
                     ariaLabel={t('fieldNameIngredient')}
@@ -340,21 +340,24 @@ export function RecipeMappingDrawer({
                     }}
                   />
                 </div>
-                <div className="flex items-center gap-[6px]">
+                <div className="flex items-center gap-[8px]">
                   <input
                     value={row.qty}
                     onChange={(e) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, qty: e.target.value } : r)))}
                     inputMode="decimal"
                     dir="ltr"
                     aria-label={t('qtyAria')}
-                    className={cn('h-[35px] w-[36px] rounded-[58px] px-1 text-center font-satoshi text-[10.7px] font-medium text-[#989898] outline-none focus:ring-2 focus:ring-[#026F4F]', bad ? 'bg-[#FFE6E6]' : 'bg-[#F2F2F2]')}
+                    className={cn(
+                      'h-[44px] w-[52px] rounded-[58px] px-2 text-center font-satoshi text-[14px] font-medium text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]',
+                      bad ? 'bg-[#FFE6E6]' : 'bg-[#F2F2F2]',
+                    )}
                   />
                   {units.length > 1 ? (
                     <select
                       value={row.unit}
                       onChange={(e) => setRowUnit(row, e.target.value)}
                       aria-label={t('unitAria')}
-                      className="h-[35px] shrink-0 cursor-pointer rounded-[58px] bg-[#F2F2F2] px-1 text-center font-satoshi text-[10.7px] font-medium text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
+                      className="h-[44px] shrink-0 cursor-pointer rounded-[58px] bg-[#F2F2F2] px-3 text-center font-satoshi text-[13px] font-medium text-[#2D2F33] outline-none focus:ring-2 focus:ring-[#026F4F]"
                     >
                       {units.map((u) => (
                         <option key={u} value={u}>
@@ -363,13 +366,13 @@ export function RecipeMappingDrawer({
                       ))}
                     </select>
                   ) : (
-                    <span className="w-[28px] text-[8.7px] font-medium leading-[1.4] text-[#989898]">{row.unit}</span>
+                    <span className="min-w-[32px] text-center text-[13px] font-medium leading-[1.4] text-[#989898]">{row.unit}</span>
                   )}
                 </div>
                 <button
                   onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
                   aria-label={t('removeRowAria')}
-                  className="shrink-0 text-[#E85E5E] transition-colors hover:text-[#d94a4a]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#E85E5E] transition-colors hover:bg-red-50 hover:text-[#d94a4a]"
                 >
                   <Trash2 size={20} />
                 </button>

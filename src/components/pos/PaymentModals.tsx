@@ -389,7 +389,13 @@ export function MergeOrdersModal({
                   <span className="text-sm font-semibold text-[#026F4F]">${order.total.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center gap-2 ps-7 text-xs text-[#686868]">
-                  <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">{order.table}</span>
+                  <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">
+                    {order.type === 'Takeaway'
+                      ? tTypes('takeaway')
+                      : order.type === 'Delivery'
+                        ? tTypes('delivery')
+                        : order.table}
+                  </span>
                   <span>•</span>
                   <span>{t('itemsCount', { count: order.itemsCount })}</span>
                 </div>

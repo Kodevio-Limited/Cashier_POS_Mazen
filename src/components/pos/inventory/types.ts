@@ -102,6 +102,8 @@ export interface CountEntry {
   ingredientAr?: string;
   theo: number;
   phys: number;
+  unit?: string;
+  loggedBy?: string;
 }
 
 export interface WasteEntry {
@@ -226,12 +228,12 @@ export const INITIAL_TRANSFERS: Transfer[] = [
 ];
 
 export const INITIAL_COUNTS: CountEntry[] = [
-  { id: 'c1', date: '2023-10-25', dateAr: '25 أكتوبر 2023', ingredient: 'Beef Patties', ingredientAr: 'أقراص لحم البقر', theo: 125, phys: 120 },
-  { id: 'c2', date: '2023-10-25', dateAr: '25 أكتوبر 2023', ingredient: 'Burger Buns', ingredientAr: 'خبز البرجر', theo: 90, phys: 88 },
-  { id: 'c3', date: '2023-10-25', dateAr: '25 أكتوبر 2023', ingredient: 'Cheddar Cheese', ingredientAr: 'جبنة شيدر', theo: 60, phys: 60 },
-  { id: 'c4', date: '2023-10-24', dateAr: '24 أكتوبر 2023', ingredient: 'Lettuce', ingredientAr: 'خس', theo: 40, phys: 32 },
-  { id: 'c5', date: '2023-10-24', dateAr: '24 أكتوبر 2023', ingredient: 'Tomatoes', ingredientAr: 'طماطم', theo: 70, phys: 70 },
-  { id: 'c6', date: '2023-10-23', dateAr: '23 أكتوبر 2023', ingredient: 'Chicken Breast', ingredientAr: 'صدور دجاج', theo: 100, phys: 96 },
+  { id: 'c1', date: '2023-10-25', dateAr: '25 أكتوبر 2023', ingredient: 'Beef Patties', ingredientAr: 'أقراص لحم البقر', theo: 125, phys: 120, unit: 'pcs', loggedBy: 'John. D' },
+  { id: 'c2', date: '2023-10-25', dateAr: '25 أكتوبر 2023', ingredient: 'Burger Buns', ingredientAr: 'خبز البرجر', theo: 90, phys: 88, unit: 'pcs', loggedBy: 'John. D' },
+  { id: 'c3', date: '2023-10-25', dateAr: '25 أكتوبر 2023', ingredient: 'Cheddar Cheese', ingredientAr: 'جبنة شيدر', theo: 60, phys: 60, unit: 'pcs', loggedBy: 'Sarah J.' },
+  { id: 'c4', date: '2023-10-24', dateAr: '24 أكتوبر 2023', ingredient: 'Lettuce', ingredientAr: 'خس', theo: 40, phys: 32, unit: 'kg', loggedBy: 'Sarah J.' },
+  { id: 'c5', date: '2023-10-24', dateAr: '24 أكتوبر 2023', ingredient: 'Tomatoes', ingredientAr: 'طماطم', theo: 70, phys: 70, unit: 'pcs', loggedBy: 'Mike T.' },
+  { id: 'c6', date: '2023-10-23', dateAr: '23 أكتوبر 2023', ingredient: 'Chicken Breast', ingredientAr: 'صدور دجاج', theo: 100, phys: 96, unit: 'L', loggedBy: 'John. D' },
 ];
 
 export const INITIAL_WASTE: WasteEntry[] = [
