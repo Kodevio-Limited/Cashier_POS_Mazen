@@ -254,6 +254,7 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<HistoryOrder[]>(INITIAL_HISTORY);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>(INITIAL_HISTORY[0]?.id ?? '');
   // Query-driven refund flow: ?modal=refund&mode=refund|cancel&id=h1 (step 1),
   // ?modal=refund-waste (step 2). Back walks back through the steps.
@@ -414,37 +415,64 @@ export default function OrderHistoryPage() {
         </div>
 
         {/* Filter pills + search */}
-        <div className="mt-[24px] flex flex-wrap items-center gap-[11px]">
-          {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTypeTabChange(tab)}
-              className={cn(
-                'rounded-[33.8px] px-[12px] py-[5px] text-[13.5px] font-normal leading-[1.4] transition-all',
-                activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
-              )}
-            >
-              {tTypes(mapEnum(tab, ORDER_TYPE_KEY_MAP))}
-            </button>
-          ))}
-          <div className="ms-auto flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-full bg-white px-4 sm:max-w-[280px] sm:flex-none">
-            <Search size={14} className="shrink-0 text-[#989898]" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              className="w-full bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
-            />
-            {search && (
+        <div className="mt-[24px] flex items-center gap-[11px]">
+          {!searchOpen && (
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[11px]">
+              {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => handleTypeTabChange(tab)}
+                  className={cn(
+                    'flex h-[45px] items-center rounded-full px-[16px] text-[16px] font-medium leading-[1.3] transition-all',
+                    activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
+                  )}
+                >
+                  {tTypes(mapEnum(tab, ORDER_TYPE_KEY_MAP))}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search — collapsed to a button on right, expands over the row */}
+          {searchOpen ? (
+            <div className="flex h-[45px] min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-4 outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] animate-in fade-in zoom-in-95 duration-200">
+              <Search size={18} className="shrink-0 text-[#989898]" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearch('');
+                    setSearchOpen(false);
+                  }
+                }}
+                placeholder={t('searchPlaceholder')}
+                className="w-full min-w-0 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+              />
               <button
-                onClick={() => setSearch('')}
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchOpen(false);
+                }}
                 aria-label={t('clearSearch')}
                 className="shrink-0 text-[#989898] transition-colors hover:text-[#2D2F33]"
               >
                 <X size={14} />
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t('searchPlaceholder')}
+              title={t('searchPlaceholder')}
+              className="ms-auto flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] transition-colors hover:text-[#026F4F] hover:outline-[#026F4F]"
+            >
+              <Search size={18} />
+            </button>
+          )}
         </div>
 
         {/* Cards grid */}
