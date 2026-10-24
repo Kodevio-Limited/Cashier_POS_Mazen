@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr } from '@/lib/locale-fields';
 import { foodImage, CATEGORY_IMAGE, FOOD_IMAGES } from '@/lib/menu-images';
@@ -61,6 +61,7 @@ export default function CashierMenuPage() {
   const [availability, setAvailability] = useState<MenuAvailability>(() => getMenuAvailability());
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     setAvailability(getMenuAvailability());
@@ -78,39 +79,83 @@ export default function CashierMenuPage() {
   });
 
   return (
-    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-3">
-      {/* ── Header card ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-[19px] font-medium leading-7 text-[#2D2F33]">{t('title')}</h1>
+    <div className="flex min-h-[calc(100vh-38px)] flex-col gap-4">
+      {/* ── Top: Title + Categories (left) + Search (right) — exactly like /order ── */}
+      <div className="flex flex-col gap-[13px] pt-1">
+        {/* Title */}
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <h1 className="text-[20px] font-medium leading-[1.4] text-[#2D2F33]">{t('title')}</h1>
+          <span className="text-[15px] leading-[1.4] text-[#989898]">
+            ({filtered.length} {t('items')})
+          </span>
         </div>
 
-        {/* Filters — single scrollable line: search + categories */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <div className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#F2F2F2] px-4">
-            <Search size={14} className="shrink-0 text-[#989898]" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              className="w-36 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
-            />
-          </div>
-          {MENU_CATEGORIES.map((cat) => (
+        {/* Category pills (left) + search (right) */}
+        <div className="flex items-center gap-x-[10px] gap-y-2 xl:gap-x-[14px]">
+          {!searchOpen && (
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[8px] lg:flex-nowrap lg:gap-[5px] xl:gap-[14px]">
+              {MENU_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={cn(
+                    'flex h-[36px] shrink-0 items-center justify-center gap-[4px] rounded-full pe-[12px] ps-[4px] text-[13.5px] font-medium leading-[1.3] transition-all duration-200 lg:h-[36px] lg:gap-[3px] lg:pe-[10px] lg:ps-[3px] lg:text-[12.5px] xl:h-[45px] xl:gap-[8px] xl:pe-[16px] xl:ps-[6px] xl:text-[16px]',
+                    activeCategory === cat
+                      ? 'bg-[#026F4F] text-white shadow-xs'
+                      : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
+                  )}
+                >
+                  <img
+                    src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos}
+                    alt=""
+                    className="h-[24px] w-[24px] shrink-0 rounded-full object-cover lg:h-[20px] lg:w-[20px] xl:h-[33px] xl:w-[33px]"
+                  />
+                  {tCat(cat.toLowerCase())}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search — collapsed to a button, expands over the category row */}
+          {searchOpen ? (
+            <div className="flex h-[38px] min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-4 outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] xl:h-[45px] animate-in fade-in zoom-in-95 duration-200">
+              <Search size={17} className="shrink-0 text-[#989898] xl:size-[18]" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearch('');
+                    setSearchOpen(false);
+                  }
+                }}
+                placeholder={t('searchPlaceholder')}
+                className="w-full min-w-0 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchOpen(false);
+                }}
+                aria-label={t('searchPlaceholder')}
+                className="shrink-0 text-[#989898] transition-colors hover:text-[#2D2F33]"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={cn(
-                'flex h-[33px] flex-shrink-0 items-center gap-[6px] rounded-full pe-[13px] ps-[5px] text-[13px] font-medium transition-all duration-200',
-                activeCategory === cat
-                  ? 'bg-[#026F4F] text-white shadow-xs'
-                  : 'border border-[#E9E9E9] bg-white text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
-              )}
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t('searchPlaceholder')}
+              title={t('searchPlaceholder')}
+              className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] transition-colors hover:text-[#026F4F] hover:outline-[#026F4F] xl:h-[45px] xl:w-[45px]"
             >
-              <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[23px] w-[23px] shrink-0 rounded-full object-cover" />
-              {tCat(cat.toLowerCase())}
+              <Search size={15} className="xl:size-[20]" />
             </button>
-          ))}
+          )}
         </div>
       </div>
 
