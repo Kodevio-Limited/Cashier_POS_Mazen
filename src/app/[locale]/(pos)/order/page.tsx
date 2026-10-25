@@ -289,19 +289,21 @@ export default function OrderPage() {
         {/* Category pills (left) + search (right) */}
         <div className="mt-[13px] flex items-center gap-x-[10px] gap-y-2 xl:gap-x-[14px]">
           {!searchOpen && (
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[8px] lg:flex-nowrap lg:gap-[5px] xl:gap-[14px]">
+            /* Pills wrap to a second row when there are too many — no scrolling.
+               Size matches the running-order filter pills (h-45 / text-16). */
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[8px] xl:gap-[14px]">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    'flex h-[36px] shrink-0 items-center justify-center gap-[4px] rounded-full pe-[12px] ps-[4px] text-[13.5px] font-medium leading-[1.3] transition-all duration-200 lg:h-[36px] lg:gap-[3px] lg:pe-[10px] lg:ps-[3px] lg:text-[12.5px] xl:h-[45px] xl:gap-[8px] xl:pe-[16px] xl:ps-[6px] xl:text-[16px]',
+                    'flex h-[45px] shrink-0 items-center justify-center gap-[8px] rounded-full pe-[16px] ps-[6px] text-[16px] font-medium leading-[1.3] transition-all duration-200',
                     activeCategory === cat
                       ? 'bg-[#026F4F] text-white shadow-xs'
                       : 'bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] hover:text-[#026F4F] hover:outline-[#026F4F]',
                   )}
                 >
-                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[24px] w-[24px] shrink-0 rounded-full object-cover lg:h-[20px] lg:w-[20px] xl:h-[33px] xl:w-[33px]" />
+                  <img src={CATEGORY_IMAGE[cat] ?? FOOD_IMAGES.nachos} alt="" className="h-[33px] w-[33px] shrink-0 rounded-full object-cover" />
                   {tCat(cat.toLowerCase())}
                 </button>
               ))}

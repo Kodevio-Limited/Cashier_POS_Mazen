@@ -47,10 +47,13 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     // render time by the localized components, so seeds stay language-agnostic.
     const tables = ['Table A02', 'Table A05', 'Table A07', 'Table B01', 'Table C01'];
     const tick = () => {
+      const isCheck = Math.random() < 0.5;
       addRequest({
         table: tables[Math.floor(Math.random() * tables.length)],
-        type: Math.random() < 0.5 ? 'Waiter Requested' : 'Check Requested',
-        paymentMethod: Math.random() < 0.5 ? 'Card' : 'Cash',
+        type: isCheck ? 'Check Requested' : 'Waiter Requested',
+        // Cash / Card belongs to check requests only — a waiter request is just
+        // a waiter request and never carries a payment method.
+        paymentMethod: isCheck ? (Math.random() < 0.5 ? 'Card' : 'Cash') : undefined,
       });
     };
     const first = setTimeout(tick, 7000);

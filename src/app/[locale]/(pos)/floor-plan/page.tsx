@@ -420,7 +420,8 @@ export default function FloorPlanPage() {
                         <CheckCircle2 size={13} className="text-blue-600" />
                       )}
                       {req.type === 'Waiter Requested' ? t('modal.waiterRequested') : t('modal.checkRequested')}
-                      {req.paymentMethod ? ` (${t('paymentMethod.' + req.paymentMethod.toLowerCase())})` : ''}
+                      {/* Cash / Card shows for check requests only */}
+                      {req.type === 'Check Requested' && req.paymentMethod ? ` (${t('paymentMethod.' + req.paymentMethod.toLowerCase())})` : ''}
                     </span>
                     <button
                       onClick={() => handleRequest(req.id)}

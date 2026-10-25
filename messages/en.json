@@ -315,6 +315,8 @@
     "title": "Running Orders",
     "subtitle": "Live order tracking & actions",
     "noOrders": "No active running orders for this filter.",
+    "searchPlaceholder": "Search order # or table...",
+    "clearSearch": "Clear search",
     "filters": {
       "all": "All",
       "dineIn": "Dine In",

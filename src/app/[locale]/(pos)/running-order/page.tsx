@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors, ShoppingBag, Bike } from 'lucide-react';
+import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors, ShoppingBag, Bike, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getOrders,
@@ -46,6 +46,8 @@ export default function RunningOrderPage() {
   const locale = useLocale();
   const [orders, setOrders] = useState<RunningOrder[]>([]);
   const [activeTypeTab, setActiveTypeTab] = useState<OrderType>('All');
+  const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const initialized = useRef(false);
 
@@ -65,7 +67,16 @@ export default function RunningOrderPage() {
   }, []);
 
   const filteredOrders = orders
-    .filter((o) => activeTypeTab === 'All' || o.type === activeTypeTab)
+    .filter((o) => {
+      if (activeTypeTab !== 'All' && o.type !== activeTypeTab) return false;
+      const q = search.trim().toLowerCase().replace(/^#/, '');
+      if (!q) return true;
+      return (
+        o.orderNumber.toLowerCase().replace(/^#/, '').includes(q) ||
+        (o.table ? o.table.toLowerCase().includes(q) : false) ||
+        o.customerName.toLowerCase().includes(q)
+      );
+    })
     // Pending acceptance (Placed) always float to the top.
     .sort((a, b) => Number(b.status === 'Placed') - Number(a.status === 'Placed'));
 
@@ -76,8 +87,17 @@ export default function RunningOrderPage() {
 
   function handleTypeTabChange(tab: OrderType) {
     setActiveTypeTab(tab);
+    const q = search.trim().toLowerCase().replace(/^#/, '');
     const nextFiltered = orders
-      .filter((o) => tab === 'All' || o.type === tab)
+      .filter((o) => {
+        if (tab !== 'All' && o.type !== tab) return false;
+        if (!q) return true;
+        return (
+          o.orderNumber.toLowerCase().replace(/^#/, '').includes(q) ||
+          (o.table ? o.table.toLowerCase().includes(q) : false) ||
+          o.customerName.toLowerCase().includes(q)
+        );
+      })
       .sort((a, b) => Number(b.status === 'Placed') - Number(a.status === 'Placed'));
     if (nextFiltered.length > 0) {
       setSelectedOrderId(nextFiltered[0].id);
@@ -107,20 +127,65 @@ export default function RunningOrderPage() {
           </div>
         </div>
 
-        {/* Filter pills */}
-        <div className="mt-[24px] flex flex-wrap items-center gap-[11px]">
-          {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
+        {/* Filter pills + search */}
+        <div className="mt-[24px] flex items-center gap-[11px]">
+          {!searchOpen && (
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[11px]">
+              {(['All', 'Dine In', 'Takeaway', 'Delivery'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => handleTypeTabChange(tab)}
+                  className={cn(
+                    'flex h-[45px] items-center rounded-full px-[16px] text-[16px] font-medium leading-[1.3] transition-all',
+                    activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
+                  )}
+                >
+                  {tTypes(mapEnum(tab, ORDER_TYPE_KEY_MAP))}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search — collapsed to a button on right, expands over the row */}
+          {searchOpen ? (
+            <div className="flex h-[45px] min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-4 outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] animate-in fade-in zoom-in-95 duration-200">
+              <Search size={18} className="shrink-0 text-[#989898]" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearch('');
+                    setSearchOpen(false);
+                  }
+                }}
+                placeholder={t('searchPlaceholder')}
+                className="w-full min-w-0 bg-transparent text-[13px] text-[#2D2F33] outline-none placeholder:text-[#989898]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchOpen(false);
+                }}
+                aria-label={t('clearSearch')}
+                className="shrink-0 text-[#989898] transition-colors hover:text-[#2D2F33]"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
             <button
-              key={tab}
-              onClick={() => handleTypeTabChange(tab)}
-              className={cn(
-                'flex h-[45px] items-center rounded-full px-[16px] text-[16px] font-medium leading-[1.3] transition-all',
-                activeTypeTab === tab ? 'bg-[#026F4F] text-white shadow-xs' : 'bg-white text-[#686868] hover:text-[#2D2F33]',
-              )}
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t('searchPlaceholder')}
+              title={t('searchPlaceholder')}
+              className="ms-auto flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-white text-[#686868] outline outline-1 outline-offset-[-1px] outline-[#E9E9E9] transition-colors hover:text-[#026F4F] hover:outline-[#026F4F]"
             >
-              {tTypes(mapEnum(tab, ORDER_TYPE_KEY_MAP))}
+              <Search size={18} />
             </button>
-          ))}
+          )}
         </div>
 
         {/* Cards grid — pt/px keep the selected card's 2px ring from being

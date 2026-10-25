@@ -85,7 +85,8 @@ export function TableRequestModal({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <span className="text-2xl font-medium text-black">{locTable(req.table, locale, tTable)}</span>
-                        {req.paymentMethod && (
+                        {/* Cash / Card shows for check requests only */}
+                        {req.type === 'Check Requested' && req.paymentMethod && (
                           <div className="flex items-center gap-1 rounded-[20px] bg-zinc-100 px-1.5 py-1">
                             <Image
                               src={req.paymentMethod === 'Card' ? '/images/figma/payment-card.png' : '/images/figma/payment-cash.png'}
