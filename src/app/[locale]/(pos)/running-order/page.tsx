@@ -7,14 +7,19 @@ import { cn } from '@/lib/utils';
 import {
   getOrders,
   updateOrderStatus,
+  markOrderPaid,
   removeOrder,
   subscribeOrders,
+  nextStatus,
+  STATUS_STEPS,
+  DELIVERY_STATUS_STEPS,
   type OrderStatus,
   type OrderType,
   type RunningOrder,
 } from '@/lib/running-orders';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
+import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 
 const ORDER_TYPE_KEY_MAP: Record<string, string> = {
   All: 'all',
@@ -28,20 +33,26 @@ const STATUS_KEY_MAP: Record<string, string> = {
   Preparing: 'preparing',
   Ready: 'ready',
   Served: 'served',
+  'Out for Delivery': 'outForDelivery',
+  Delivered: 'delivered',
 };
 
-const STATUS_STEPS: { key: OrderStatus; label: string; icon: typeof Clock }[] = [
-  { key: 'Placed', label: 'Placed', icon: Clock },
-  { key: 'Preparing', label: 'Preparing', icon: CookingPot },
-  { key: 'Ready', label: 'Ready', icon: Package },
-  { key: 'Served', label: 'Served', icon: UtensilsCrossed },
-];
+const STATUS_ICON: Record<OrderStatus, typeof Clock> = {
+  Placed: Clock,
+  Preparing: CookingPot,
+  Ready: Package,
+  Served: UtensilsCrossed,
+  'Out for Delivery': Bike,
+  Delivered: Check,
+  Completed: Check,
+};
 
 export default function RunningOrderPage() {
   const t = useTranslations('runningOrder');
   const tTypes = useTranslations('common.orderTypes');
   const tStatus = useTranslations('runningOrder.statusActions');
   const tPay = useTranslations('common.status');
+  const tMethod = useTranslations('common.paymentMethods');
   const tTable = useTranslations('common.table');
   const locale = useLocale();
   const [orders, setOrders] = useState<RunningOrder[]>([]);
@@ -49,6 +60,11 @@ export default function RunningOrderPage() {
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  // Cash on delivery: opened when a delivery order is marked Delivered so the
+  // cashier collects the money (Bug-70) and the card flips to Paid.
+  const [collecting, setCollecting] = useState<RunningOrder | null>(null);
+  const [collectReceived, setCollectReceived] = useState('');
+  useBodyScrollLock(collecting !== null);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -104,15 +120,16 @@ export default function RunningOrderPage() {
     }
   }
 
+  /** Advance one step. Delivery orders end at Delivered, where an unpaid
+      (cash-on-delivery) check is collected right away. */
   function advanceStatus(order: RunningOrder) {
-    const next: Record<OrderStatus, OrderStatus> = {
-      Placed: 'Preparing',
-      Preparing: 'Ready',
-      Ready: 'Served',
-      Served: 'Completed',
-      Completed: 'Completed',
-    };
-    updateOrderStatus(order.id, next[order.status]);
+    const next = nextStatus(order);
+    if (next === 'Delivered' && !order.isPaid) {
+      // Cash on delivery: the money changes hands once the food is delivered.
+      setCollecting(order);
+      return;
+    }
+    updateOrderStatus(order.id, next);
   }
 
   return (
@@ -329,19 +346,30 @@ export default function RunningOrderPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            updateOrderStatus(order.id, 'Served');
+                            updateOrderStatus(order.id, order.type === 'Delivery' ? 'Out for Delivery' : 'Served');
                           }}
                           className="rounded-full bg-green-600 px-4 py-2 text-xs font-medium text-white shadow-xs transition-all hover:bg-green-700 active:scale-95"
                         >
-                          {t('complete')}
+                          {order.type === 'Delivery' ? t('sendOutForDelivery') : t('complete')}
                         </button>
                       )}
-                      {(order.status === 'Served' || order.status === 'Completed') && (
+                      {order.status === 'Out for Delivery' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            advanceStatus(order);
+                          }}
+                          className="rounded-full bg-[#F97316] px-4 py-2 text-xs font-medium text-white shadow-xs transition-all hover:bg-[#ea690b] active:scale-95"
+                        >
+                          {t('markDelivered')}
+                        </button>
+                      )}
+                      {(order.status === 'Served' || order.status === 'Completed' || order.status === 'Delivered') && (
                         <button
                           disabled
                           className="cursor-not-allowed rounded-full bg-zinc-300 px-4 py-2 text-xs font-medium text-white"
                         >
-                          {t('served')}
+                          {order.status === 'Delivered' ? t('statusActions.delivered') : t('served')}
                         </button>
                       )}
                     </div>
@@ -404,10 +432,14 @@ export default function RunningOrderPage() {
                   <Phone size={15} className="shrink-0 text-[#989898]" />
                   <span className="text-[12px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.phone}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Mail size={15} className="shrink-0 text-[#989898]" />
-                  <span className="text-[12px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.email}</span>
-                </div>
+                {/* Delivery orders carry no email, so the row is skipped entirely
+                    rather than leaving a bare icon behind (Bug-70). */}
+                {selectedOrder.email && (
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={15} className="shrink-0 text-[#989898]" />
+                    <span className="text-[12px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.email}</span>
+                  </div>
+                )}
                 {/* Delivery — instructions sit right under the email, then the address */}
                 {selectedOrder.type === 'Delivery' && selectedOrder.instructions && (
                   <div className="flex items-start gap-1.5">
@@ -424,16 +456,17 @@ export default function RunningOrderPage() {
               </div>
             </div>
 
-            {/* Status stepper */}
-            <div className="mt-[20px] h-[114px] rounded-[10px] bg-[#F2F2F2] px-[16px] pt-[13px]">
+            {/* Status stepper — delivery orders walk Preparing → Ready → Out for
+                Delivery → Delivered; dine-in / takeaway keep Served. */}
+            <div className="mt-[20px] rounded-[10px] bg-[#F2F2F2] px-[16px] pt-[13px] pb-[13px]">
               <p className="text-[13px] font-medium leading-[1.4] text-black">{t('statusHeading')}</p>
               <div className="relative mt-[6px] flex items-start justify-between">
-                {STATUS_STEPS.map((step, i) => {
-                  const idx = STATUS_STEPS.findIndex((s) => s.key === selectedOrder.status);
-                  const isDone = i <= idx;
-                  const Icon = step.icon;
+                {(selectedOrder.type === 'Delivery' ? DELIVERY_STATUS_STEPS : STATUS_STEPS).map((key, i, steps) => {
+                  const idx = steps.findIndex((s) => s === selectedOrder.status);
+                  const isDone = idx >= 0 ? i <= idx : false;
+                  const Icon = STATUS_ICON[key];
                   return (
-                    <Fragment key={step.key}>
+                    <Fragment key={key}>
                       {/* Connector — in-flow so it tracks the real step spacing */}
                       {i > 0 && (
                         <div
@@ -453,7 +486,7 @@ export default function RunningOrderPage() {
                           <Icon size={18} strokeWidth={1.6} />
                         </div>
                         <span className={cn('mt-[8px] text-[9px] font-normal leading-[1.4]', isDone ? 'text-[#026F4F]' : 'text-[#B9B9B9]')}>
-                          {tStatus(mapEnum(step.key, STATUS_KEY_MAP))}
+                          {tStatus(mapEnum(key, STATUS_KEY_MAP))}
                         </span>
                       </div>
                     </Fragment>
@@ -474,8 +507,15 @@ export default function RunningOrderPage() {
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-[13.5px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
                       <span className="truncate text-[11px] leading-[1.4]">
-                        <span className="font-semibold text-[#64C864]">+</span>{' '}
-                        <span className="text-[#989898]">{locStr(item.modifier || 'Mayo', item.modifierAr || t('mayoModifier'), locale)}</span>
+                        {/* Only render the add-on row when the line actually has
+                            one — real orders can be plain, and defaulting to a
+                            fabricated "Mayo" misreports the dish. */}
+                        {item.modifier && (
+                          <>
+                            <span className="font-semibold text-[#64C864]">+</span>{' '}
+                            <span className="text-[#989898]">{locStr(item.modifier, item.modifierAr, locale)}</span>
+                          </>
+                        )}
                       </span>
                       <span className="flex items-center gap-[3px] text-[11px] italic leading-[1.4] text-[#026F4F]">
                         <Scissors size={14} strokeWidth={1.6} />
@@ -491,10 +531,11 @@ export default function RunningOrderPage() {
               </div>
             </div>
 
-            {/* Payments */}
-            <div className="mt-[20px] flex min-h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
+            {/* Payments — kept compact so Subtotal → Tax → Tips → Total all fit
+                above the fold of this narrow panel (Bugs 3/6). */}
+            <div className="mt-[12px] flex min-h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
               <p className="text-[15px] font-medium leading-[1.4] text-[#2D2F33]">{t('paymentsDetails')}</p>
-              <div className="mt-[16px] flex flex-col gap-[12px] text-[13px] leading-[1.4]">
+              <div className="mt-[10px] flex flex-col gap-[9px] text-[13px] leading-[1.4]">
                 <div className="flex items-center justify-between">
                   <span className="font-normal text-[#989898]">{t('subtotalItems', { count: selectedOrder.items.reduce((s, i) => s + i.qty, 0) })}</span>
                   <span className="font-medium text-[#686868]">${selectedOrder.subtotal.toFixed(2)}</span>
@@ -515,6 +556,20 @@ export default function RunningOrderPage() {
                     <span className="font-medium text-[#686868]">${selectedOrder.tips.toFixed(2)}</span>
                   </div>
                 )}
+                {/* Delivery — how the money is coming in: prepaid online, or
+                    cash collected on delivery. */}
+                {selectedOrder.type === 'Delivery' && selectedOrder.paymentMethod && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-normal text-[#989898]">{t('paymentMethod')}</span>
+                    <span className="font-medium text-[#686868]">
+                      {selectedOrder.paymentMethod === 'Online'
+                        ? t('payMethod.online')
+                        : selectedOrder.paymentMethod === 'Cash on Delivery'
+                          ? t('payMethod.cod')
+                          : tMethod(mapEnum(selectedOrder.paymentMethod, { Card: 'card', Cash: 'cash' }))}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="mt-[12px] border-t border-dashed border-[#989898]" />
               <div className="mt-[10px] flex items-center justify-between text-[14px] leading-[1.4]">
@@ -524,20 +579,111 @@ export default function RunningOrderPage() {
             </div>
           </div>
 
-          {/* Mark Ready */}
+          {/* Advance the order — the label follows the (possibly delivery-only)
+              status chain; a finished order shows Completed. */}
           <div className="p-[11px]">
-            <button
-              onClick={() => advanceStatus(selectedOrder)}
-              className="flex h-[44px] w-full items-center justify-center rounded-[30px] bg-[#F97316] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all hover:bg-[#ea690b] active:scale-[0.99]"
-            >
-              {selectedOrder.status === 'Placed'
-                ? t('markPreparing')
-                : selectedOrder.status === 'Preparing'
-                  ? t('markReady')
-                  : selectedOrder.status === 'Ready'
-                    ? t('serveOrder')
-                    : t('completed')}
-            </button>
+            {(() => {
+              const done =
+                selectedOrder.type === 'Delivery'
+                  ? selectedOrder.status === 'Delivered'
+                  : selectedOrder.status === 'Served' || selectedOrder.status === 'Completed';
+              const label = selectedOrder.type === 'Delivery'
+                ? selectedOrder.status === 'Placed'
+                  ? t('markPreparing')
+                  : selectedOrder.status === 'Preparing'
+                    ? t('markReady')
+                    : selectedOrder.status === 'Ready'
+                      ? t('sendOutForDelivery')
+                      : selectedOrder.status === 'Out for Delivery'
+                        ? t('markDelivered')
+                        : t('completed')
+                : selectedOrder.status === 'Placed'
+                  ? t('markPreparing')
+                  : selectedOrder.status === 'Preparing'
+                    ? t('markReady')
+                    : selectedOrder.status === 'Ready'
+                      ? t('serveOrder')
+                      : t('completed');
+              return (
+                <button
+                  onClick={() => advanceStatus(selectedOrder)}
+                  disabled={done}
+                  className={cn(
+                    'flex h-[44px] w-full items-center justify-center rounded-[30px] text-[16px] font-medium leading-[1.4] text-white shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] transition-all active:scale-[0.99]',
+                    done
+                      ? 'cursor-not-allowed bg-zinc-300 shadow-none'
+                      : 'bg-[#F97316] hover:bg-[#ea690b]',
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ── Cash on delivery: collect the money when a delivery order lands ── */}
+      {collecting && (
+        <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <h3 className="text-xl font-bold text-black">{t('collectCashOnDelivery.title')}</h3>
+              <button
+                onClick={() => setCollecting(null)}
+                aria-label={t('backToOrders')}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition-colors hover:text-black"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1 rounded-xl bg-[#F2F2F2] p-4">
+              <span className="text-xs text-[#989898]">{t('collectCashOnDelivery.due')}</span>
+              <span className="text-3xl font-semibold text-black"><bdi dir="ltr">${collecting.total.toFixed(2)}</bdi></span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-[#686868]">{t('collectCashOnDelivery.amountReceived')}</label>
+              <input
+                type="number"
+                dir="ltr"
+                inputMode="decimal"
+                autoFocus
+                value={collectReceived}
+                onChange={(e) => setCollectReceived(e.target.value)}
+                placeholder={collecting.total.toFixed(2)}
+                className="h-12 w-full rounded-xl bg-[#F2F2F2] px-4 text-lg font-medium text-[#2D2F33] outline-none [appearance:textfield] placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-black">{t('collectCashOnDelivery.changeDue')}</span>
+              <span className="text-lg font-semibold text-[#026F4F]">
+                <bdi dir="ltr">${Math.max(0, (parseFloat(collectReceived) || 0) - collecting.total).toFixed(2)}</bdi>
+              </span>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setCollecting(null)}
+                className="h-11 flex-1 rounded-xl bg-zinc-100 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
+              >
+                {t('collectCashOnDelivery.cancel')}
+              </button>
+              <button
+                onClick={() => {
+                  updateOrderStatus(collecting.id, 'Delivered');
+                  markOrderPaid(collecting.id, 'Cash');
+                  setCollecting(null);
+                  setCollectReceived('');
+                }}
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#026F4F] text-sm font-medium text-white transition-colors hover:bg-[#015c42]"
+              >
+                <Check size={16} strokeWidth={2.6} />
+                {t('collectCashOnDelivery.confirm')}
+              </button>
+            </div>
           </div>
         </div>
       )}

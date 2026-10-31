@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Bell, CheckCircle2, Clock } from 'lucide-react';
+import { Bell, CalendarClock, CheckCircle2, Clock } from 'lucide-react';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
 
 export type FloorTableStatus = 'occupied' | 'available' | 'reserved';
@@ -26,6 +26,10 @@ interface FloorTableCardProps {
   bill?: string;
   time?: string;
   requests?: TableRequestBadge[];
+  /** e.g. 'John Smith • 2 guests • 7:30 PM' — shown on reserved tables. */
+  reservedFor?: string;
+  /** Opens the reservation form. A plain tap on the card still seats guests. */
+  onReserve?: () => void;
   onClick?: () => void;
 }
 
@@ -38,7 +42,7 @@ interface FloorTableCardProps {
  * size scales from the 256px reference. The grid gives it `minmax(256px, 1fr)`
  * tracks, so it grows to fill wide viewports and stays 256px at narrow ones.
  */
-export function FloorTableCard({ name, zone, status, itemsCount, bill, time, requests, onClick }: FloorTableCardProps) {
+export function FloorTableCard({ name, zone, status, itemsCount, bill, time, requests, reservedFor, onReserve, onClick }: FloorTableCardProps) {
   const t = useTranslations('floorPlan');
   const tTime = useTranslations('common.time');
   const locale = useLocale();
@@ -103,6 +107,30 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
 
         {/* Zone */}
         <p className="absolute left-[4.297cqw] top-[17.188cqw] text-[5.273cqw] font-medium leading-[1.4] text-[#989898]">{zoneLabel}</p>
+
+        {/* Reserved-for summary (name • time) on reserved tables */}
+        {status === 'reserved' && reservedFor && (
+          <p className="absolute left-[4.297cqw] right-[4.297cqw] top-[26.953cqw] truncate text-[5.078cqw] font-medium leading-[1.4] text-[#0D7EA8]">
+            {reservedFor}
+          </p>
+        )}
+
+        {/* Reserve action — a secondary tap target INSIDE the card so the
+            card itself keeps seating guests on a single tap (no extra click
+            in the normal ordering flow). */}
+        {status === 'available' && onReserve && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReserve();
+            }}
+            className="absolute bottom-[4.297cqw] left-[4.297cqw] right-[4.297cqw] flex h-[12.5cqw] items-center justify-center gap-[2.344cqw] rounded-full bg-white/80 text-[5.078cqw] font-medium leading-[1.4] text-[#026F4F] outline outline-1 outline-[#026F4F]/40 transition-colors hover:bg-[#026F4F] hover:text-white"
+          >
+            <CalendarClock size={16} strokeWidth={1.8} className="shrink-0" />
+            {t('reserveTable')}
+          </button>
+        )}
 
         {/* Items (occupied) */}
         {status === 'occupied' && typeof itemsCount === 'number' && (

@@ -3,8 +3,49 @@
 // (not-yet-accepted) order count at all times. Persisted to localStorage and
 // broadcast via a custom event.
 
-export type OrderStatus = 'Placed' | 'Preparing' | 'Ready' | 'Served' | 'Completed';
+// Delivery orders run their own chain (Preparing → Ready → Out for Delivery →
+// Delivered) because "Served" is meaningless for them — the food leaves the
+// restaurant and payment is collected after delivery (Bug-70).
+export type OrderStatus =
+  | 'Placed'
+  | 'Preparing'
+  | 'Ready'
+  | 'Served'
+  | 'Completed'
+  | 'Out for Delivery'
+  | 'Delivered';
 export type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
+
+/** Dine-in / takeaway steps shown in the order-detail stepper. */
+export const STATUS_STEPS: OrderStatus[] = ['Placed', 'Preparing', 'Ready', 'Served'];
+/** Delivery steps shown in the order-detail stepper. */
+export const DELIVERY_STATUS_STEPS: OrderStatus[] = ['Preparing', 'Ready', 'Out for Delivery', 'Delivered'];
+
+/** The status an order moves to when the cashier advances it one step. */
+export function nextStatus(order: Pick<RunningOrder, 'type' | 'status'>): OrderStatus {
+  if (order.type === 'Delivery') {
+    switch (order.status) {
+      case 'Placed':
+        return 'Preparing';
+      case 'Preparing':
+        return 'Ready';
+      case 'Ready':
+        return 'Out for Delivery';
+      default:
+        return 'Delivered';
+    }
+  }
+  switch (order.status) {
+    case 'Placed':
+      return 'Preparing';
+    case 'Preparing':
+      return 'Ready';
+    case 'Ready':
+      return 'Served';
+    default:
+      return 'Completed';
+  }
+}
 
 export interface RunningOrderItem {
   name: string;
@@ -34,6 +75,9 @@ export interface RunningOrder {
   type: 'Dine In' | 'Takeaway' | 'Delivery';
   status: OrderStatus;
   items: RunningOrderItem[];
+  /** How the order is/was paid. Delivery orders are either prepaid online or
+      cash on delivery, collected once the order is marked Delivered. */
+  paymentMethod?: 'Cash' | 'Card' | 'Online' | 'Cash on Delivery';
   subtotal: number;
   serviceCharge: number;
   /** Tax (VAT) line in the payments breakdown. */
@@ -130,7 +174,6 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     customerNameAr: 'سارة جنكينز',
     phone: '+01284984',
     email: 'sarah.j@example.com',
-    isPaid: true,
     date: '7 Apr, 12:15 PM',
     dateAr: '٧ أبريل، ١٢:١٥ م',
     table: '',
@@ -145,10 +188,41 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     tax: 2.66,
     tips: 2.5,
     total: 26.04,
+    // Cash on delivery: still unpaid, payment is collected once it is Delivered.
+    isPaid: false,
+    paymentMethod: 'Cash on Delivery',
     address: '12 Nile Corniche, Apt 4B',
     addressAr: '١٢ كورنيش النيل، شقة ٤ب',
     instructions: 'Leave at the front desk — call on arrival',
     instructionsAr: 'اترك الطلب عند الاستقبال — واتصل عند الوصول',
+  },
+  {
+    id: 'ro5',
+    orderNumber: '#049',
+    customerName: 'Omar Nasser',
+    customerNameAr: 'عمر ناصر',
+    phone: '+01284992',
+    email: 'omar.n@example.com',
+    isPaid: true,
+    paymentMethod: 'Online',
+    date: '7 Apr, 12:30 PM',
+    dateAr: '٧ أبريل، ١٢:٣٠ م',
+    table: '',
+    type: 'Delivery',
+    status: 'Ready',
+    items: [
+      { name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', qty: 1, price: 18.99, modifier: 'Medium', modifierAr: 'متوسط', emoji: '🍜' },
+      { name: 'French Fries', nameAr: 'بطاطس مقلية', qty: 1, price: 4.99, modifier: 'Standard', modifierAr: 'عادي', emoji: '🍟' },
+    ],
+    subtotal: 23.98,
+    serviceCharge: 2.4,
+    tax: 3.36,
+    tips: 3.0,
+    total: 32.74,
+    address: '88 Sheikh Zayed St, Villa 12',
+    addressAr: '٨٨ شارع الشيخ زايد، فيلا ١٢',
+    instructions: 'Ring the bell twice — leave with the guard if no answer',
+    instructionsAr: 'دق الجرس مرتين — اترك الطلب مع الحارس إن لا أحد يرد',
   },
 ];
 
@@ -183,6 +257,16 @@ export function getOrders(): RunningOrder[] {
 
 export function updateOrderStatus(id: string, status: OrderStatus): void {
   write(getOrders().map((o) => (o.id === id ? { ...o, status } : o)));
+}
+
+/** Record a newly created checkout as a running order (newest first). */
+export function addOrder(order: RunningOrder): void {
+  write([order, ...getOrders()]);
+}
+
+/** Delivery was cash on delivery: collect the money and mark it paid. */
+export function markOrderPaid(id: string, method: 'Cash' | 'Card' | 'Online' = 'Cash'): void {
+  write(getOrders().map((o) => (o.id === id ? { ...o, isPaid: true, paymentMethod: method } : o)));
 }
 
 export function removeOrder(id: string): void {

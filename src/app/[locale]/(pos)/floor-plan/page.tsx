@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
-import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, CheckCircle2 } from 'lucide-react';
+import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, CheckCircle2, CalendarClock, User, Phone, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
 import { clearDraft, lineTotal, newLineId, saveDraft, type DraftItem } from '@/lib/order-draft';
 import { addClearedTable, getClearedTables, removeClearedTable } from '@/lib/cleared-tables';
 import { loadSession, newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
 import { getRequests, addRequest, handleRequest, subscribeRequests, type TableRequest } from '@/lib/table-requests';
+import { getReservations, saveReservation, removeReservation } from '@/lib/table-reservations';
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 import { ConfirmMergeModal } from '@/components/pos/PaymentModals';
@@ -36,6 +37,10 @@ interface FloorTable {
   reservedName?: string;
   /** Arabic twin of `reservedName`. */
   reservedNameAr?: string;
+  /** Phone number given when the table was reserved. */
+  reservedPhone?: string;
+  /** Guest count given when the table was reserved. */
+  reservedGuests?: number;
 }
 
 type SeedLine = Omit<DraftItem, 'lineId'>;
@@ -65,7 +70,7 @@ const INITIAL_TABLES: FloorTable[] = [
     { id: 'm11', name: 'Coca-Cola', nameAr: 'كوكا كولا', price: 2.99, qty: 2, emoji: '🥤' },
   ]),
   { id: 't3', name: 'Table A03', nameAr: 'طاولة A03', capacity: 4, status: 'available', zone: 'Indoor' },
-  { id: 't4', name: 'Table A04', nameAr: 'طاولة A04', capacity: 2, status: 'reserved', zone: 'Indoor', reservedTime: '7:30 PM', reservedName: 'John Smith', reservedNameAr: 'جون سميث' },
+  { id: 't4', name: 'Table A04', nameAr: 'طاولة A04', capacity: 2, status: 'reserved', zone: 'Indoor', reservedTime: '7:30 PM', reservedName: 'John Smith', reservedNameAr: 'جون سميث', reservedPhone: '+0100 224 8890', reservedGuests: 2 },
   occupied({ id: 't5', name: 'Table A05', nameAr: 'طاولة A05', capacity: 6, zone: 'Indoor', guestsCount: 4, timeSeated: '20 mins' }, '#045', [
     { id: 'm3', name: 'Tonkotsu Ramen', nameAr: 'رامن تونكوتسو', price: 18.99, qty: 1, emoji: '🍜', options: ['Medium'] },
     { id: 'm6', name: 'BBQ Bacon Burger', nameAr: 'برجر باربيكي بيكون', price: 19.99, qty: 1, emoji: '🍔' },
@@ -112,6 +117,12 @@ export default function FloorPlanPage() {
   // Table modal + transfer sub-modal (+ its merge confirm) cover the floor.
   useBodyScrollLock(tableOpen || transferOpen);
   const [requests, setRequests] = useState<TableRequest[]>([]);
+  // ── Reservations (Bug-69): a reservation is created from the card's own
+  // "Reserve" action, never from the tap that seats guests, so the normal
+  // ordering flow stays one tap. The form is a small modal. ──
+  const [reserveTarget, setReserveTarget] = useState<FloorTable | null>(null);
+  const [reserveForm, setReserveForm] = useState({ name: '', phone: '', guests: '2', time: '' });
+  useBodyScrollLock(reserveTarget !== null);
 
   const openTableModal = (t: FloorTable) => {
     setActiveModalTable(t);
@@ -161,16 +172,101 @@ export default function FloorPlanPage() {
 
   function seatTable(table: FloorTable) {
     removeClearedTable(table.name);
+    removeReservation(table.name);
     setTables((prev) =>
       prev.map((t) =>
         t.id === table.id
-          ? { ...t, status: 'occupied' as FloorTableStatus, guestsCount: 2, itemsCount: 0, orderId: '#NEW', orderTotal: 0, orderItems: undefined, timeSeated: 'Just now', reservedName: undefined, reservedTime: undefined }
+          ? { ...t, status: 'occupied' as FloorTableStatus, guestsCount: 2, itemsCount: 0, orderId: '#NEW', orderTotal: 0, orderItems: undefined, timeSeated: 'Just now', reservedName: undefined, reservedTime: undefined, reservedPhone: undefined, reservedGuests: undefined }
           : t,
       ),
     );
     closeTableModal();
     startOrder('dine-in', table.name, true);
   }
+
+  // ── Reservations ────────────────────────────────────────────────────────
+  const reserveValid = reserveForm.name.trim().length > 0 && reserveForm.phone.trim().length > 0 && reserveForm.time.trim().length > 0;
+
+  function openReserve(table: FloorTable) {
+    setReserveForm({ name: '', phone: '', guests: '2', time: '' });
+    setReserveTarget(table);
+  }
+
+  /** <input type="time"> yields '19:30' — store it as the 12-hour label the
+      seeded reservations (and receipts) already use. */
+  function toDisplayTime(value: string): string {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+    if (!m) return value.trim();
+    const h = Number(m[1]);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${m[2]} ${suffix}`;
+  }
+
+  function saveTableReservation() {
+    const target = reserveTarget;
+    if (!target || !reserveValid) return;
+    const guests = Math.min(target.capacity, Math.max(1, Number.parseInt(reserveForm.guests, 10) || 1));
+    const name = reserveForm.name.trim();
+    const time = toDisplayTime(reserveForm.time);
+    saveReservation({
+      table: target.name,
+      tableAr: target.nameAr,
+      name,
+      phone: reserveForm.phone.trim(),
+      guests,
+      time,
+    });
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === target.id
+          ? {
+              ...t,
+              status: 'reserved' as FloorTableStatus,
+              reservedName: name,
+              reservedNameAr: locale === 'ar' ? name : undefined,
+              reservedPhone: reserveForm.phone.trim(),
+              reservedGuests: guests,
+              reservedTime: time,
+            }
+          : t,
+      ),
+    );
+    setReserveTarget(null);
+  }
+
+  function cancelReservation(table: FloorTable) {
+    removeReservation(table.name);
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === table.id
+          ? { ...t, status: 'available' as FloorTableStatus, reservedName: undefined, reservedNameAr: undefined, reservedTime: undefined, reservedPhone: undefined, reservedGuests: undefined }
+          : t,
+      ),
+    );
+    closeTableModal();
+  }
+
+  // Reservations made on another visit survive navigation / reload.
+  useEffect(() => {
+    const saved = getReservations();
+    if (saved.length === 0) return;
+    setTables((prev) =>
+      prev.map((t) => {
+        const r = saved.find((s) => s.table === t.name);
+        if (!r || t.status !== 'available') return t;
+        return {
+          ...t,
+          status: 'reserved' as FloorTableStatus,
+          reservedName: r.name,
+          reservedNameAr: r.nameAr,
+          reservedPhone: r.phone,
+          reservedGuests: r.guests,
+          reservedTime: r.time,
+        };
+      }),
+    );
+  }, []);
 
   // Persist the table / Take Out / Delivery choice, then open the menu to build
   // the order. `fresh` clears any previous cart so a new order starts empty.
@@ -352,6 +448,16 @@ export default function FloorPlanPage() {
             bill={table.status === 'occupied' && table.orderTotal ? `$${table.orderTotal.toFixed(2)}` : undefined}
             time={table.status === 'occupied' ? table.timeSeated : undefined}
             requests={requestsForTable(table.name).map((r) => ({ ...r, timeAgo: locTimeAgo(r.timeAgo, locale, tTime) }))}
+            reservedFor={
+              table.status === 'reserved' && table.reservedName
+                ? t('reservedSummary', {
+                    name: locStr(table.reservedName, table.reservedNameAr, locale),
+                    guests: table.reservedGuests ?? table.capacity,
+                    time: table.reservedTime ?? '',
+                  })
+                : undefined
+            }
+            onReserve={table.status === 'available' ? () => openReserve(table) : undefined}
             onClick={() => {
               // Available tables skip the modal entirely: seat guests and open
               // the menu immediately. Reserved/occupied tables keep the modal.
@@ -399,11 +505,23 @@ export default function FloorPlanPage() {
                 </div>
               )}
               {activeModalTable.reservedName && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-500">{t('modal.reservedFor')}</span>
-                  <span className="font-semibold text-blue-700">
-                    {locStr(activeModalTable.reservedName, activeModalTable.reservedNameAr, locale)} • {activeModalTable.reservedTime}
-                  </span>
+                <div className="flex flex-col gap-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-neutral-500">{t('modal.reservedFor')}</span>
+                    <span className="font-semibold text-blue-700">
+                      {locStr(activeModalTable.reservedName, activeModalTable.reservedNameAr, locale)} • {activeModalTable.reservedTime}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-neutral-500">{t('modal.reservedGuests')}</span>
+                    <span className="font-semibold text-blue-700">{activeModalTable.reservedGuests ?? '-'}</span>
+                  </div>
+                  {activeModalTable.reservedPhone && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-500">{t('modal.reservedPhone')}</span>
+                      <span className="font-semibold text-blue-700" dir="ltr">{activeModalTable.reservedPhone}</span>
+                    </div>
+                  )}
                 </div>
               )}
               {activeModalTable.status === 'available' && (
@@ -441,6 +559,16 @@ export default function FloorPlanPage() {
                 >
                   <Plus size={16} />
                   <span>{t('modal.startNewOrder')}</span>
+                </button>
+              )}
+
+              {activeModalTable.status === 'reserved' && (
+                <button
+                  onClick={() => cancelReservation(activeModalTable)}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-100 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
+                >
+                  <X size={16} />
+                  <span>{t('modal.cancelReservation')}</span>
                 </button>
               )}
 
@@ -522,6 +650,113 @@ export default function FloorPlanPage() {
               </button>
             </div>
            </div>
+        </div>
+      )}
+
+      {/* ── Reservation form (?modal=reserve&id=) — opened from the card's own
+          Reserve action, so tapping a free table still seats guests in one go ── */}
+      {reserveTarget && (
+        <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div>
+                <h3 className="flex items-center gap-2 text-xl font-bold text-black">
+                  <CalendarClock size={20} className="text-[#026F4F]" />
+                  {t('reserve.title', { name: locStr(reserveTarget.name, reserveTarget.nameAr, locale) })}
+                </h3>
+                <p className="mt-1 text-xs text-neutral-400">{t('reserve.subtitle')}</p>
+              </div>
+              <button
+                onClick={() => setReserveTarget(null)}
+                aria-label={tc('close')}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition-colors hover:text-black"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[#686868]">{t('reserve.name')}</label>
+                <div className="relative">
+                  <User size={14} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[#989898]" />
+                  <input
+                    value={reserveForm.name}
+                    onChange={(e) => setReserveForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder={t('reserve.namePlaceholder')}
+                    className="h-11 w-full rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[#686868]">{t('reserve.phone')}</label>
+                <div className="relative">
+                  <Phone size={14} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[#989898]" />
+                  <input
+                    type="tel"
+                    dir="ltr"
+                    value={reserveForm.phone}
+                    onChange={(e) => setReserveForm((p) => ({ ...p, phone: e.target.value }))}
+                    placeholder={t('reserve.phonePlaceholder')}
+                    className="h-11 w-full rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-[#686868]">{t('reserve.guests')}</label>
+                  <div className="relative">
+                    <Users size={14} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[#989898]" />
+                    <input
+                      type="number"
+                      min={1}
+                      max={reserveTarget.capacity}
+                      inputMode="numeric"
+                      value={reserveForm.guests}
+                      onChange={(e) => setReserveForm((p) => ({ ...p, guests: e.target.value }))}
+                      className="h-11 w-full rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                  </div>
+                  <span className="text-[11px] text-[#989898]">{t('reserve.capacity', { count: reserveTarget.capacity })}</span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-[#686868]">{t('reserve.time')}</label>
+                  <div className="relative">
+                    <CalendarClock size={14} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[#989898]" />
+                    <input
+                      type="time"
+                      value={reserveForm.time}
+                      onChange={(e) => setReserveForm((p) => ({ ...p, time: e.target.value }))}
+                      className="h-11 w-full rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setReserveTarget(null)}
+                className="h-11 flex-1 rounded-xl bg-zinc-100 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
+              >
+                {tc('cancel')}
+              </button>
+              <button
+                onClick={saveTableReservation}
+                disabled={!reserveValid}
+                className={cn(
+                  'flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-medium text-white transition-colors',
+                  reserveValid ? 'bg-[#026F4F] hover:bg-[#015c42]' : 'cursor-not-allowed bg-zinc-300',
+                )}
+              >
+                <CheckCircle2 size={16} />
+                {t('reserve.confirm')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

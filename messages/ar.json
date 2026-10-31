@@ -158,7 +158,10 @@
       "collectPayment": "استلام الدفع وتفريغ الطاولة",
       "handled": "تمت المعالجة",
       "waiterRequested": "طلب نادل",
-      "checkRequested": "طلب الحساب"
+      "checkRequested": "طلب الحساب",
+      "cancelReservation": "إلغاء الحجز",
+      "reservedGuests": "الضيوف",
+      "reservedPhone": "الهاتف"
     },
     "transfer": {
       "title": "تحويل {name}",
@@ -178,6 +181,20 @@
     "paymentMethod": {
       "card": "بطاقة",
       "cash": "نقدًا"
+    },
+    "reserveTable": "حجز",
+    "reservedSummary": "{name} · {guests} ضيوف · {time}",
+    "reserve": {
+      "title": "حجز {name}",
+      "subtitle": "اسم الضيف ورقم الهاتف وعدد الضيوف وموعد الحجز.",
+      "name": "اسم الضيف",
+      "namePlaceholder": "مثال: أحمد محمد",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "+20 1XXX XXX XXX",
+      "guests": "عدد الضيوف",
+      "capacity": "سعة {count} مقاعد",
+      "time": "موعد الحجز",
+      "confirm": "تأكيد الحجز"
     }
   },
   "order": {
@@ -308,8 +325,17 @@
     "demoEmail": "sarah.jessie@example.com",
     "payMethod": {
       "cash": "نقدًا",
-      "card": "بطاقة"
-    }
+      "card": "بطاقة",
+      "online": "الدفع أونلاين",
+      "cod": "الدفع عند الاستلام"
+    },
+    "tipLabel": "الإكرامية",
+    "clearTip": "إزالة الإكرامية",
+    "customTip": "مبلغ مخصص",
+    "taxLabel": "الضريبة ({rate}%)",
+    "tipsLabel": "الإكرامية",
+    "deliveryPaymentMethod": "طريقة دفع التوصيل",
+    "placeOrderCod": "تأكيد الطلب (الدفع عند التوصيل)"
   },
   "runningOrder": {
     "title": "الطلبات الجارية",
@@ -324,10 +350,12 @@
       "delivery": "توصيل"
     },
     "status": {
-      "placed": "تم الطلب",
+      "placed": "مُرسل",
       "preparing": "قيد التحضير",
       "ready": "جاهز",
-      "served": "تم التقديم"
+      "served": "تم التقديم",
+      "outForDelivery": "خارج للتوصيل",
+      "delivered": "تم التوصيل"
     },
     "actions": {
       "accept": "قبول",
@@ -370,14 +398,31 @@
       "preparing": "قيد التحضير",
       "ready": "جاهز",
       "served": "تم التقديم",
-      "completed": "مكتمل"
+      "completed": "مكتمل",
+      "outForDelivery": "خارج للتوصيل",
+      "delivered": "تم التوصيل"
     },
     "demoCustomer": "روبرت فوكس",
     "demoCustomer2": "مايك تومسون",
     "demoCustomer3": "ديفيد ك.",
     "demoDate": "٧ أبريل، ١١:٣٠ ص",
     "demoDate2": "٧ أبريل، ١١:٤٥ ص",
-    "demoDate3": "٧ أبريل، ١٢:٠٠ م"
+    "demoDate3": "٧ أبريل، ١٢:٠٠ م",
+    "sendOutForDelivery": "إرسال للتوصيل",
+    "markDelivered": "تحديد تم التوصيل",
+    "paymentMethod": "طريقة الدفع",
+    "payMethod": {
+      "online": "الدفع أونلاين",
+      "cod": "الدفع عند الاستلام"
+    },
+    "collectCashOnDelivery": {
+      "title": "الدفع عند الاستلام",
+      "due": "المبلغ المستحق عند التوصيل",
+      "amountReceived": "المبلغ المستلم",
+      "changeDue": "الباقي",
+      "confirm": "الاستلام والإكمال",
+      "cancel": "إلغاء"
+    }
   },
   "history": {
     "title": "سجل الطلبات",

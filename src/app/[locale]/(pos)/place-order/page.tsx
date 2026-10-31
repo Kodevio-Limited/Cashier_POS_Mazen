@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer, Mail } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Trash2, Tag, Check, CreditCard, Banknote, PauseCircle, Split, GitMerge, Phone, User, Printer, Mail, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadDraft, saveDraft, clearDraft, lineTotal, MODIFIER_PRICES } from '@/lib/order-draft';
 import { addClearedTable } from '@/lib/cleared-tables';
@@ -12,6 +12,7 @@ import { loadSession, clearSession, sessionLabel, type OrderSession } from '@/li
 import {
   loadDeliveryDetails,
   saveDeliveryDetails,
+  clearDeliveryDetails,
   emptyDeliveryDetails,
   isDeliveryDetailsComplete,
   loadCustomerByPhone,
@@ -21,6 +22,8 @@ import {
 import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
 import { useQueryModal } from '@/lib/use-query-modal';
+import { SERVICE_RATE, TAX_RATE, TIP_PRESETS, round2 } from '@/lib/order-charges';
+import { addOrder, getOrders, markOrderPaid, type RunningOrder } from '@/lib/running-orders';
 import {
   CollectPaymentModal,
   SplitBillModal,
@@ -150,7 +153,21 @@ export default function PlaceOrderPage() {
 
   // Checkout options
   const [promo, setPromo] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card'>('Card');
+  // Cashier-selected tip (Bug-72): percentage presets off the discounted
+  // subtotal, or a free amount typed in. Nothing is tipped by default.
+  const [tipPreset, setTipPreset] = useState<number | 'custom' | null>(null);
+  const [customTip, setCustomTip] = useState('');
+  // Delivery orders are paid either online up front or in cash on delivery —
+  // the two options replace Cash / Card for delivery sessions (Bug-70).
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card' | 'Online' | 'Cash on Delivery'>('Card');
+
+  // Delivery sessions never use the dine-in Cash / Card pair — normalize to
+  // "pay online" so the highlighted option always matches the chosen flow.
+  useEffect(() => {
+    if (session?.type === 'delivery' && (paymentMethod === 'Cash' || paymentMethod === 'Card')) {
+      setPaymentMethod('Online');
+    }
+  }, [session?.type, paymentMethod]);
   // Query-driven checkout overlays: ?modal=payment|split-bill|merge-orders|
   // confirm-merge|order-success. Back walks back through them.
   const [successOpen, setSuccessOpen] = useQueryModal('order-success');
@@ -204,8 +221,81 @@ export default function PlaceOrderPage() {
   const subtotal = items.reduce((sum, i) => sum + lineTotal(i), 0);
   const promoApplied = promo.trim().length > 0;
   const discount = promoApplied ? subtotal * 0.1 : 0;
-  const serviceCharge = (subtotal - discount) * 0.1; // 10%
-  const total = subtotal - discount + serviceCharge;
+  const base = Math.max(0, subtotal - discount); // every % charge applies here
+  const serviceCharge = round2(base * SERVICE_RATE); // 10%
+  const tax = round2(base * TAX_RATE); // 14% VAT
+  const tip =
+    tipPreset === 'custom'
+      ? Math.max(0, Number.parseFloat(customTip) || 0)
+      : typeof tipPreset === 'number'
+        ? round2(base * tipPreset)
+        : 0;
+  const total = round2(subtotal - discount + serviceCharge + tax + tip);
+
+  /**
+   * Snapshot this checkout into a running order so the kitchen / cashier
+   * screens see the real order (with the tip the cashier picked and the
+   * delivery address + instructions, Bugs 2/3/4/6).
+   */
+  function buildRunningOrder(paid: boolean): RunningOrder {
+    const now = new Date();
+    const date = now.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    const dateAr = now.toLocaleString('ar-EG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    const isDelivery = session?.type === 'delivery';
+    const type: RunningOrder['type'] = isDelivery ? 'Delivery' : session?.type === 'take-out' ? 'Takeaway' : 'Dine In';
+    const address = isDelivery
+      ? [deliveryForm.address, deliveryForm.street, deliveryForm.floor ? `Fl ${deliveryForm.floor}` : '', deliveryForm.apartment ? `Apt ${deliveryForm.apartment}` : '', deliveryForm.landmark]
+          .filter(Boolean)
+          .join(', ')
+      : undefined;
+    return {
+      id: `order-${Date.now()}`,
+      orderNumber: orderNumber.startsWith('#') ? orderNumber : `#${orderNumber}`,
+      customerName: isDelivery ? deliveryForm.name : name || t('demoName'),
+      phone: isDelivery ? deliveryForm.phone : phone,
+      email: isDelivery ? undefined : email || undefined,
+      isPaid: paid,
+      date,
+      dateAr,
+      table: session?.type === 'dine-in' ? (session.tableName ?? '') : '',
+      type,
+      status: 'Placed',
+      paymentMethod: isDelivery ? (paid ? 'Online' : 'Cash on Delivery') : paymentMethod,
+      items: items.map((i) => ({
+        name: i.name,
+        nameAr: i.nameAr,
+        qty: i.qty,
+        price: lineTotal(i) / i.qty,
+        modifier: i.modifiers?.[0],
+        emoji: i.emoji ?? '🍽️',
+      })),
+      subtotal: round2(subtotal),
+      serviceCharge,
+      tax,
+      tips: tip,
+      total,
+      address,
+      instructions: isDelivery ? (deliveryForm.instructions || undefined) : undefined,
+    };
+  }
+
+  /**
+   * Land the checkout in the running-orders store.
+   *
+   * "Collect Payment & Clear Table" reopens a check that is ALREADY running,
+   * so it must not create a second card for the same table — it just flips the
+   * existing order to Paid. A brand-new order is appended at the top instead.
+   */
+  function commitOrder(paid: boolean) {
+    if (collectOnly) {
+      const existing = getOrders().find((o) => o.orderNumber === orderNumber || o.orderNumber === `#${orderNumber}`);
+      if (existing) {
+        markOrderPaid(existing.id, paymentMethod === 'Online' ? 'Online' : paymentMethod === 'Cash on Delivery' ? 'Cash' : paymentMethod);
+        return;
+      }
+    }
+    addOrder(buildRunningOrder(paid));
+  }
 
   return (
     <div className="flex h-[calc(100vh-38px)] gap-[15px]">
@@ -601,6 +691,69 @@ export default function PlaceOrderPage() {
             </button>
           </div>
 
+          {/* Tips — the cashier picks the amount here, before paying (Bug-72) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-[#2D2F33]">{t('tipLabel')}</label>
+              {tip > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTipPreset(null);
+                    setCustomTip('');
+                  }}
+                  className="text-[11px] font-medium text-[#989898] transition-colors hover:text-[#E85E5E]"
+                >
+                  {t('clearTip')}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TIP_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setTipPreset(tipPreset === p ? null : p)}
+                  className={cn(
+                    'flex h-9 flex-1 items-center justify-center rounded-lg border text-xs font-medium transition-all',
+                    tipPreset === p
+                      ? 'border-[#026F4F] bg-[#026F4F] text-white'
+                      : 'border-[#E9E9E9] bg-[#F2F2F2] text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
+                  )}
+                >
+                  {Math.round(p * 100)}%
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setTipPreset('custom')}
+                className={cn(
+                  'flex h-9 items-center justify-center gap-1 rounded-lg border px-3 text-xs font-medium transition-all',
+                  tipPreset === 'custom'
+                    ? 'border-[#026F4F] bg-[#026F4F] text-white'
+                    : 'border-[#E9E9E9] bg-[#F2F2F2] text-[#686868] hover:border-[#026F4F] hover:text-[#026F4F]',
+                )}
+              >
+                {t('customTip')}
+              </button>
+            </div>
+            {tipPreset === 'custom' && (
+              <div className="relative">
+                <span className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-sm text-[#989898]">$</span>
+                <input
+                  type="number"
+                  dir="ltr"
+                  inputMode="decimal"
+                  min={0}
+                  value={customTip}
+                  onChange={(e) => setCustomTip(e.target.value)}
+                  placeholder="0.00"
+                  className="h-10 w-full rounded-lg bg-[#F2F2F2] ps-7 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
+            )}
+          </div>
+
           {/* Payment Details Box */}
           <div className="bg-[#F2F2F2] rounded-lg p-3 flex flex-col gap-2">
             <p className="font-medium text-[14px] text-[#2D2F33]">{t('paymentsDetails')}</p>
@@ -618,6 +771,16 @@ export default function PlaceOrderPage() {
               <span>{t('serviceCharge')}</span>
               <span>${serviceCharge.toFixed(2)}</span>
             </div>
+            <div className="flex justify-between text-xs text-[#686868]">
+              <span>{t('taxLabel', { rate: Math.round(TAX_RATE * 100) })}</span>
+              <span>${tax.toFixed(2)}</span>
+            </div>
+            {tip > 0 && (
+              <div className="flex justify-between text-xs text-[#686868]">
+                <span>{t('tipsLabel')}</span>
+                <span>${tip.toFixed(2)}</span>
+              </div>
+            )}
             <div className="border-t border-dashed border-[#989898] my-0.5" />
             <div className="flex justify-between text-sm font-medium text-[#2D2F33]">
               <span>{t('total')}</span>
@@ -625,36 +788,72 @@ export default function PlaceOrderPage() {
             </div>
           </div>
 
-          {/* Payment Method Switcher */}
+          {/* Payment Method Switcher — delivery orders are paid online up front
+              or in cash once delivered (Bug-70) */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-medium text-[#2D2F33]">{t('paymentMethod')}</label>
+            <label className="text-xs font-medium text-[#2D2F33]">
+              {session?.type === 'delivery' ? t('deliveryPaymentMethod') : t('paymentMethod')}
+            </label>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('Cash')}
-                className={cn(
-                  'flex items-center justify-center gap-2 h-10 rounded-lg text-xs font-medium border transition-all',
-                  paymentMethod === 'Cash'
-                    ? 'border-[#026F4F] bg-emerald-50 text-[#026F4F]'
-                    : 'border-[#E9E9E9] bg-white text-[#686868] hover:border-[#B9B9B9]',
-                )}
-              >
-                <Banknote size={16} />
-                <span>{t('payMethod.cash')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('Card')}
-                className={cn(
-                  'flex items-center justify-center gap-2 h-10 rounded-lg text-xs font-medium border transition-all',
-                  paymentMethod === 'Card'
-                    ? 'border-[#026F4F] bg-emerald-50 text-[#026F4F]'
-                    : 'border-[#E9E9E9] bg-white text-[#686868] hover:border-[#B9B9B9]',
-                )}
-              >
-                <CreditCard size={16} />
-                <span>{t('payMethod.card')}</span>
-              </button>
+              {session?.type === 'delivery' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('Online')}
+                    className={cn(
+                      'flex items-center justify-center gap-2 h-10 rounded-lg text-xs font-medium border transition-all',
+                      paymentMethod === 'Online'
+                        ? 'border-[#026F4F] bg-emerald-50 text-[#026F4F]'
+                        : 'border-[#E9E9E9] bg-white text-[#686868] hover:border-[#B9B9B9]',
+                    )}
+                  >
+                    <CreditCard size={16} />
+                    <span>{t('payMethod.online')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('Cash on Delivery')}
+                    className={cn(
+                      'flex items-center justify-center gap-2 h-10 rounded-lg text-xs font-medium border transition-all',
+                      paymentMethod === 'Cash on Delivery'
+                        ? 'border-[#026F4F] bg-emerald-50 text-[#026F4F]'
+                        : 'border-[#E9E9E9] bg-white text-[#686868] hover:border-[#B9B9B9]',
+                    )}
+                  >
+                    <Bike size={16} />
+                    <span>{t('payMethod.cod')}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('Cash')}
+                    className={cn(
+                      'flex items-center justify-center gap-2 h-10 rounded-lg text-xs font-medium border transition-all',
+                      paymentMethod === 'Cash'
+                        ? 'border-[#026F4F] bg-emerald-50 text-[#026F4F]'
+                        : 'border-[#E9E9E9] bg-white text-[#686868] hover:border-[#B9B9B9]',
+                    )}
+                  >
+                    <Banknote size={16} />
+                    <span>{t('payMethod.cash')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('Card')}
+                    className={cn(
+                      'flex items-center justify-center gap-2 h-10 rounded-lg text-xs font-medium border transition-all',
+                      paymentMethod === 'Card'
+                        ? 'border-[#026F4F] bg-emerald-50 text-[#026F4F]'
+                        : 'border-[#E9E9E9] bg-white text-[#686868] hover:border-[#B9B9B9]',
+                    )}
+                  >
+                    <CreditCard size={16} />
+                    <span>{t('payMethod.card')}</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -685,12 +884,25 @@ export default function PlaceOrderPage() {
             onClick={() => {
               if (items.length === 0 || !deliveryOk || missingSession) return;
               if (session?.type === 'delivery') saveCustomer(deliveryForm);
-              // Card is charged automatically — place the order right away;
-              // only Cash needs the Collect Payment modal to enter tendered amount.
-              if (paymentMethod === 'Card') {
-                openSuccess();
-              } else {
+              // Cash on delivery: the order is placed UNPAID — the money is
+              // collected when the rider hands the food over (Bug-70).
+              if (session?.type === 'delivery' && paymentMethod === 'Cash on Delivery') {
+                commitOrder(false);
+                clearDraft();
+                clearSession();
+                clearDeliveryDetails();
+                setItems([]);
+                router.push('/running-order');
+                return;
+              }
+              // Card / Online is charged automatically — place the order right
+              // away; only Cash needs the Collect Payment modal to enter the
+              // tendered amount.
+              if (paymentMethod === 'Cash') {
                 setPaymentOpen(true);
+              } else {
+                commitOrder(true);
+                openSuccess();
               }
             }}
             disabled={items.length === 0 || !deliveryOk || missingSession}
@@ -702,7 +914,11 @@ export default function PlaceOrderPage() {
             )}
           >
             <Check size={20} />
-            <span>{t('confirmPay')}</span>
+            <span>
+              {session?.type === 'delivery' && paymentMethod === 'Cash on Delivery'
+                ? t('placeOrderCod')
+                : t('confirmPay')}
+            </span>
           </button>
         </div>
       </div>
@@ -714,6 +930,7 @@ export default function PlaceOrderPage() {
           onClose={() => setPaymentOpen(false)}
           onConfirm={() => {
             setPaymentOpen(false);
+            commitOrder(true);
             openSuccess();
           }}
           onSplit={() => setSplitOpen(true)}

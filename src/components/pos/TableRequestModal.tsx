@@ -58,10 +58,12 @@ export function TableRequestModal({
             <Clock size={14} />
             <span>{t('sortedHint')}</span>
           </div>
+          {/* Tap target sized for a finger (Bug-71): a plain text link was
+              ~14px tall on a tablet and impossible to hit. */}
           <button
             onClick={onDismissAll}
             disabled={requests.length === 0}
-            className="text-xs font-medium text-emerald-700 enabled:hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-9 items-center justify-center rounded-full bg-[#026F4F] px-4 text-xs font-medium text-white transition-colors enabled:hover:bg-[#015c42] disabled:cursor-not-allowed disabled:bg-[#B9B9B9]"
           >
             {t('dismissAll')}
           </button>

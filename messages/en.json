@@ -158,7 +158,10 @@
       "collectPayment": "Collect Payment & Clear Table",
       "handled": "Handled",
       "waiterRequested": "Waiter Requested",
-      "checkRequested": "Check Requested"
+      "checkRequested": "Check Requested",
+      "cancelReservation": "Cancel Reservation",
+      "reservedGuests": "Guests",
+      "reservedPhone": "Phone"
     },
     "transfer": {
       "title": "Transfer {name}",
@@ -178,6 +181,20 @@
     "paymentMethod": {
       "card": "Card",
       "cash": "Cash"
+    },
+    "reserveTable": "Reserve",
+    "reservedSummary": "{name} · {guests} guests · {time}",
+    "reserve": {
+      "title": "Reserve {name}",
+      "subtitle": "Name, phone, guest count and time for this table.",
+      "name": "Guest Name",
+      "namePlaceholder": "e.g. John Smith",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+20 1XXX XXX XXX",
+      "guests": "Guests",
+      "capacity": "Seats {count}",
+      "time": "Reservation Time",
+      "confirm": "Reserve Table"
     }
   },
   "order": {
@@ -308,8 +325,17 @@
     "demoEmail": "sarah.jessie@example.com",
     "payMethod": {
       "cash": "Cash",
-      "card": "Card"
-    }
+      "card": "Card",
+      "online": "Pay Online",
+      "cod": "Cash on Delivery"
+    },
+    "tipLabel": "Tips",
+    "clearTip": "Remove tip",
+    "customTip": "Custom",
+    "taxLabel": "Tax ({rate}%)",
+    "tipsLabel": "Tips",
+    "deliveryPaymentMethod": "Delivery Payment",
+    "placeOrderCod": "Place Order (Pay on Delivery)"
   },
   "runningOrder": {
     "title": "Running Orders",
@@ -327,7 +353,9 @@
       "placed": "Placed",
       "preparing": "Preparing",
       "ready": "Ready",
-      "served": "Served"
+      "served": "Served",
+      "outForDelivery": "Out for Delivery",
+      "delivered": "Delivered"
     },
     "actions": {
       "accept": "Accept",
@@ -370,14 +398,31 @@
       "preparing": "Preparing",
       "ready": "Ready",
       "served": "Served",
-      "completed": "Completed"
+      "completed": "Completed",
+      "outForDelivery": "Out for Delivery",
+      "delivered": "Delivered"
     },
     "demoCustomer": "Robert Fox",
     "demoCustomer2": "Mike Thompson",
     "demoCustomer3": "David K.",
     "demoDate": "7 Apr, 11:30 AM",
     "demoDate2": "7 Apr, 11:45 AM",
-    "demoDate3": "7 Apr, 12:00 PM"
+    "demoDate3": "7 Apr, 12:00 PM",
+    "sendOutForDelivery": "Out for Delivery",
+    "markDelivered": "Mark Delivered",
+    "paymentMethod": "Payment Method",
+    "payMethod": {
+      "online": "Pay Online",
+      "cod": "Cash on Delivery"
+    },
+    "collectCashOnDelivery": {
+      "title": "Cash on Delivery",
+      "due": "Amount due on delivery",
+      "amountReceived": "Amount received",
+      "changeDue": "Change due",
+      "confirm": "Collect & Complete",
+      "cancel": "Cancel"
+    }
   },
   "history": {
     "title": "Order History",
