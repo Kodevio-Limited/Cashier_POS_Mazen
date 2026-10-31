@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Clock, Bell, CheckCircle2, Printer, X } from 'lucide-react';
@@ -24,7 +23,6 @@ export function TableRequestModal({
   onHandled: (id: string) => void;
 }) {
   const t = useTranslations('tableRequests');
-  const tType = useTranslations('floorPlan.modal');
   const tPay = useTranslations('floorPlan.paymentMethod');
   const tTime = useTranslations('common.time');
   const tTable = useTranslations('common.table');
@@ -84,20 +82,8 @@ export function TableRequestModal({
                   <div key={req.id} className="flex shrink-0 flex-col justify-between gap-2.5 rounded-xl bg-white p-3.5 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-2xl font-medium text-black">{locTable(req.table, locale, tTable)}</span>
-                        {/* Cash / Card shows for check requests only */}
-                        {req.type === 'Check Requested' && req.paymentMethod && (
-                          <div className="flex items-center gap-1 rounded-[20px] bg-zinc-100 px-1.5 py-1">
-                            <Image
-                              src={req.paymentMethod === 'Card' ? '/images/figma/payment-card.png' : '/images/figma/payment-cash.png'}
-                              alt=""
-                              width={req.paymentMethod === 'Card' ? 14 : 12}
-                              height={req.paymentMethod === 'Card' ? 14 : 8}
-                              className={cn('shrink-0', req.paymentMethod === 'Card' ? 'h-3.5 w-3.5' : 'h-2 w-3')}
-                            />
-                            <span className="text-[8px] font-normal text-zinc-800">{tPay(mapEnum(req.paymentMethod, PAYMENT_METHOD_KEY_MAP))}</span>
-                          </div>
-                        )}
+                        {/* "Table B01: Check - Card" / "…Check - Cash" / "…Waiter" */}
+                        <span className="text-2xl font-medium text-black">{locTable(req.table, locale, tTable)}:</span>
                       </div>
                       <div className="flex items-center gap-1 text-xs font-normal text-red-600">
                         <Clock size={14} />
@@ -109,12 +95,12 @@ export function TableRequestModal({
                       {req.type === 'Waiter Requested' ? (
                         <div className="flex items-center gap-1.5 rounded-2xl bg-fuchsia-200 px-2.5 py-1.5 text-xs font-normal text-fuchsia-800">
                           <Bell size={13} />
-                          <span>{tType('waiterRequested')}</span>
+                          <span>{t('waiter')}</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5 rounded-2xl bg-blue-100 px-2.5 py-1.5 text-xs font-normal text-blue-900">
                           <CheckCircle2 size={13} />
-                          <span>{tType('checkRequested')}</span>
+                          <span>{req.paymentMethod ? `${t('check')} - ${tPay(mapEnum(req.paymentMethod, PAYMENT_METHOD_KEY_MAP))}` : t('check')}</span>
                         </div>
                       )}
                     </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer, ShoppingBag, Bike } from 'lucide-react';
+import { Clock, UtensilsCrossed, Phone, Mail, ArrowLeft, X, RotateCcw, CircleAlert, Plus, Minus, Check, Ban, Search, Printer, ShoppingBag, Bike, MapPin, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
@@ -64,7 +64,18 @@ interface HistoryOrder {
   items: HistoryItem[];
   subtotal: number;
   serviceCharge: number;
+  /** Tax (VAT) line in the payments breakdown. */
+  tax?: number;
+  /** Tips line in the payments breakdown. */
+  tips?: number;
   total: number;
+  /** Delivery-only details, shown under the customer's email. */
+  address?: string;
+  /** Arabic twin of `address` for mock data. */
+  addressAr?: string;
+  instructions?: string;
+  /** Arabic twin of `instructions` for mock data. */
+  instructionsAr?: string;
 }
 
 const PAY_PILL: Record<PayState, string> = {
@@ -99,7 +110,9 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     ],
     subtotal: 25.99,
     serviceCharge: 2.6,
-    total: 30.99,
+    tax: 3.64,
+    tips: 2.0,
+    total: 34.23,
   },
   {
     id: 'h2',
@@ -120,7 +133,9 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     ],
     subtotal: 25.99,
     serviceCharge: 2.6,
-    total: 30.99,
+    tax: 3.64,
+    tips: 2.0,
+    total: 34.23,
   },
   {
     id: 'h3',
@@ -141,7 +156,9 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     ],
     subtotal: 36.97,
     serviceCharge: 3.7,
-    total: 40.67,
+    tax: 5.18,
+    tips: 3.0,
+    total: 48.85,
   },
   {
     id: 'h4',
@@ -162,7 +179,9 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     ],
     subtotal: 18.98,
     serviceCharge: 1.9,
-    total: 20.88,
+    tax: 2.66,
+    tips: 1.5,
+    total: 25.04,
   },
   {
     id: 'h5',
@@ -183,7 +202,13 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     ],
     subtotal: 18.98,
     serviceCharge: 1.9,
-    total: 20.88,
+    tax: 2.66,
+    tips: 2.5,
+    total: 26.04,
+    address: '12 Nile Corniche, Apt 4B',
+    addressAr: '١٢ كورنيش النيل، شقة ٤ب',
+    instructions: 'Leave at the front desk — call on arrival',
+    instructionsAr: 'اترك الطلب عند الاستقبال — واتصل عند الوصول',
   },
   {
     id: 'h6',
@@ -204,7 +229,13 @@ const INITIAL_HISTORY: HistoryOrder[] = [
     ],
     subtotal: 31.98,
     serviceCharge: 3.2,
-    total: 35.18,
+    tax: 4.48,
+    tips: 2.0,
+    total: 41.66,
+    address: '8 Garden City, Villa 12',
+    addressAr: '٨ مدينة الأندلس، فيلا ١٢',
+    instructions: 'Ring the bell twice — leave with the guard if no answer',
+    instructionsAr: 'دق الجرس مرتين — اترك الطلب مع الحارس إن لا أحد يرد',
   },
 ];
 
@@ -609,7 +640,7 @@ export default function OrderHistoryPage() {
 
           <div className="mt-4 flex-1 overflow-y-auto px-[11px] pb-2">
             {/* Customer info */}
-            <div className="flex h-[116px] flex-col gap-[14px] rounded-[10px] bg-[#F2F2F2] px-[18px] py-[16px]">
+            <div className="flex min-h-[116px] flex-col gap-[14px] rounded-[10px] bg-[#F2F2F2] px-[18px] py-[16px]">
               <p className="text-[16px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(selectedOrder.customerName, selectedOrder.customerNameAr, locale)}</p>
               <div className="flex flex-col gap-[10px]">
                 <div className="flex items-center gap-[8px]">
@@ -620,6 +651,19 @@ export default function OrderHistoryPage() {
                   <Mail size={19} className="shrink-0 text-[#989898]" />
                   <span className="text-[13px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.email}</span>
                 </div>
+                {/* Delivery — instructions sit right under the email, then the address */}
+                {selectedOrder.type === 'Delivery' && selectedOrder.instructions && (
+                  <div className="flex items-start gap-[8px]">
+                    <MessageSquare size={19} className="mt-[2px] shrink-0 text-[#989898]" />
+                    <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">{locStr(selectedOrder.instructions, selectedOrder.instructionsAr, locale)}</span>
+                  </div>
+                )}
+                {selectedOrder.type === 'Delivery' && selectedOrder.address && (
+                  <div className="flex items-start gap-[8px]">
+                    <MapPin size={19} className="mt-[2px] shrink-0 text-[#989898]" />
+                    <span className="text-[13px] font-normal leading-[1.4] text-[#989898]">{locStr(selectedOrder.address, selectedOrder.addressAr, locale)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -652,7 +696,7 @@ export default function OrderHistoryPage() {
             </div>
 
             {/* Payments */}
-            <div className="mt-[20px] flex h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
+            <div className="mt-[20px] flex min-h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
               <p className="text-[15px] font-medium leading-[1.4] text-[#2D2F33]">{t('paymentsDetails')}</p>
               <div className="mt-[16px] flex flex-col gap-[12px] text-[13px] leading-[1.4]">
                 <div className="flex items-center justify-between">
@@ -663,6 +707,18 @@ export default function OrderHistoryPage() {
                   <span className="font-normal text-[#989898]">{t('serviceCharge')}</span>
                   <span className="font-medium text-[#686868]">${selectedOrder.serviceCharge.toFixed(2)}</span>
                 </div>
+                {typeof selectedOrder.tax === 'number' && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-normal text-[#989898]">{t('tax')}</span>
+                    <span className="font-medium text-[#686868]">${selectedOrder.tax.toFixed(2)}</span>
+                  </div>
+                )}
+                {typeof selectedOrder.tips === 'number' && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-normal text-[#989898]">{t('tips')}</span>
+                    <span className="font-medium text-[#686868]">${selectedOrder.tips.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
               <div className="mt-[12px] border-t border-dashed border-[#989898]" />
               <div className="mt-[10px] flex items-center justify-between text-[14px] leading-[1.4]">

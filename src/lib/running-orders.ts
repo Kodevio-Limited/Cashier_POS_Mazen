@@ -36,7 +36,18 @@ export interface RunningOrder {
   items: RunningOrderItem[];
   subtotal: number;
   serviceCharge: number;
+  /** Tax (VAT) line in the payments breakdown. */
+  tax?: number;
+  /** Tips line in the payments breakdown. */
+  tips?: number;
   total: number;
+  /** Delivery-only details, shown under the customer's email. */
+  address?: string;
+  /** Arabic twin of `address` for mock data. */
+  addressAr?: string;
+  instructions?: string;
+  /** Arabic twin of `instructions` for mock data. */
+  instructionsAr?: string;
 }
 
 const KEY = 'pos-running-orders';
@@ -62,7 +73,9 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     ],
     subtotal: 25.99,
     serviceCharge: 2.6,
-    total: 30.99,
+    tax: 3.64,
+    tips: 2.0,
+    total: 34.23,
   },
   {
     id: 'ro2',
@@ -83,7 +96,9 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     ],
     subtotal: 18.98,
     serviceCharge: 1.9,
-    total: 20.88,
+    tax: 2.66,
+    tips: 1.5,
+    total: 25.04,
   },
   {
     id: 'ro3',
@@ -104,7 +119,9 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     ],
     subtotal: 36.97,
     serviceCharge: 3.7,
-    total: 40.67,
+    tax: 5.18,
+    tips: 3.0,
+    total: 48.85,
   },
   {
     id: 'ro4',
@@ -125,7 +142,13 @@ export const INITIAL_RUNNING_ORDERS: RunningOrder[] = [
     ],
     subtotal: 18.98,
     serviceCharge: 1.9,
-    total: 20.88,
+    tax: 2.66,
+    tips: 2.5,
+    total: 26.04,
+    address: '12 Nile Corniche, Apt 4B',
+    addressAr: '١٢ كورنيش النيل، شقة ٤ب',
+    instructions: 'Leave at the front desk — call on arrival',
+    instructionsAr: 'اترك الطلب عند الاستقبال — واتصل عند الوصول',
   },
 ];
 

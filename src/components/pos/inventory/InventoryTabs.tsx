@@ -20,6 +20,7 @@ import {
 } from './types';
 import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction } from './InventoryShell';
 import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
+import { getActiveShift } from '@/lib/shift-session';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export function StockTab({ ingredients }: { ingredients: Ingredient[] }) {
@@ -475,7 +476,8 @@ export function PhysicalCountTab({
   }
 
   function commitCount() {
-    onSubmit(ingredientId, parseFloat(phys) || 0, 'John. D');
+    // Log the count against the cashier who started the shift.
+    onSubmit(ingredientId, parseFloat(phys) || 0, getActiveShift()?.cashierName || 'John. D');
     setPhys('');
     setPinOpen(false);
   }

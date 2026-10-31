@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors, ShoppingBag, Bike, Search } from 'lucide-react';
+import { Clock, UtensilsCrossed, CookingPot, Package, Check, X, ArrowLeft, Phone, Mail, Scissors, ShoppingBag, Bike, Search, MapPin, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getOrders,
@@ -408,6 +408,19 @@ export default function RunningOrderPage() {
                   <Mail size={15} className="shrink-0 text-[#989898]" />
                   <span className="text-[12px] font-normal leading-[1.4] text-[#989898]" dir="ltr">{selectedOrder.email}</span>
                 </div>
+                {/* Delivery — instructions sit right under the email, then the address */}
+                {selectedOrder.type === 'Delivery' && selectedOrder.instructions && (
+                  <div className="flex items-start gap-1.5">
+                    <MessageSquare size={15} className="mt-[2px] shrink-0 text-[#989898]" />
+                    <span className="text-[12px] font-normal leading-[1.4] text-[#989898]">{locStr(selectedOrder.instructions, selectedOrder.instructionsAr, locale)}</span>
+                  </div>
+                )}
+                {selectedOrder.type === 'Delivery' && selectedOrder.address && (
+                  <div className="flex items-start gap-1.5">
+                    <MapPin size={15} className="mt-[2px] shrink-0 text-[#989898]" />
+                    <span className="text-[12px] font-normal leading-[1.4] text-[#989898]">{locStr(selectedOrder.address, selectedOrder.addressAr, locale)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -479,7 +492,7 @@ export default function RunningOrderPage() {
             </div>
 
             {/* Payments */}
-            <div className="mt-[20px] flex h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
+            <div className="mt-[20px] flex min-h-[158px] flex-col rounded-[7px] bg-[#F2F2F2] px-[9px] py-[10px]">
               <p className="text-[15px] font-medium leading-[1.4] text-[#2D2F33]">{t('paymentsDetails')}</p>
               <div className="mt-[16px] flex flex-col gap-[12px] text-[13px] leading-[1.4]">
                 <div className="flex items-center justify-between">
@@ -490,6 +503,18 @@ export default function RunningOrderPage() {
                   <span className="font-normal text-[#989898]">{t('serviceCharge')}</span>
                   <span className="font-medium text-[#686868]">${selectedOrder.serviceCharge.toFixed(2)}</span>
                 </div>
+                {typeof selectedOrder.tax === 'number' && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-normal text-[#989898]">{t('tax')}</span>
+                    <span className="font-medium text-[#686868]">${selectedOrder.tax.toFixed(2)}</span>
+                  </div>
+                )}
+                {typeof selectedOrder.tips === 'number' && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-normal text-[#989898]">{t('tips')}</span>
+                    <span className="font-medium text-[#686868]">${selectedOrder.tips.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
               <div className="mt-[12px] border-t border-dashed border-[#989898]" />
               <div className="mt-[10px] flex items-center justify-between text-[14px] leading-[1.4]">
