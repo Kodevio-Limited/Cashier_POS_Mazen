@@ -21,6 +21,7 @@ import {
 import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction } from './InventoryShell';
 import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
 import { getActiveShift } from '@/lib/shift-session';
+import { money } from '@/lib/currency';
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export function StockTab({ ingredients }: { ingredients: Ingredient[] }) {
@@ -307,7 +308,7 @@ export function PurchasesTab({
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm text-neutral-400 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{p.qty} {locUnit(p.unit, t)}</td>
                 <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-                  <span className="text-sm font-semibold leading-6 text-emerald-700 sm:text-base"><bdi dir="ltr">${p.total.toFixed(2)}</bdi></span>
+                  <span className="text-sm font-semibold leading-6 text-emerald-700 sm:text-base"><bdi dir="ltr">{money(p.total)}</bdi></span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
                   <span className="block max-w-[110px] truncate text-sm font-normal leading-7 text-zinc-800 sm:max-w-[160px] sm:text-base lg:max-w-none">{locStr(p.supplier, p.supplierAr, locale)}</span>
@@ -355,7 +356,7 @@ export function PurchasesTab({
                     {ex.notes && <span className="block truncate text-xs leading-5 text-neutral-400 sm:text-sm">{ex.notes}</span>}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-                    <span className="text-sm font-semibold leading-6 text-emerald-700 sm:text-base"><bdi dir="ltr">${ex.amount.toFixed(2)}</bdi></span>
+                    <span className="text-sm font-semibold leading-6 text-emerald-700 sm:text-base"><bdi dir="ltr">{money(ex.amount)}</bdi></span>
                   </td>
                 </tr>
               ))

@@ -10,6 +10,7 @@ import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { endShift, getActiveShift, subscribeShift, type ActiveShift } from '@/lib/shift-session';
+import { money, moneySigned } from '@/lib/currency';
 
 export default function ShiftClosePage() {
   const router = useRouter();
@@ -100,15 +101,15 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
           <div className="grid grid-cols-1 divide-y divide-white/20 rounded-[12px] bg-[#2D2F33] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="flex flex-col justify-center gap-[10px] px-[24px] py-[18px]">
               <span className="text-[11px] font-medium uppercase tracking-wide text-white/60">{t('openingFloatLabel')}</span>
-              <span className="text-[22px] font-semibold leading-[1.3] text-white">${openingFloat.toFixed(2)}</span>
+              <span className="text-[22px] font-semibold leading-[1.3] text-white">{money(openingFloat)}</span>
             </div>
             <div className="flex flex-col justify-center gap-[10px] px-[24px] py-[18px]">
               <span className="text-[11px] font-medium uppercase tracking-wide text-white/60">{t('netCashCollected')}</span>
-              <span className="text-[22px] font-semibold leading-[1.3] text-[#4ADE80]">+${netCash.toFixed(2)}</span>
+              <span className="text-[22px] font-semibold leading-[1.3] text-[#4ADE80]">{moneySigned(netCash)}</span>
             </div>
             <div className="flex flex-col justify-center gap-[10px] px-[24px] py-[18px]">
               <span className="text-[11px] font-medium uppercase tracking-wide text-white/60">{t('expectedCashInDrawer')}</span>
-              <span className="text-[22px] font-semibold leading-[1.3] text-white">${expectedCash.toFixed(2)}</span>
+              <span className="text-[22px] font-semibold leading-[1.3] text-white">{money(expectedCash)}</span>
             </div>
           </div>
         </div>
@@ -117,12 +118,12 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
         <div className="flex flex-col gap-[12px]">
           <h2 className="text-[15px] font-medium leading-[1.4] text-black">{t('liveRevenueTracking')}</h2>
           <div className="grid grid-cols-1 gap-[16px] sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label={t('cashSalesLabel')} value={`$${cashSales.toFixed(2)}`} />
-            <StatCard label={t('cardPaymentsLabel')} value={`$${cardSales.toFixed(2)}`} />
-            <StatCard label={t('walletPayments')} value={`$${walletSales.toFixed(2)}`} />
+            <StatCard label={t('cashSalesLabel')} value={money(cashSales)} />
+            <StatCard label={t('cardPaymentsLabel')} value={money(cardSales)} />
+            <StatCard label={t('walletPayments')} value={money(walletSales)} />
             <div className="flex flex-col gap-[10px] rounded-[10px] bg-[#026F4F] px-[16px] py-[14px]">
               <span className="text-[11px] font-medium uppercase tracking-wide text-white/70">{t('totalGrossSales')}</span>
-              <span className="text-[20px] font-semibold leading-[1.4] text-white">${totalGross.toFixed(2)}</span>
+              <span className="text-[20px] font-semibold leading-[1.4] text-white">{money(totalGross)}</span>
             </div>
           </div>
         </div>
@@ -134,7 +135,7 @@ function ShiftDashboard({ shift }: { shift: ActiveShift }) {
             <div className="grid grid-cols-2 gap-[16px] sm:grid-cols-4">
               <StatNum value="42" color="#2563EB" label={t('statTotalOrders')} />
               <StatNum value="39" color="#16A34A" label={t('statCompleted')} />
-              <StatNum value="2" color="#EA580C" label={`${t('statRefunds')} ($12.50)`} />
+              <StatNum value="2" color="#EA580C" label={`${t('statRefunds')} (${money(12.5)})`} />
               <StatNum value="1" color="#DC2626" label={t('statCancelled')} />
             </div>
             <div className="flex flex-wrap gap-[12px]">

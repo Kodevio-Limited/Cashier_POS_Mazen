@@ -9,6 +9,7 @@ import { foodImage } from '@/lib/menu-images';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
+import { money } from '@/lib/currency';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
@@ -579,7 +580,7 @@ export default function OrderHistoryPage() {
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
                             <span className="truncate text-[10.7px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('mayoModifier'), locale)}&rdquo;</span>
-                            <span className="text-[12.7px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
+                            <span className="text-[12.7px] font-semibold leading-[1.4] text-[#026F4F]">{money(item.price)}</span>
                           </div>
                           <span className="shrink-0 text-[12.7px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
                         </div>
@@ -593,7 +594,7 @@ export default function OrderHistoryPage() {
                       </span>
                       <div className="flex flex-col items-end gap-[6px]">
                         <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">{t('moreItems', { count: Math.max(0, order.items.length - 2) })}</span>
-                        <span className="text-[14px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
+                        <span className="text-[14px] font-semibold leading-[1.4] text-[#026F4F]">{money(order.total)}</span>
                       </div>
                     </div>
                   </div>
@@ -686,7 +687,7 @@ export default function OrderHistoryPage() {
                         </span>
                       </div>
                       <div className="ms-auto flex shrink-0 flex-col items-end gap-[36px]">
-                        <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
+                        <span className="text-[17px] font-semibold leading-[1.4] text-[#026F4F]">{money(item.price * item.qty)}</span>
                         <span className="text-[11.6px] font-medium leading-[1.4] text-[#686868]">Qty: {item.qty}</span>
                       </div>
                     </div>
@@ -701,29 +702,29 @@ export default function OrderHistoryPage() {
               <div className="mt-[16px] flex flex-col gap-[12px] text-[13px] leading-[1.4]">
                 <div className="flex items-center justify-between">
                   <span className="font-normal text-[#989898]">{t('subtotalItems', { count: selectedOrder.items.reduce((s, i) => s + i.qty, 0) })}</span>
-                  <span className="font-medium text-[#686868]">${selectedOrder.subtotal.toFixed(2)}</span>
+                  <span className="font-medium text-[#686868]">{money(selectedOrder.subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-normal text-[#989898]">{t('serviceCharge')}</span>
-                  <span className="font-medium text-[#686868]">${selectedOrder.serviceCharge.toFixed(2)}</span>
+                  <span className="font-medium text-[#686868]">{money(selectedOrder.serviceCharge)}</span>
                 </div>
                 {typeof selectedOrder.tax === 'number' && (
                   <div className="flex items-center justify-between">
                     <span className="font-normal text-[#989898]">{t('tax')}</span>
-                    <span className="font-medium text-[#686868]">${selectedOrder.tax.toFixed(2)}</span>
+                    <span className="font-medium text-[#686868]">{money(selectedOrder.tax)}</span>
                   </div>
                 )}
                 {typeof selectedOrder.tips === 'number' && (
                   <div className="flex items-center justify-between">
                     <span className="font-normal text-[#989898]">{t('tips')}</span>
-                    <span className="font-medium text-[#686868]">${selectedOrder.tips.toFixed(2)}</span>
+                    <span className="font-medium text-[#686868]">{money(selectedOrder.tips)}</span>
                   </div>
                 )}
               </div>
               <div className="mt-[12px] border-t border-dashed border-[#989898]" />
               <div className="mt-[10px] flex items-center justify-between text-[14px] leading-[1.4]">
                 <span className="font-medium text-black">{t('total')}</span>
-                <span className="font-semibold text-[#026F4F]">${selectedOrder.total.toFixed(2)}</span>
+                <span className="font-semibold text-[#026F4F]">{money(selectedOrder.total)}</span>
               </div>
             </div>
           </div>
@@ -965,7 +966,7 @@ function RefundItemsModal({
                 : 'bg-[#026F4F] shadow-[0px_4px_16.3px_11px_rgba(0,0,0,0.12)] hover:bg-[#015c42] active:scale-[0.99]',
             )}
           >
-            {confirmLabel} (${total.toFixed(2)})
+            {confirmLabel} ({money(total)})
           </button>
         </div>
       </div>
@@ -1029,7 +1030,7 @@ function LogWasteModal({
                     <span className="block truncate text-[14px] font-medium text-[#2D2F33]">
                       {locStr(item.name, item.nameAr, locale)} <span className="text-[#989898]">× {qty}</span>
                     </span>
-                    <span className="text-[12px] text-[#989898]">${(item.price * qty).toFixed(2)}</span>
+                    <span className="text-[12px] text-[#989898]">{money(item.price * qty)}</span>
                   </span>
                   <button
                     type="button"

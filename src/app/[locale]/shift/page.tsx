@@ -15,7 +15,7 @@ export default function ShiftPage() {
   const t = useTranslations('shift');
   const [cashier, setCashier] = useState(CASHIERS[0]);
   const [pin, setPin] = useState('');
-  const [floatInput, setFloatInput] = useState('$50.00');
+  const [floatInput, setFloatInput] = useState('EGP 50.00');
   const [formError, setFormError] = useState('');
 
   // Auth gate: not signed in → Login. Signed in with a running shift → floor plan.

@@ -31,6 +31,7 @@ import {
   subscribeMenuAvailability,
   type MenuAvailability,
 } from '@/lib/menu-availability';
+import { money } from '@/lib/currency';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -109,7 +110,7 @@ function ProductCard({ item, onSelect }: { item: MenuItem; onSelect: () => void 
           {tCat(item.category.toLowerCase())}
         </div>
         <div className="w-full text-[16px] font-medium leading-[1.3] text-[#026F4F]">
-          ${item.price.toFixed(2)}
+          {money(item.price)}
         </div>
       </div>
     </button>
@@ -460,7 +461,7 @@ export default function OrderPage() {
                       {locStr(item.name, item.nameAr, locale)}
                     </p>
                     <p className="shrink-0 text-emerald-700 text-lg font-semibold font-['Inter'] leading-6">
-                      ${lineTotal(item).toFixed(2)}
+                      {money(lineTotal(item))}
                     </p>
                   </div>
 
@@ -471,7 +472,7 @@ export default function OrderPage() {
                     </p>
                   )}
 
-                  {/* Modifiers (+ Mayo · $0.50, + Extra Chili · $0.75) */}
+                  {/* Modifiers (+ Mayo · EGP 0.50, + Extra Chili · EGP 0.75) */}
                   {item.modifiers && item.modifiers.length > 0 && (
                     <div className="flex flex-wrap items-start gap-x-1.5 gap-y-0.5">
                       {item.modifiers.map((mod, mi) => (
@@ -479,7 +480,7 @@ export default function OrderPage() {
                           <span className="text-green-500 text-sm font-normal font-['Inter'] leading-5">+</span>
                           <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5 ms-0.5">{mod}</span>
                           {(MODIFIER_PRICES[mod] ?? 0) > 0 && (
-                            <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5"> · <bdi dir="ltr">${MODIFIER_PRICES[mod].toFixed(2)}</bdi></span>
+                            <span className="text-neutral-400 text-xs font-normal font-['Inter'] leading-5"> · <bdi dir="ltr">{money(MODIFIER_PRICES[mod])}</bdi></span>
                           )}
                         </span>
                       ))}
@@ -583,7 +584,7 @@ export default function OrderPage() {
                     {t('subtotal', { count: itemCount })}
                   </div>
                   <div className="text-stone-500 text-xs font-medium font-['Inter'] leading-5">
-                    ${subtotal.toFixed(2)}
+                    {money(subtotal)}
                   </div>
                 </div>
                 <div className="self-stretch inline-flex justify-between items-center">
@@ -591,7 +592,7 @@ export default function OrderPage() {
                     {t('serviceCharge')}
                   </div>
                   <div className="text-stone-500 text-xs font-medium font-['Inter'] leading-5">
-                    ${serviceCharge.toFixed(2)}
+                    {money(serviceCharge)}
                   </div>
                 </div>
               </div>
@@ -599,7 +600,7 @@ export default function OrderPage() {
               <div className="self-stretch inline-flex justify-between items-center">
                 <div className="text-black text-sm font-medium font-['Inter'] leading-5">{t('total')}</div>
                 <div className="text-emerald-700 text-sm font-semibold font-['Inter'] leading-5">
-                  ${total.toFixed(2)}
+                  {money(total)}
                 </div>
               </div>
             </div>
@@ -752,7 +753,7 @@ function CustomizeItemModal({
             </div>
             <div className="flex flex-col items-start gap-[15px] leading-[1.4]">
               <p className="text-[19px] font-medium text-[#2D2F33]">{locStr(data.name, data.nameAr, locale)}</p>
-              <p className="text-[17.5px] font-semibold text-[#026F4F]">${data.price.toFixed(2)}</p>
+              <p className="text-[17.5px] font-semibold text-[#026F4F]">{money(data.price)}</p>
             </div>
           </div>
 
@@ -809,7 +810,7 @@ function CustomizeItemModal({
                         : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
                     )}
                   >
-                    + {locale === 'ar' ? MODIFIER_AR[mod] ?? mod : mod} <bdi dir="ltr" className={cn(isSelected ? 'text-white/80' : 'text-[#989898]')}>${MODIFIER_PRICES[mod].toFixed(2)}</bdi>
+                    + {locale === 'ar' ? MODIFIER_AR[mod] ?? mod : mod} <bdi dir="ltr" className={cn(isSelected ? 'text-white/80' : 'text-[#989898]')}>{money(MODIFIER_PRICES[mod])}</bdi>
                   </button>
                 );
               })}

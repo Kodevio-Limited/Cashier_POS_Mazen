@@ -15,6 +15,7 @@ import { locStr, locTimeAgo } from '@/lib/locale-fields';
 import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-modal';
 import { ConfirmMergeModal } from '@/components/pos/PaymentModals';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { money } from '@/lib/currency';
 
 type Zone = 'Indoor' | 'Outdoor' | 'Patio';
 
@@ -445,7 +446,7 @@ export default function FloorPlanPage() {
             zone={table.zone}
             status={table.status}
             itemsCount={table.status === 'occupied' ? table.itemsCount : undefined}
-            bill={table.status === 'occupied' && table.orderTotal ? `$${table.orderTotal.toFixed(2)}` : undefined}
+            bill={table.status === 'occupied' && table.orderTotal ? money(table.orderTotal) : undefined}
             time={table.status === 'occupied' ? table.timeSeated : undefined}
             requests={requestsForTable(table.name).map((r) => ({ ...r, timeAgo: locTimeAgo(r.timeAgo, locale, tTime) }))}
             reservedFor={
@@ -500,7 +501,7 @@ export default function FloorPlanPage() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-neutral-500">{t('modal.activeOrder')}</span>
                   <span className="font-semibold text-emerald-700">
-                    {activeModalTable.orderId} (${activeModalTable.orderTotal?.toFixed(2) ?? '0.00'})
+                    {activeModalTable.orderId} ({money(activeModalTable.orderTotal ?? 0)})
                   </span>
                 </div>
               )}

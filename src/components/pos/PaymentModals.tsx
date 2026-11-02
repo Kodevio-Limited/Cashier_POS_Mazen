@@ -6,6 +6,7 @@ import { Search, Check, X, Split, GitMerge, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { mapEnum } from '@/lib/locale-fields';
+import { money } from '@/lib/currency';
 
 const ORDER_TYPE_KEY_MAP: Record<string, string> = {
   'Dine In': 'dineIn',
@@ -99,17 +100,18 @@ export function CollectPaymentModal({
         {/* Total Due Box */}
         <div className="mt-[25px] flex h-[105px] w-full flex-col items-center justify-center gap-[12px] rounded-[9px] border border-[#B9B9B9] bg-[#F2F2F2]">
           <span className="text-[13px] font-medium leading-[1.4] text-[#686868]">{t('totalDue')}</span>
-          <span className="text-[36px] font-semibold leading-[1.4] text-black">${total.toFixed(2)}</span>
+          <span className="text-[36px] font-semibold leading-[1.4] text-black">{money(total)}</span>
         </div>
 
         {/* Amount Received */}
         <div className="mt-[29px] flex flex-col gap-[13px]">
           <label className="text-[16px] font-normal leading-[1.4] text-[#686868]">{t('amountReceived')}</label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-[17px] top-1/2 -translate-y-1/2 text-[21px] font-medium leading-[1.4] text-[#989898]">
-              $
+            <span className="pointer-events-none absolute left-[17px] top-1/2 -translate-y-1/2 text-[13px] font-medium leading-[1.4] text-[#989898]">
+              EGP
             </span>
-            {/* Currency amount: intentionally LTR in both locales (physical $ prefix) */}
+            {/* Currency amount: intentionally LTR in both locales (physical
+                "EGP" prefix, matching every other amount in the POS) */}
             <input
               ref={amountRef}
               type="number"
@@ -118,7 +120,7 @@ export function CollectPaymentModal({
               onChange={(e) => setReceived(e.target.value)}
               inputMode="decimal"
               placeholder="0.00"
-              className="h-[61px] w-full rounded-[10px] bg-[#E9E9E9] pl-[38px] pr-[17px] text-[21px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="h-[61px] w-full rounded-[10px] bg-[#E9E9E9] pl-[52px] pr-[17px] text-[21px] font-medium leading-[1.4] text-[#2D2F33] outline-none placeholder:text-[#989898] focus:ring-2 focus:ring-[#026F4F] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
         </div>
@@ -126,7 +128,7 @@ export function CollectPaymentModal({
         {/* Change Due */}
         <div className="mt-[19px] flex items-center justify-between">
           <span className="text-[21px] font-medium leading-[1.4] text-black">{t('changeDue')}</span>
-          <span className="text-[28px] font-semibold leading-[1.4] text-black">${change.toFixed(2)}</span>
+          <span className="text-[28px] font-semibold leading-[1.4] text-black">{money(change)}</span>
         </div>
 
         {/* Action Buttons */}
@@ -222,7 +224,7 @@ export function SplitBillModal({
                 className="flex items-center justify-between rounded-[10px] border border-[#E9E9E9] bg-white px-4 py-3"
               >
                 <span className="text-[14px] font-medium text-[#2D2F33]">{t('billN', { number: i + 1 })}</span>
-                <span className="text-[16px] font-semibold text-[#026F4F]">${amount.toFixed(2)}</span>
+                <span className="text-[16px] font-semibold text-[#026F4F]">{money(amount)}</span>
               </div>
             );
           })}
@@ -348,7 +350,7 @@ export function MergeOrdersModal({
                       {t('currentOrder')}
                     </span>
                   </div>
-                  <span className="text-sm font-semibold text-[#026F4F]">${currentOrder.total.toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-[#026F4F]">{money(currentOrder.total)}</span>
                 </div>
                 <div className="flex items-center gap-2 ps-7 text-xs text-[#686868]">
                   <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">{t('thisCheck')}</span>
@@ -386,7 +388,7 @@ export function MergeOrdersModal({
                     </div>
                     <span className="text-sm font-medium text-[#2D2F33]">{order.orderNumber}</span>
                   </div>
-                  <span className="text-sm font-semibold text-[#026F4F]">${order.total.toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-[#026F4F]">{money(order.total)}</span>
                 </div>
                 <div className="flex items-center gap-2 ps-7 text-xs text-[#686868]">
                   <span className="rounded bg-[#E9E9E9] px-2 py-0.5 text-[11px]">
@@ -412,7 +414,7 @@ export function MergeOrdersModal({
             <div className="text-right">
               <p className="text-[10px] text-[#989898]">{t('combinedTotal')}</p>
               <p className="text-sm font-semibold text-[#026F4F]">
-                ${combinedTotal.toFixed(2)}
+                {money(combinedTotal)}
               </p>
             </div>
           </div>
@@ -484,7 +486,7 @@ export function ConfirmMergeModal({
         {/* Combined Total Box */}
         <div className="mt-[23px] flex h-[106px] w-full flex-col items-center justify-center rounded-[7px] bg-[#F2F2F2]">
           <span className="text-[15px] font-medium leading-[1.4] text-[#989898]">{t('newTotal')}</span>
-          <span className="text-[37px] font-semibold leading-[1.4] text-[#026F4F]">${combinedTotal.toFixed(2)}</span>
+          <span className="text-[37px] font-semibold leading-[1.4] text-[#026F4F]">{money(combinedTotal)}</span>
         </div>
 
         {/* Buttons */}

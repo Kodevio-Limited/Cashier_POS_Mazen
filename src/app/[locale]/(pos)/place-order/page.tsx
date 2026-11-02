@@ -31,6 +31,7 @@ import {
   ConfirmMergeModal,
 } from '@/components/pos/PaymentModals';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { money } from '@/lib/currency';
 
 interface OrderLineItem {
   id: string;
@@ -379,7 +380,7 @@ export default function PlaceOrderPage() {
                       <p className="font-medium text-[14px] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</p>
                       {item.modifiers && item.modifiers.length > 0 && (
                         <p className="text-xs text-[#989898] mt-0.5">
-                          + {item.modifiers.map((m) => `${m}${(MODIFIER_PRICES[m] ?? 0) > 0 ? ` · $${MODIFIER_PRICES[m].toFixed(2)}` : ''}`).join(', ')}
+                          + {item.modifiers.map((m) => `${m}${(MODIFIER_PRICES[m] ?? 0) > 0 ? ` · ${money(MODIFIER_PRICES[m])}` : ''}`).join(', ')}
                         </p>
                       )}
                     </div>
@@ -387,7 +388,7 @@ export default function PlaceOrderPage() {
 
                   {/* Amount */}
                   <div className="col-span-2 text-right font-semibold text-[14px] text-[#026F4F]">
-                    ${lineTotal(item).toFixed(2)}
+                    {money(lineTotal(item))}
                   </div>
 
                   {/* Quantity */}
@@ -739,7 +740,7 @@ export default function PlaceOrderPage() {
             </div>
             {tipPreset === 'custom' && (
               <div className="relative">
-                <span className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-sm text-[#989898]">$</span>
+                <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[#989898]">EGP</span>
                 <input
                   type="number"
                   dir="ltr"
@@ -759,32 +760,32 @@ export default function PlaceOrderPage() {
             <p className="font-medium text-[14px] text-[#2D2F33]">{t('paymentsDetails')}</p>
             <div className="flex justify-between text-xs text-[#686868]">
               <span>{t('subtotalItems', { count: items.reduce((s, i) => s + i.qty, 0) })}</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{money(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-xs text-emerald-700">
                 <span>{t('promoDiscount')}</span>
-                <span>-${discount.toFixed(2)}</span>
+                <span>-{money(discount)}</span>
               </div>
             )}
             <div className="flex justify-between text-xs text-[#686868]">
               <span>{t('serviceCharge')}</span>
-              <span>${serviceCharge.toFixed(2)}</span>
+              <span>{money(serviceCharge)}</span>
             </div>
             <div className="flex justify-between text-xs text-[#686868]">
               <span>{t('taxLabel', { rate: Math.round(TAX_RATE * 100) })}</span>
-              <span>${tax.toFixed(2)}</span>
+              <span>{money(tax)}</span>
             </div>
             {tip > 0 && (
               <div className="flex justify-between text-xs text-[#686868]">
                 <span>{t('tipsLabel')}</span>
-                <span>${tip.toFixed(2)}</span>
+                <span>{money(tip)}</span>
               </div>
             )}
             <div className="border-t border-dashed border-[#989898] my-0.5" />
             <div className="flex justify-between text-sm font-medium text-[#2D2F33]">
               <span>{t('total')}</span>
-              <span className="font-semibold text-[#026F4F]">${total.toFixed(2)}</span>
+              <span className="font-semibold text-[#026F4F]">{money(total)}</span>
             </div>
           </div>
 
@@ -992,7 +993,7 @@ export default function PlaceOrderPage() {
 
             <div className="w-full bg-[#F2F2F2] rounded-xl p-4 flex justify-between text-sm text-[#2D2F33] my-2">
               <span>{t('totalPaid', { method: t('payMethod.' + paymentMethod.toLowerCase()) })}</span>
-              <span className="font-bold text-[#026F4F]">${total.toFixed(2)}</span>
+              <span className="font-bold text-[#026F4F]">{money(total)}</span>
             </div>
 
             <div className="flex gap-3 w-full mt-2">

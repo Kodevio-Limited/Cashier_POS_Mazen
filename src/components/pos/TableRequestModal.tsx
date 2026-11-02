@@ -8,6 +8,7 @@ import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import type { TableRequest } from '@/lib/table-requests';
 import { getOrders, subscribeOrders, type RunningOrder } from '@/lib/running-orders';
 import { mapEnum, locStr, locTimeAgo, locTable } from '@/lib/locale-fields';
+import { money } from '@/lib/currency';
 
 const PAYMENT_METHOD_KEY_MAP: Record<string, string> = { Card: 'card', Cash: 'cash' };
 
@@ -112,7 +113,7 @@ export function TableRequestModal({
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">{t('unpaidItems')}</span>
                         {unpaidTotal > 0 && (
-                          <span className="text-[11px] font-semibold text-emerald-700"><bdi dir="ltr">${unpaidTotal.toFixed(2)}</bdi></span>
+                          <span className="text-[11px] font-semibold text-emerald-700"><bdi dir="ltr">{money(unpaidTotal)}</bdi></span>
                         )}
                       </div>
                       {unpaid.length === 0 ? (
@@ -124,7 +125,7 @@ export function TableRequestModal({
                               <span className="min-w-0 flex-1 truncate">
                                 {locStr(item.name, item.nameAr, locale)} <span className="text-neutral-400">× {item.qty}</span>
                               </span>
-                              <span className="shrink-0 font-medium text-[#026F4F]"><bdi dir="ltr">${(item.price * item.qty).toFixed(2)}</bdi></span>
+                              <span className="shrink-0 font-medium text-[#026F4F]"><bdi dir="ltr">{money(item.price * item.qty)}</bdi></span>
                             </li>
                           ))}
                         </ul>

@@ -20,6 +20,7 @@ import {
 import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
+import { money } from '@/lib/currency';
 
 const ORDER_TYPE_KEY_MAP: Record<string, string> = {
   All: 'all',
@@ -277,7 +278,7 @@ export default function RunningOrderPage() {
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span className="truncate text-[13px] font-medium leading-[1.4] text-[#2D2F33]">{locStr(item.name, item.nameAr, locale)}</span>
                             <span className="truncate text-[10.7px] font-normal leading-[1.4] text-[#989898]">&ldquo;{locStr(item.modifier || 'Standard', item.modifierAr || t('standardModifier'), locale)}&rdquo;</span>
-                            <span className="text-[12.7px] font-semibold leading-[1.4] text-[#026F4F]">${item.price.toFixed(2)}</span>
+                            <span className="text-[12.7px] font-semibold leading-[1.4] text-[#026F4F]">{money(item.price)}</span>
                           </div>
                           <span className="shrink-0 text-[12.7px] font-semibold leading-[1.4] text-[#2D2F33]">{t('qty', { count: item.qty })}</span>
                         </div>
@@ -290,7 +291,7 @@ export default function RunningOrderPage() {
                         <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">
                           {t('moreItems', { count: Math.max(0, order.items.length - 2) })}
                         </span>
-                        <span className="text-[12px] font-semibold leading-[1.4] text-[#026F4F]">${order.total.toFixed(2)}</span>
+                        <span className="text-[12px] font-semibold leading-[1.4] text-[#026F4F]">{money(order.total)}</span>
                       </div>
                       {order.status === 'Placed' && (
                         <div className="flex items-center gap-2">
@@ -523,7 +524,7 @@ export default function RunningOrderPage() {
                       </span>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-[13.5px] font-semibold leading-[1.4] text-[#026F4F]">${(item.price * item.qty).toFixed(2)}</span>
+                      <span className="text-[13.5px] font-semibold leading-[1.4] text-[#026F4F]">{money(item.price * item.qty)}</span>
                       <span className="text-[11px] font-medium leading-[1.4] text-[#686868]">{t('qty', { count: item.qty })}</span>
                     </div>
                   </div>
@@ -538,22 +539,22 @@ export default function RunningOrderPage() {
               <div className="mt-[10px] flex flex-col gap-[9px] text-[13px] leading-[1.4]">
                 <div className="flex items-center justify-between">
                   <span className="font-normal text-[#989898]">{t('subtotalItems', { count: selectedOrder.items.reduce((s, i) => s + i.qty, 0) })}</span>
-                  <span className="font-medium text-[#686868]">${selectedOrder.subtotal.toFixed(2)}</span>
+                  <span className="font-medium text-[#686868]">{money(selectedOrder.subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-normal text-[#989898]">{t('serviceCharge')}</span>
-                  <span className="font-medium text-[#686868]">${selectedOrder.serviceCharge.toFixed(2)}</span>
+                  <span className="font-medium text-[#686868]">{money(selectedOrder.serviceCharge)}</span>
                 </div>
                 {typeof selectedOrder.tax === 'number' && (
                   <div className="flex items-center justify-between">
                     <span className="font-normal text-[#989898]">{t('tax')}</span>
-                    <span className="font-medium text-[#686868]">${selectedOrder.tax.toFixed(2)}</span>
+                    <span className="font-medium text-[#686868]">{money(selectedOrder.tax)}</span>
                   </div>
                 )}
                 {typeof selectedOrder.tips === 'number' && (
                   <div className="flex items-center justify-between">
                     <span className="font-normal text-[#989898]">{t('tips')}</span>
-                    <span className="font-medium text-[#686868]">${selectedOrder.tips.toFixed(2)}</span>
+                    <span className="font-medium text-[#686868]">{money(selectedOrder.tips)}</span>
                   </div>
                 )}
                 {/* Delivery — how the money is coming in: prepaid online, or
@@ -574,7 +575,7 @@ export default function RunningOrderPage() {
               <div className="mt-[12px] border-t border-dashed border-[#989898]" />
               <div className="mt-[10px] flex items-center justify-between text-[14px] leading-[1.4]">
                 <span className="font-medium text-black">{t('total')}</span>
-                <span className="font-semibold text-[#026F4F]">${selectedOrder.total.toFixed(2)}</span>
+                <span className="font-semibold text-[#026F4F]">{money(selectedOrder.total)}</span>
               </div>
             </div>
           </div>
@@ -640,7 +641,7 @@ export default function RunningOrderPage() {
 
             <div className="flex flex-col gap-1 rounded-xl bg-[#F2F2F2] p-4">
               <span className="text-xs text-[#989898]">{t('collectCashOnDelivery.due')}</span>
-              <span className="text-3xl font-semibold text-black"><bdi dir="ltr">${collecting.total.toFixed(2)}</bdi></span>
+              <span className="text-3xl font-semibold text-black"><bdi dir="ltr">{money(collecting.total)}</bdi></span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -660,7 +661,7 @@ export default function RunningOrderPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-black">{t('collectCashOnDelivery.changeDue')}</span>
               <span className="text-lg font-semibold text-[#026F4F]">
-                <bdi dir="ltr">${Math.max(0, (parseFloat(collectReceived) || 0) - collecting.total).toFixed(2)}</bdi>
+                <bdi dir="ltr">{money(Math.max(0, (parseFloat(collectReceived) || 0) - collecting.total))}</bdi>
               </span>
             </div>
 

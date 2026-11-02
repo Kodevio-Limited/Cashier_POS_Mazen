@@ -21,6 +21,7 @@ import {
   subscribeMenuAvailability,
   type MenuAvailability,
 } from '@/lib/menu-availability';
+import { money } from '@/lib/currency';
 
 function AvailabilityToggle({
   checked,
@@ -199,7 +200,7 @@ export default function CashierMenuPage() {
                       {tCat(item.category.toLowerCase())}
                     </div>
                     <div className="w-full text-base font-medium leading-5 text-emerald-700">
-                      ${item.price.toFixed(2)}
+                      {money(item.price)}
                     </div>
                   </div>
                   <div className="mt-2.5 flex items-center justify-between border-t border-[#E9E9E9] pt-2.5">
@@ -234,7 +235,7 @@ export default function CashierMenuPage() {
                       {locStr(addon.name, addon.nameAr, locale)}
                     </span>
                     <span className="text-[12px] font-normal leading-5 text-[#989898]">
-                      + ${addon.price.toFixed(2)}
+                      + {money(addon.price)}
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-2.5">

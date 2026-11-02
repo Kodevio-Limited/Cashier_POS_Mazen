@@ -150,7 +150,7 @@ export function LogPurchaseDrawer({
             <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal" placeholder="120" className={pillInputClass} />
           </Field>
           <Field label={t('fieldNameTotalCost')}>
-            <input value={totalCost} onChange={(e) => setTotalCost(e.target.value)} inputMode="decimal" dir="ltr" placeholder="$120.00" className={pillInputClass} />
+            <input value={totalCost} onChange={(e) => setTotalCost(e.target.value)} inputMode="decimal" dir="ltr" placeholder="EGP 120.00" className={pillInputClass} />
           </Field>
         </div>
         <Field label={t('fieldNameSupplier')}>
@@ -205,7 +205,7 @@ export function LogExpenseDrawer({
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('phExpenseName')} className={pillInputClass} />
         </Field>
         <Field label={t('fieldNameAmount')}>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" placeholder="$0.00" className={pillInputClass} />
+          <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" placeholder="EGP 0.00" className={pillInputClass} />
         </Field>
         <Field label={t('notesOptional')}>
           <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('addContext')} className={pillInputClass} />

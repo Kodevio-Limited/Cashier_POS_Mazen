@@ -141,12 +141,14 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
 
         {/* Bill + time (occupied) */}
         {status === 'occupied' && (bill || time) && (
-          <div className="absolute inset-x-[4.297cqw] bottom-[4.297cqw] flex items-center justify-between gap-2">
-            {bill && <span className="text-[8.203cqw] font-semibold leading-[1.4] text-[#026F4F]">{bill}</span>}
+          <div className="absolute inset-x-[4.297cqw] bottom-[4.297cqw] flex items-center justify-between gap-[2cqw]">
+            {/* The bill now carries an "EGP" prefix, so it must never wrap —
+                the elapsed time truncates first if space runs out. */}
+            {bill && <span className="shrink-0 whitespace-nowrap text-[7.383cqw] font-semibold leading-[1.4] text-[#026F4F]">{bill}</span>}
             {time && (
-              <span className="flex items-center gap-1">
-                <Clock size={21} strokeWidth={1.5} className="shrink-0 text-[#989898]" />
-                <span className="whitespace-nowrap text-[6.055cqw] font-normal leading-[1.4] text-[#989898]">{locTimeAgo(time, locale, tTime)}</span>
+              <span className="flex min-w-0 items-center gap-1">
+                <Clock size={18} strokeWidth={1.5} className="shrink-0 text-[#989898]" />
+                <span className="truncate whitespace-nowrap text-[6.055cqw] font-normal leading-[1.4] text-[#989898]">{locTimeAgo(time, locale, tTime)}</span>
               </span>
             )}
           </div>
