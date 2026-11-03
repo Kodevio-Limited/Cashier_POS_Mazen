@@ -34,13 +34,13 @@ interface FloorTableCardProps {
 }
 
 /**
- * Rail-style table card, pixel-matched to Figma Floor Plan (1759:345).
- * Natural size 256 x 198. Status colors: yellow = occupied, green = available, blue = reserved.
+ * Table card for the Floor Plan. Status colors: yellow = occupied,
+ * green = available, blue = reserved.
  *
  * Fluid: the card is a `container-type: inline-size` box whose internals are
  * expressed in `cqw` (1% of the card's own width), so every dimension and type
- * size scales from the 256px reference. The grid gives it `minmax(256px, 1fr)`
- * tracks, so it grows to fill wide viewports and stays 256px at narrow ones.
+ * size scales from the 256px reference. The grid gives it `minmax(240px, 1fr)`
+ * tracks, so it grows to fill wide viewports and stays 240px at narrow ones.
  */
 export function FloorTableCard({ name, zone, status, itemsCount, bill, time, requests, reservedFor, onReserve, onClick }: FloorTableCardProps) {
   const t = useTranslations('floorPlan');
@@ -48,7 +48,6 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
   const locale = useLocale();
   const { body, badge } = STATUS[status];
   const statusLabel = t(`status.${status}`).toUpperCase();
-  const rail = { backgroundColor: body };
   const waiterCount = (requests ?? []).filter((r) => r.type === 'Waiter Requested').length;
   const checkCount = (requests ?? []).filter((r) => r.type === 'Check Requested').length;
   const zoneLabel = t(`zones.${zone.toLowerCase()}`, { default: zone } as never);
@@ -62,7 +61,7 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
         if (e.key === 'Enter') onClick?.();
       }}
       style={{ containerType: 'inline-size' }}
-      className="relative aspect-[256/198] w-full cursor-pointer transition-transform duration-200 hover:-translate-y-1"
+      className="relative aspect-[256/160] w-full cursor-pointer transition-transform duration-200 hover:-translate-y-1"
     >
       {/* Active table requests (waiter / check) */}
       {requests && requests.length > 0 && (
@@ -82,16 +81,11 @@ export function FloorTableCard({ name, zone, status, itemsCount, bill, time, req
         </div>
       )}
 
-      {/* Top / bottom rails */}
-      <div className="absolute left-[24.609cqw] top-0 h-[5.078cqw] w-[50.781cqw] rounded-full border border-[#B9B9B9]" style={rail} />
-      <div className="absolute bottom-0 left-[24.609cqw] h-[5.078cqw] w-[50.781cqw] rounded-full border border-[#B9B9B9]" style={rail} />
-      {/* Left / right rails */}
-      <div className="absolute left-0 top-[13.281cqw] h-[50.781cqw] w-[5.078cqw] rounded-full border border-[#B9B9B9]" style={rail} />
-      <div className="absolute right-0 top-[13.281cqw] h-[50.781cqw] w-[5.078cqw] rounded-full border border-[#B9B9B9]" style={rail} />
-
-      {/* Body */}
+      {/* Bug-25: the four seat/rail capsules around each card are removed —
+          they ate horizontal space between tables and looked misaligned.
+          The table body now fills the whole card box. */}
       <div
-        className="absolute left-[8.203cqw] top-[8.203cqw] h-[60.547cqw] w-[83.594cqw] overflow-hidden rounded-[3.125cqw] border border-[#B9B9B9]"
+        className="absolute inset-0 overflow-hidden rounded-[3.125cqw] border border-[#B9B9B9]"
         style={{ backgroundColor: body }}
       >
         {/* Name + badge */}

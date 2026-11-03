@@ -437,8 +437,10 @@ export default function FloorPlanPage() {
       </div>
 
       {/* ── Table grid (Figma 1759:802) — 4 across on tablet landscape (lg…xl),
-          auto-filling 256px tracks on desktop so it grows to fill. ── */}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(256px,1fr))] gap-x-[28px] gap-y-9 pb-20 pt-9 lg:grid-cols-4 xl:grid-cols-[repeat(auto-fill,minmax(256px,1fr))]">
+          auto-filling tracks on desktop so it grows to fill.
+          Bug-25: with the seat capsules removed the tracks are narrower
+          (240px) and gaps tighter, so one more table fits per row. ── */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-8 pb-20 pt-9 lg:grid-cols-4 xl:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
         {filteredTables.map((table) => (
           <FloorTableCard
             key={table.id}
