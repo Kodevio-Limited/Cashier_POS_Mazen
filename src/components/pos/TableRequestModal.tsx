@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import type { TableRequest } from '@/lib/table-requests';
 import { getOrders, subscribeOrders, type RunningOrder } from '@/lib/running-orders';
-import { mapEnum, locStr, locTimeAgo, locTable } from '@/lib/locale-fields';
+import { mapEnum, locStr, locTable } from '@/lib/locale-fields';
 import { money } from '@/lib/currency';
+import { RequestTimer } from '@/components/pos/RequestTimer';
 
 const PAYMENT_METHOD_KEY_MAP: Record<string, string> = { Card: 'card', Cash: 'cash' };
 
@@ -25,7 +26,6 @@ export function TableRequestModal({
 }) {
   const t = useTranslations('tableRequests');
   const tPay = useTranslations('floorPlan.paymentMethod');
-  const tTime = useTranslations('common.time');
   const tTable = useTranslations('common.table');
   const locale = useLocale();
   const [orders, setOrders] = useState<RunningOrder[]>([]);
@@ -88,10 +88,7 @@ export function TableRequestModal({
                         {/* "Table B01: Check - Card" / "…Check - Cash" / "…Waiter" */}
                         <span className="text-2xl font-medium text-black">{locTable(req.table, locale, tTable)}:</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs font-normal text-red-600">
-                        <Clock size={14} />
-                        <span>{locTimeAgo(req.timeAgo, locale, tTime)}</span>
-                      </div>
+                      <RequestTimer createdAt={req.createdAt} timeAgo={req.timeAgo} />
                     </div>
 
                     <div className="flex items-center gap-2">

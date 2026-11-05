@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Plus, ArrowRightLeft, Receipt, CreditCard, X, ShoppingBag, Bike, Bell, CheckCircle2, CalendarClock, User, Phone, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FloorTableCard, type FloorTableStatus } from '@/components/pos/FloorTableCard';
+import { RequestTimer } from '@/components/pos/RequestTimer';
 import { clearDraft, lineTotal, newLineId, saveDraft, type DraftItem } from '@/lib/order-draft';
 import { addClearedTable, getClearedTables, removeClearedTable } from '@/lib/cleared-tables';
 import { loadSession, newOrderNumber, saveSession, type OrderType } from '@/lib/order-session';
@@ -532,18 +533,22 @@ export default function FloorPlanPage() {
               )}
 
               {/* Live requests for this table */}
-                  {requestsForTable(activeModalTable.name).map((req) => (
-                  <div key={req.id} className="flex items-center justify-between gap-3 text-xs">
-                    <span className="flex items-center gap-1.5 font-medium text-[#2D2F33]">
-                      {req.type === 'Waiter Requested' ? (
-                        <Bell size={13} className="text-fuchsia-600" />
-                      ) : (
-                        <CheckCircle2 size={13} className="text-blue-600" />
-                      )}
+              {requestsForTable(activeModalTable.name).map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-3 text-xs">
+                  <span className="flex min-w-0 items-center gap-1.5 font-medium text-[#2D2F33]">
+                    {req.type === 'Waiter Requested' ? (
+                      <Bell size={13} className="shrink-0 text-fuchsia-600" />
+                    ) : (
+                      <CheckCircle2 size={13} className="shrink-0 text-blue-600" />
+                    )}
+                    <span className="truncate">
                       {req.type === 'Waiter Requested' ? t('modal.waiterRequested') : t('modal.checkRequested')}
                       {/* Cash / Card shows for check requests only */}
                       {req.type === 'Check Requested' && req.paymentMethod ? ` (${t('paymentMethod.' + req.paymentMethod.toLowerCase())})` : ''}
                     </span>
+                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <RequestTimer createdAt={req.createdAt} timeAgo={req.timeAgo} />
                     <button
                       onClick={() => handleRequest(req.id)}
                       className="shrink-0 rounded-full bg-orange-500 px-3 py-1 text-[11px] font-medium text-white transition-colors hover:bg-orange-600"
@@ -551,7 +556,8 @@ export default function FloorPlanPage() {
                       {t('modal.handled')}
                     </button>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
 
             <div className="flex flex-col gap-2 pt-1">

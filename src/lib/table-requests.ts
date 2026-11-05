@@ -44,7 +44,16 @@ export function getRequests(): TableRequest[] {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed as TableRequest[];
+      if (Array.isArray(parsed)) {
+        return (parsed as TableRequest[]).map((r) => {
+          if (!r.createdAt || typeof r.createdAt !== 'number') {
+            const minutesMatch = r.timeAgo?.match(/(\d+)\s*min/);
+            const mins = minutesMatch ? parseInt(minutesMatch[1], 10) : 5;
+            return { ...r, createdAt: Date.now() - mins * 60_000 };
+          }
+          return r;
+        });
+      }
       return [];
     }
   } catch {
