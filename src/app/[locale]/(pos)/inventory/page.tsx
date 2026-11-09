@@ -110,10 +110,10 @@ export default function InventoryPage() {
   }
 
   // ── Waste ──
-  function handleSubmitWaste(e: { ingredientId: string; qty: number; unit: string; reason: string; responsible: string; notes: string }) {
+  function handleSubmitWaste(e: { ingredientId: string; qty: number; unit: string; reason: string; responsible: string; notes: string; loggedBy: string }) {
     const ing = ingredients.find((i) => i.id === e.ingredientId);
     if (!ing) return;
-    setWaste((prev) => [{ id: `w-${Date.now()}`, date: '2023-10-25', item: ing.name, itemAr: ing.nameAr, note: e.notes || e.reason, qty: e.qty, unit: e.unit, reason: e.reason, loggedBy: e.responsible }, ...prev]);
+    setWaste((prev) => [{ id: `w-${Date.now()}`, date: '2023-10-25', item: ing.name, itemAr: ing.nameAr, note: e.notes || e.reason, qty: e.qty, unit: e.unit, reason: e.reason, responsible: e.responsible, loggedBy: e.loggedBy }, ...prev]);
     setIngredients((prev) => prev.map((i) => (i.id === e.ingredientId ? { ...i, qty: Math.max(0, i.qty - e.qty), updatedAgo: 'Just now' } : i)));
   }
 
@@ -126,12 +126,20 @@ export default function InventoryPage() {
           <StockTab ingredients={ingredients} />
         )}
         {activeTab === 'Recipe' && (
-          <RecipeTab recipes={recipes} ingredients={ingredients} onEditRecipe={(r) => setDrawer({ kind: 'mapping', recipe: r })} />
+          /* View-only for cashiers: RecipeTab opens its own read-only modal. */
+          <RecipeTab recipes={recipes} ingredients={ingredients} />
         )}
         {activeTab === 'Purchases' && (
           <PurchasesTab purchases={purchases} expenses={expenses} onLogPurchase={() => setDrawer({ kind: 'purchase' })} onLogExpense={() => setDrawer({ kind: 'expense' })} />
         )}
-        {activeTab === 'Transfers' && <TransfersTab transfers={transfers} onNewTransfer={() => setDrawer({ kind: 'transfer' })} />}
+        {activeTab === 'Transfers' && (
+          /* No creation for cashiers — but an in-progress transfer can be
+             marked completed (bug: "edit the status from in progress to completed"). */
+          <TransfersTab
+            transfers={transfers}
+            onStatusChange={(id) => setTransfers((prev) => prev.map((tr) => (tr.id === id ? { ...tr, status: 'COMPLETED' } : tr)))}
+          />
+        )}
         {activeTab === 'Physical Count' && <PhysicalCountTab counts={counts} ingredients={ingredients} onSubmit={handleSubmitCount} />}
         {activeTab === 'Waste log' && <WasteLogTab entries={waste} ingredients={ingredients} onSubmit={handleSubmitWaste} />}
       </div>

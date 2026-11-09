@@ -18,7 +18,7 @@ import {
   type CountEntry,
   type WasteEntry,
 } from './types';
-import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction } from './InventoryShell';
+import { StockPill, Field, PillSelect, pillInputClass, PrimaryAction, CloseX } from './InventoryShell';
 import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
 import { getActiveShift } from '@/lib/shift-session';
 import { money } from '@/lib/currency';
@@ -95,15 +95,16 @@ export function StockTab({ ingredients }: { ingredients: Ingredient[] }) {
 export function RecipeTab({
   recipes,
   ingredients,
-  onEditRecipe,
 }: {
   recipes: Recipe[];
   ingredients: Ingredient[];
-  onEditRecipe: (r: Recipe) => void;
 }) {
   const [subTab, setSubTab] = useState<'Main Menu Item' | 'Add on & Extras'>('Main Menu Item');
   const [search, setSearch] = useState('');
+  // Cashiers can read a recipe but never edit it (view-only card → this modal).
+  const [viewing, setViewing] = useState<Recipe | null>(null);
   const t = useTranslations('inventory');
+  const tActions = useTranslations('common.actions');
   const locale = useLocale();
   const visible = recipes.filter(
     (r) =>
@@ -161,7 +162,20 @@ export function RecipeTab({
           {visible.map((recipe) => {
             const available = recipeAvailable(recipe, ingredients);
             return (
-              <div key={recipe.id} className="flex w-full max-w-[324px] flex-col items-start gap-[21px] overflow-clip rounded-[22.517px] bg-white p-[14.64px]">
+              <div
+                key={recipe.id}
+                role="button"
+                tabIndex={0}
+                aria-label={locStr(recipe.name, recipe.nameAr, locale)}
+                onClick={() => setViewing(recipe)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setViewing(recipe);
+                  }
+                }}
+                className="flex w-full max-w-[324px] cursor-pointer flex-col items-start gap-[21px] overflow-clip rounded-[22.517px] bg-white p-[14.64px] transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.10)] focus:outline-none focus:ring-2 focus:ring-[#026F4F]"
+              >
                 <div className="flex w-full flex-col gap-[11px]">
                   <div className="relative aspect-[295/263] w-full overflow-clip rounded-[11.258px] bg-[#F2F2F2]">
                     <img
@@ -186,12 +200,6 @@ export function RecipeTab({
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => onEditRecipe(recipe)}
-                  className="flex h-[53px] w-full shrink-0 items-center justify-center whitespace-nowrap rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_8.15px_rgba(0,0,0,0.12)] transition-colors hover:bg-emerald-800"
-                >
-                  {t('editRecipe')}
-                </button>
               </div>
             );
           })}
@@ -201,7 +209,20 @@ export function RecipeTab({
           {visible.map((recipe) => {
             const available = recipeAvailable(recipe, ingredients);
             return (
-              <div key={recipe.id} className="flex w-full flex-col gap-[12px] rounded-[22.5px] bg-white p-[13.94px]">
+              <div
+                key={recipe.id}
+                role="button"
+                tabIndex={0}
+                aria-label={locStr(recipe.name, recipe.nameAr, locale)}
+                onClick={() => setViewing(recipe)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setViewing(recipe);
+                  }
+                }}
+                className="flex w-full cursor-pointer flex-col gap-[12px] rounded-[22.5px] bg-white p-[13.94px] transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.10)] focus:outline-none focus:ring-2 focus:ring-[#026F4F]"
+              >
                 <span className={cn('inline-flex w-fit items-center justify-center rounded-[7.9px] px-[11.29px] py-[9.03px] text-[13.5px] font-medium leading-[1.4] text-white', available ? 'bg-[#10D935]' : 'bg-[#D91010]')}>
                   {available ? t('stockState.in') : t('stockState.out')}
                 </span>
@@ -215,12 +236,6 @@ export function RecipeTab({
                     <span className="text-[16px] font-normal leading-[1.4] text-neutral-400">{t('noIngredientsMapped')}</span>
                   )}
                 </div>
-                <button
-                  onClick={() => onEditRecipe(recipe)}
-                  className="flex h-[53px] w-full items-center justify-center rounded-[30px] bg-[#026F4F] text-[19px] font-medium leading-[1.4] text-white shadow-[0px_4px_8.15px_rgba(0,0,0,0.12)] transition-colors hover:bg-emerald-800"
-                >
-                  {t('editRecipe')}
-                </button>
               </div>
             );
           })}
@@ -229,6 +244,62 @@ export function RecipeTab({
 
       {visible.length === 0 && (
         <p className="py-10 text-center text-sm text-[#989898]">{t('emptyRecipes')}</p>
+      )}
+
+      {/* Read-only recipe view — replaces the old "Edit Recipe" drawer for cashiers. */}
+      {viewing && (
+        <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setViewing(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={locStr(viewing.name, viewing.nameAr, locale)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[440px] overflow-hidden rounded-[16px] bg-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between gap-3 px-5 pt-5">
+              <h2 className="text-[22px] font-medium leading-[1.4] text-black">{locStr(viewing.name, viewing.nameAr, locale)}</h2>
+              <CloseX onClick={() => setViewing(null)} />
+            </div>
+            <div className="flex flex-col gap-[14px] px-5 pb-5 pt-4">
+              <span
+                className={cn(
+                  'inline-flex w-fit items-center justify-center rounded-[7.9px] px-[11.29px] py-[6px] text-[13.5px] font-medium leading-[1.4] text-white',
+                  recipeAvailable(viewing, ingredients) ? 'bg-[#10D935]' : 'bg-[#D91010]',
+                )}
+              >
+                {recipeAvailable(viewing, ingredients) ? t('stockState.in') : t('stockState.out')}
+              </span>
+              <div className="rounded-[10px] bg-[#F2F2F2] p-[14px]">
+                <p className="mb-[10px] text-[13px] font-medium leading-[1.4] text-[#686868]">{t('col.ingredient')}</p>
+                {viewing.maps.length > 0 ? (
+                  <div className="flex flex-col gap-[10px] text-[15px] font-normal leading-[1.4]">
+                    {viewing.maps.map((m, i) => {
+                      const ing = ingredients.find((x) => x.id === m.ingredientId);
+                      const bad = m.missing || !ing;
+                      const cls = bad ? 'text-[#D91010]' : 'text-[#2D2F33]';
+                      return (
+                        <div key={i} className="flex items-center justify-between gap-3">
+                          <span className={cls}>{ing ? locStr(ing.name, ing.nameAr, locale) : t('missingIngredient')}</span>
+                          <span className={cn(cls, 'whitespace-nowrap font-medium')}>
+                            {m.qty} {locUnit(m.unit, t)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[15px] font-normal leading-[1.4] text-[#989898]">{t('noIngredientsMapped')}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setViewing(null)}
+                className="h-[46px] w-full rounded-[24px] border border-[#B9B9B9] bg-[#E9E9E9] font-satoshi text-[14px] font-medium leading-[1.4] text-[#2D2F33] transition-colors hover:bg-[#E0E0E0]"
+              >
+                {tActions('close')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -369,7 +440,14 @@ export function PurchasesTab({
 }
 
 // ─── TRANSFERS ────────────────────────────────────────────────────────────────
-export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer[]; onNewTransfer: () => void }) {
+export function TransfersTab({
+  transfers,
+  onStatusChange,
+}: {
+  transfers: Transfer[];
+  /** Cashiers can't create transfers, but may push an in-progress one to completed. */
+  onStatusChange: (id: string) => void;
+}) {
   const t = useTranslations('inventory');
   const tStatus = useTranslations('inventory.transferStatus');
   const tLoc = useTranslations('inventory.locations');
@@ -386,7 +464,7 @@ export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer
             className="h-12 w-full rounded-xl border border-neutral-200 bg-white ps-12 pe-4 text-base outline-none transition-colors focus:border-emerald-500"
           />
         </div>
-        <PrimaryAction icon={<Plus size={20} />} label={t('newTransfer')} onClick={onNewTransfer} />
+        {/* No "New Transfer" button: transfers are view-only for cashiers. */}
       </div>
 
       <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
@@ -430,13 +508,22 @@ export function TransfersTab({ transfers, onNewTransfer }: { transfers: Transfer
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-                  <span className={cn(
-                    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium',
-                    completed(tr.status) ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700',
-                  )}>
-                    <span className={cn('h-2 w-2 shrink-0 rounded-full', completed(tr.status) ? 'bg-green-500' : 'bg-yellow-500')} />
-                    {tStatus(completed(tr.status) ? 'completed' : 'pending')}
-                  </span>
+                  {completed(tr.status) ? (
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                      {tStatus('completed')}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => onStatusChange(tr.id)}
+                      title={t('markCompleted')}
+                      aria-label={`${t('markCompleted')} — ${tr.id}`}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-700 transition-colors hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-[#026F4F]"
+                    >
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-yellow-500" />
+                      {tStatus('pending')}
+                    </button>
+                  )}
                 </td>
                 <td className="px-3 py-3 text-center align-middle sm:px-4 sm:py-4 lg:px-6 lg:py-5">
                   <span className="block max-w-[140px] truncate text-sm font-medium text-zinc-800 sm:max-w-[180px] sm:text-base lg:max-w-none">{tr.responsible}</span>
@@ -679,7 +766,7 @@ export function WasteLogTab({
 }: {
   entries: WasteEntry[];
   ingredients: Ingredient[];
-  onSubmit: (e: { ingredientId: string; qty: number; unit: string; reason: string; responsible: string; notes: string }) => void;
+  onSubmit: (e: { ingredientId: string; qty: number; unit: string; reason: string; responsible: string; notes: string; loggedBy: string }) => void;
 }) {
   const [ingredientId, setIngredientId] = useState(ingredients[0]?.id ?? '');
   const [qty, setQty] = useState('');
@@ -700,7 +787,16 @@ export function WasteLogTab({
   }
 
   function commitWaste() {
-    onSubmit({ ingredientId, qty: parseFloat(qty) || 0, unit, reason, responsible: responsible || t('unassigned'), notes: notes || tReason(wasteReasonKey(reason)) });
+    onSubmit({
+      ingredientId,
+      qty: parseFloat(qty) || 0,
+      unit,
+      reason,
+      responsible: responsible || t('unassigned'),
+      notes: notes || tReason(wasteReasonKey(reason)),
+      // Who filed the log = the cashier on shift (shown in its own column).
+      loggedBy: getActiveShift()?.cashierName || 'John. D',
+    });
     setQty('');
     setNotes('');
     setPinOpen(false);
@@ -787,11 +883,12 @@ export function WasteLogTab({
         <div className="mt-[14px] overflow-x-auto pb-[14px]">
           <table className="w-full table-fixed">
             <colgroup>
-              <col className="w-[16%]" />
-              <col className="w-[28%]" />
-              <col className="w-[16%]" />
-              <col className="w-[16%]" />
+              <col className="w-[14%]" />
               <col className="w-[24%]" />
+              <col className="w-[14%]" />
+              <col className="w-[14%]" />
+              <col className="w-[17%]" />
+              <col className="w-[17%]" />
             </colgroup>
             <thead>
               <tr className="divide-x divide-[#E0E0E0] border-b border-neutral-100 bg-gray-200">
@@ -800,6 +897,7 @@ export function WasteLogTab({
                 <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.qtyWasted')}</th>
                 <th className="px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.reason')}</th>
                 <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.responsible')}</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center text-sm font-medium leading-6 text-stone-500 sm:px-4 sm:text-base lg:px-6 lg:py-4">{t('col.loggedBy')}</th>
               </tr>
             </thead>
             <tbody>
@@ -814,6 +912,7 @@ export function WasteLogTab({
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-red-500 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{w.qty} {locUnit(w.unit, t)}</td>
                   <td className="max-w-[120px] truncate px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-black sm:max-w-[160px] sm:px-4 sm:py-4 sm:text-base lg:max-w-none lg:px-6 lg:py-5">{tReason(wasteReasonKey(w.reason))}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-zinc-800 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{w.responsible || '—'}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-sm font-medium leading-6 text-zinc-800 sm:px-4 sm:py-4 sm:text-base lg:px-6 lg:py-5">{w.loggedBy}</td>
                 </tr>
               ))}

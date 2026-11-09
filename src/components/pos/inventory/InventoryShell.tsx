@@ -29,6 +29,11 @@ const TAB_ICONS: Record<InvTab, typeof Warehouse> = {
   'Waste log': FileWarning,
 };
 
+// Cashiers must not see purchasing data (bug: "remove the Purchases tab from
+// here, cashiers shouldn't be able to view it"), so the tab list is filtered
+// here rather than in the shared INV_TABS definition.
+const POS_TABS: InvTab[] = INV_TABS.filter((tab) => tab !== 'Purchases');
+
 export function InventoryHeader({ activeTab, onTabChange }: { activeTab: InvTab; onTabChange: (t: InvTab) => void }) {
   const t = useTranslations('inventory');
   return (
@@ -42,7 +47,7 @@ export function InventoryHeader({ activeTab, onTabChange }: { activeTab: InvTab;
 
       {/* Filter tabs */}
       <div className="inline-flex flex-wrap items-center gap-1.5">
-        {INV_TABS.map((tab) => {
+        {POS_TABS.map((tab) => {
           const Icon = TAB_ICONS[tab];
           return (
             <button

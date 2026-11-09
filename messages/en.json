@@ -557,8 +557,9 @@
     "emptyTransfers": "No transfers yet.",
     "transferStatus": {
       "completed": "Completed",
-      "pending": "Pending"
+      "pending": "In Progress"
     },
+    "markCompleted": "Mark as Completed",
     "locations": {
       "downtownMain": "Downtown (Main)",
       "uptown": "Uptown",

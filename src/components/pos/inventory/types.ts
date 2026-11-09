@@ -117,6 +117,9 @@ export interface WasteEntry {
   qty: number;
   unit: string;
   reason: string;
+  /** Staff member accountable for the waste (chosen on the log form). */
+  responsible?: string;
+  /** Whoever submitted the log — the active cashier. Shown as its own column. */
   loggedBy: string;
 }
 
@@ -221,7 +224,7 @@ export const INITIAL_EXPENSES: Expense[] = [
 ];
 
 export const INITIAL_TRANSFERS: Transfer[] = [
-  { id: 'TR-886', date: 'Jul 28, 2026', dateAr: '28 يوليو 2026', ingredient: 'Beef Patties', ingredientAr: 'أقراص لحم البقر', qty: 120, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED', responsible: 'John. D' },
+  { id: 'TR-886', date: 'Jul 28, 2026', dateAr: '28 يوليو 2026', ingredient: 'Beef Patties', ingredientAr: 'أقراص لحم البقر', qty: 120, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'PENDING', responsible: 'John. D' },
   { id: 'TR-885', date: 'Jul 28, 2026', dateAr: '28 يوليو 2026', ingredient: 'Burger Buns', ingredientAr: 'خبز البرجر', qty: 60, unit: 'pcs', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED', responsible: 'Sarah J.' },
   { id: 'TR-884', date: 'Jul 27, 2026', dateAr: '27 يوليو 2026', ingredient: 'Cheddar Cheese', ingredientAr: 'جبنة شيدر', qty: 40, unit: 'pcs', from: 'Downtown (Main)', to: 'Uptown', status: 'COMPLETED', responsible: 'John. D' },
   { id: 'TR-883', date: 'Jul 27, 2026', dateAr: '27 يوليو 2026', ingredient: 'Lettuce', ingredientAr: 'خس', qty: 25, unit: 'kg', from: 'Uptown', to: 'Downtown (Main)', status: 'COMPLETED', responsible: 'Mike T.' },
@@ -237,10 +240,10 @@ export const INITIAL_COUNTS: CountEntry[] = [
 ];
 
 export const INITIAL_WASTE: WasteEntry[] = [
-  { id: 'w1', date: '2023-10-25', dateAr: '25 أكتوبر 2023', item: 'Beef Patties', itemAr: 'أقراص لحم البقر', note: 'Grill was too hot', noteAr: 'كانت الشواية ساخنة جدًا', qty: 3, unit: 'pcs', reason: 'Burned', loggedBy: 'John. D' },
-  { id: 'w2', date: '2023-10-25', dateAr: '25 أكتوبر 2023', item: 'Burger Buns', itemAr: 'خبز البرجر', note: 'Left overnight', noteAr: 'تُرك طوال الليل', qty: 5, unit: 'pcs', reason: 'Spoiled', loggedBy: 'John. D' },
-  { id: 'w3', date: '2023-10-24', dateAr: '24 أكتوبر 2023', item: 'Lettuce', itemAr: 'خس', note: 'Wilted leaves', noteAr: 'أوراق ذابلة', qty: 2, unit: 'kg', reason: 'Spoiled', loggedBy: 'Sarah J.' },
-  { id: 'w4', date: '2023-10-24', dateAr: '24 أكتوبر 2023', item: 'Cheddar Cheese', itemAr: 'جبنة شيدر', note: 'Over portioned', noteAr: 'حصة أكبر من اللازم', qty: 1, unit: 'pcs', reason: 'Overportion', loggedBy: 'John. D' },
+  { id: 'w1', date: '2023-10-25', dateAr: '25 أكتوبر 2023', item: 'Beef Patties', itemAr: 'أقراص لحم البقر', note: 'Grill was too hot', noteAr: 'كانت الشواية ساخنة جدًا', qty: 3, unit: 'pcs', reason: 'Burned', responsible: 'Mike T.', loggedBy: 'John. D' },
+  { id: 'w2', date: '2023-10-25', dateAr: '25 أكتوبر 2023', item: 'Burger Buns', itemAr: 'خبز البرجر', note: 'Left overnight', noteAr: 'تُرك طوال الليل', qty: 5, unit: 'pcs', reason: 'Spoiled', responsible: 'Sarah J.', loggedBy: 'John. D' },
+  { id: 'w3', date: '2023-10-24', dateAr: '24 أكتوبر 2023', item: 'Lettuce', itemAr: 'خس', note: 'Wilted leaves', noteAr: 'أوراق ذابلة', qty: 2, unit: 'kg', reason: 'Spoiled', responsible: 'Sarah J.', loggedBy: 'Sarah J.' },
+  { id: 'w4', date: '2023-10-24', dateAr: '24 أكتوبر 2023', item: 'Cheddar Cheese', itemAr: 'جبنة شيدر', note: 'Over portioned', noteAr: 'حصة أكبر من اللازم', qty: 1, unit: 'pcs', reason: 'Overportion', responsible: 'John. D', loggedBy: 'John. D' },
 ];
 
 export const VARIANCE_SERIES = [

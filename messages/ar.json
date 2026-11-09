@@ -557,8 +557,9 @@
     "emptyTransfers": "لا توجد تحويلات بعد.",
     "transferStatus": {
       "completed": "مكتمل",
-      "pending": "قيد الانتظار"
+      "pending": "قيد التنفيذ"
     },
+    "markCompleted": "تحديد كمكتمل",
     "locations": {
       "downtownMain": "وسط المدينة (الرئيسي)",
       "uptown": "أبتاون",
