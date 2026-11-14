@@ -10,6 +10,7 @@ import { useQueryModal, readQueryParam, writeQueryParam } from '@/lib/use-query-
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { PinVerifyModal } from '@/components/pos/PinVerifyModal';
 import { money } from '@/lib/currency';
+import { mergeIdenticalItems } from '@/lib/order-items';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type OrderType = 'All' | 'Dine In' | 'Takeaway' | 'Delivery';
@@ -318,6 +319,11 @@ export default function OrderHistoryPage() {
     filteredOrders[0] ??
     null;
 
+  // Rows identical in dish, add-ons and comment are shown as ONE row with the
+  // quantities added (Bug-19). Every index-keyed consumer below (refund qty
+  // map, refund modal, waste step) reads this same array so the indices line up.
+  const detailItems = selectedOrder ? mergeIdenticalItems(selectedOrder.items) : [];
+
   function handleTypeTabChange(tab: OrderType) {
     setActiveTypeTab(tab);
     const q = search.trim().toLowerCase().replace(/^#/, '');
@@ -335,7 +341,7 @@ export default function OrderHistoryPage() {
     }
   }
 
-  const refundLines = (selectedOrder?.items ?? [])
+  const refundLines = detailItems
     .map((item, idx) => ({ item, idx, qty: refundQty[idx] ?? 0 }))
     .filter((l) => l.qty > 0);
   const refundTotal = refundLines.reduce((s, l) => s + l.item.price * l.qty, 0);
@@ -367,7 +373,8 @@ export default function OrderHistoryPage() {
     if (modal === 'refund-waste') {
       const full: Record<number, boolean> = {};
       const qty: Record<number, number> = {};
-      found.items.forEach((item, idx) => {
+      // Same merged view as the detail panel, so the indices match.
+      mergeIdenticalItems(found.items).forEach((item, idx) => {
         full[idx] = true;
         qty[idx] = item.qty;
       });
@@ -572,7 +579,7 @@ export default function OrderHistoryPage() {
 
                     {/* Items */}
                     <div className="mt-2.5 flex flex-col">
-                      {order.items.slice(0, 2).map((item, idx) => (
+                      {mergeIdenticalItems(order.items).slice(0, 2).map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2.5 border-b border-[#F2F2F2] py-2 last:border-0">
                           <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-[#F2F2F2]">
                             <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
@@ -593,7 +600,7 @@ export default function OrderHistoryPage() {
                         {tPay(mapEnum(order.footerState, FOOTER_STATE_KEY_MAP))}
                       </span>
                       <div className="flex flex-col items-end gap-[6px]">
-                        <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">{t('moreItems', { count: Math.max(0, order.items.length - 2) })}</span>
+                        <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">{t('moreItems', { count: Math.max(0, mergeIdenticalItems(order.items).length - 2) })}</span>
                         <span className="text-[14px] font-semibold leading-[1.4] text-[#026F4F]">{money(order.total)}</span>
                       </div>
                     </div>
@@ -672,7 +679,7 @@ export default function OrderHistoryPage() {
             <div className="mt-[10px] flex flex-col gap-[10px]">
               <p className="text-[12px] font-semibold leading-[1.4] text-[#2D2F33]">{t('orderSummary')}</p>
               <div className="flex flex-col gap-[11px]">
-                {selectedOrder.items.map((item, idx) => (
+                {detailItems.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-[10px]">
                     <div className="h-[77px] w-[82px] shrink-0 overflow-hidden rounded-[7px] bg-[#F2F2F2]">
                       <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[8px]" />
@@ -770,7 +777,7 @@ export default function OrderHistoryPage() {
         <RefundItemsModal
           mode={refundMode}
           orderNumber={selectedOrder.orderNumber}
-          items={selectedOrder.items}
+          items={detailItems}
           refundQty={refundQty}
           onQtyChange={(idx, qty) => setRefundQty((prev) => ({ ...prev, [idx]: qty }))}
           reason={refundReason}

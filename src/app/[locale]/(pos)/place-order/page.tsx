@@ -32,6 +32,7 @@ import {
 } from '@/components/pos/PaymentModals';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { money } from '@/lib/currency';
+import { mergeIdenticalItems } from '@/lib/order-items';
 
 interface OrderLineItem {
   id: string;
@@ -262,14 +263,21 @@ export default function PlaceOrderPage() {
       type,
       status: 'Placed',
       paymentMethod: isDelivery ? (paid ? 'Online' : 'Cash on Delivery') : paymentMethod,
-      items: items.map((i) => ({
-        name: i.name,
-        nameAr: i.nameAr,
-        qty: i.qty,
-        price: lineTotal(i) / i.qty,
-        modifier: i.modifiers?.[0],
-        emoji: i.emoji ?? '🍽️',
-      })),
+      // Lines that ended up identical (same dish, add-ons, comment and price)
+      // collapse into ONE row with their quantities added up — Bug-19. The
+      // comment rides along in `note` so two lines differing only by comment
+      // stay separate.
+      items: mergeIdenticalItems(
+        items.map((i) => ({
+          name: i.name,
+          nameAr: i.nameAr,
+          qty: i.qty,
+          price: lineTotal(i) / i.qty,
+          modifier: i.modifiers?.[0],
+          emoji: i.emoji ?? '🍽️',
+          note: i.instructions,
+        })),
+      ),
       subtotal: round2(subtotal),
       serviceCharge,
       tax,
@@ -749,7 +757,9 @@ export default function PlaceOrderPage() {
                   value={customTip}
                   onChange={(e) => setCustomTip(e.target.value)}
                   placeholder="0.00"
-                  className="h-10 w-full rounded-lg bg-[#F2F2F2] ps-7 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  /* ps-11 (44px) clears the "EGP" label sitting at start-3 — with
+                     the old ps-7 the digits started under the P (Bug-17). */
+                  className="h-10 w-full rounded-lg bg-[#F2F2F2] ps-11 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] placeholder:text-[#B9B9B9] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
               </div>
             )}

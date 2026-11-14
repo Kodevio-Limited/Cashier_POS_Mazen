@@ -56,6 +56,9 @@ export interface RunningOrderItem {
   modifier?: string;
   /** Arabic twin of `modifier`. */
   modifierAr?: string;
+  /** Per-item comment / special instructions, kept so two lines that differ
+      only by their comment are never merged into one row (Bug-19). */
+  note?: string;
   emoji: string;
 }
 

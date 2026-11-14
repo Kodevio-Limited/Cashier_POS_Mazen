@@ -666,7 +666,10 @@ export default function FloorPlanPage() {
           Reserve action, so tapping a free table still seats guests in one go ── */}
       {reserveTarget && (
         <div className="pos-overlay z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
+          {/* overflow-x-hidden: native time/number inputs carry a minimum
+              intrinsic width on touch Safari, which used to push this dialog
+              sideways — the client asked for no side scrolling (Bug-18). */}
+          <div className="pos-overlay__panel flex w-[420px] max-w-full animate-in flex-col gap-4 overflow-x-hidden rounded-2xl bg-white p-6 shadow-2xl zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
               <div>
                 <h3 className="flex items-center gap-2 text-xl font-bold text-black">
@@ -714,7 +717,10 @@ export default function FloorPlanPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
+                {/* min-w-0 on both cells: grid items default to min-width:auto,
+                    so Safari's wide native inputs widened the column past the
+                    dialog. With it, each box matches the others (Bug-18). */}
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <label className="text-xs font-medium text-[#686868]">{t('reserve.guests')}</label>
                   <div className="relative">
                     <Users size={14} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[#989898]" />
@@ -725,13 +731,13 @@ export default function FloorPlanPage() {
                       inputMode="numeric"
                       value={reserveForm.guests}
                       onChange={(e) => setReserveForm((p) => ({ ...p, guests: e.target.value }))}
-                      className="h-11 w-full rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      className="h-11 w-full min-w-0 rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                   </div>
                   <span className="text-[11px] text-[#989898]">{t('reserve.capacity', { count: reserveTarget.capacity })}</span>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <label className="text-xs font-medium text-[#686868]">{t('reserve.time')}</label>
                   <div className="relative">
                     <CalendarClock size={14} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[#989898]" />
@@ -739,7 +745,7 @@ export default function FloorPlanPage() {
                       type="time"
                       value={reserveForm.time}
                       onChange={(e) => setReserveForm((p) => ({ ...p, time: e.target.value }))}
-                      className="h-11 w-full rounded-xl bg-[#F2F2F2] ps-10 pe-4 text-sm text-[#2D2F33] outline-none [appearance:textfield] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      className="h-11 w-full min-w-0 rounded-xl bg-[#F2F2F2] ps-9 pe-2 text-sm text-[#2D2F33] outline-none [appearance:textfield] focus:ring-1 focus:ring-[#026F4F] [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                   </div>
                 </div>

@@ -21,6 +21,7 @@ import { locStr, mapEnum, locTable } from '@/lib/locale-fields';
 import { foodImage } from '@/lib/menu-images';
 import { useBodyScrollLock } from '@/lib/use-body-scroll-lock';
 import { money } from '@/lib/currency';
+import { mergeIdenticalItems } from '@/lib/order-items';
 
 const ORDER_TYPE_KEY_MAP: Record<string, string> = {
   All: 'all',
@@ -268,9 +269,9 @@ export default function RunningOrderPage() {
                       </div>
                     </div>
 
-                    {/* Items */}
+                    {/* Items — identical lines collapse into one row (Bug-19) */}
                     <div className="mt-2.5 flex flex-col">
-                      {order.items.slice(0, 2).map((item, idx) => (
+                      {mergeIdenticalItems(order.items).slice(0, 2).map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2.5 border-b border-[#F2F2F2] py-2 last:border-0">
                           <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-[#F2F2F2]">
                             <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
@@ -289,7 +290,7 @@ export default function RunningOrderPage() {
                     <div className="mt-auto flex items-center justify-between">
                       <div className="flex flex-col gap-[8px]">
                         <span className="text-[8.4px] font-normal leading-[1.4] text-[#686868]">
-                          {t('moreItems', { count: Math.max(0, order.items.length - 2) })}
+                          {t('moreItems', { count: Math.max(0, mergeIdenticalItems(order.items).length - 2) })}
                         </span>
                         <span className="text-[12px] font-semibold leading-[1.4] text-[#026F4F]">{money(order.total)}</span>
                       </div>
@@ -496,11 +497,13 @@ export default function RunningOrderPage() {
               </div>
             </div>
 
-            {/* Order summary — compact rows, no photos (Bug-66) */}
+            {/* Order summary — compact rows, no photos (Bug-66).
+                Rows identical in dish + add-ons + comment collapse into one
+                with the quantities added (Bug-19). */}
             <div className="mt-[10px] flex flex-col gap-[6px]">
               <p className="text-[12px] font-semibold leading-[1.4] text-[#2D2F33]">{t('orderSummary')}</p>
               <div className="flex flex-col gap-[8px]">
-                {selectedOrder.items.map((item, idx) => (
+                {mergeIdenticalItems(selectedOrder.items).map((item, idx) => (
                   <div key={idx} className="flex items-center gap-[10px] rounded-[10px] bg-[#F2F2F2] p-2">
                     <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-white">
                       <img src={foodImage(item.emoji)} alt="" className="h-full w-full object-contain p-[6px]" />
